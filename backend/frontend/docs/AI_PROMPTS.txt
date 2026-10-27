@@ -1,0 +1,19 @@
+AI PROMPT LOG
+Software Project I — Winter 2026
+
+========================================
+Date: 2026-10-28
+Student: Nour Mahran
+Tool: ChatGPT
+Related Requirement: Project Setup / Git Workflow
+
+Prompt:
+Guide me through setting up the university
+Travel Planning and Booking Platform project
+according to the official PDF requirements.
+
+How the output was used:
+Used the guidance to install development tools,
+create the project folder structure, initialize
+Git, and prepare project documentation.
+========================================
