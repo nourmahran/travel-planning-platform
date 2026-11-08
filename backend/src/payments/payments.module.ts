@@ -20,6 +20,8 @@ import {
 import { Refund, RefundSchema } from './schemas/refund.schema';
 import { stripeClientProvider } from './stripe/stripe.provider';
 import { StripeService } from './stripe/stripe.service';
+import { WebhookController } from './webhook.controller';
+import { WebhookService } from './webhook.service';
 
 /**
  * PAY-01 / PAY-03 / PAY-04 / GEN-11 — payments, refunds and the Stripe webhook.
@@ -34,13 +36,15 @@ import { StripeService } from './stripe/stripe.service';
       { name: ProcessedEvent.name, schema: ProcessedEventSchema },
     ]),
   ],
-  controllers: [PaymentsController, RefundsController],
+  // WebhookController first so POST /payments/webhook is matched before any :id route
+  controllers: [WebhookController, PaymentsController, RefundsController],
   providers: [
     stripeClientProvider,
     StripeService,
     BookingGatewayRegistry,
     PaymentsService,
     RefundsService,
+    WebhookService,
     PaymentsAuthGuard,
     { provide: NOTIFICATION_PORT, useClass: LoggerNotificationAdapter },
   ],
