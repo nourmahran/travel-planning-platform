@@ -5,6 +5,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PaymentsModule } from './payments/payments.module';
+import { PoliciesModule } from './policies/policies.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { AppService } from './app.service';
     }),
     // Domain events (payment.succeeded, refund.created, ...) — PAY-01, PAY-03
     EventEmitterModule.forRoot(),
+    PaymentsModule,
+    PoliciesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
