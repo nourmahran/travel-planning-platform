@@ -10,6 +10,8 @@ import {
 import { assertDevFlagSafe } from './payments.config';
 import { PaymentsController } from './payments.controller';
 import { PaymentsService } from './payments.service';
+import { RefundsController } from './refunds.controller';
+import { RefundsService } from './refunds.service';
 import { Payment, PaymentSchema } from './schemas/payment.schema';
 import {
   ProcessedEvent,
@@ -32,12 +34,13 @@ import { StripeService } from './stripe/stripe.service';
       { name: ProcessedEvent.name, schema: ProcessedEventSchema },
     ]),
   ],
-  controllers: [PaymentsController],
+  controllers: [PaymentsController, RefundsController],
   providers: [
     stripeClientProvider,
     StripeService,
     BookingGatewayRegistry,
     PaymentsService,
+    RefundsService,
     PaymentsAuthGuard,
     { provide: NOTIFICATION_PORT, useClass: LoggerNotificationAdapter },
   ],
@@ -45,6 +48,7 @@ import { StripeService } from './stripe/stripe.service';
     BookingGatewayRegistry,
     NOTIFICATION_PORT,
     PaymentsService,
+    RefundsService,
     PaymentsAuthGuard,
   ],
 })
