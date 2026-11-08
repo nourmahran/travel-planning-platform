@@ -2,6 +2,7 @@ import { type INestApplication, ValidationPipe } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { getModelToken } from '@nestjs/mongoose';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import type Stripe from 'stripe';
@@ -178,6 +179,56 @@ describe('Payments flow over HTTP (module wiring)', () => {
       .get(`/api/payments/${paymentId}`)
       .set(as(otherUser))
       .expect(404);
+  });
+
+  it('documents every route in Swagger with its requirement ID (Task 13)', () => {
+    const doc = SwaggerModule.createDocument(
+      app,
+      new DocumentBuilder().setTitle('t').addCookieAuth('access_token').build(),
+    );
+    const expected: Array<[string, string, string]> = [
+      ['get', '/api/bookings/{type}/{id}/policies', 'PAY-02'],
+      ['post', '/api/bookings/{type}/{id}/accept-policies', 'PAY-02'],
+      ['post', '/api/payments', 'PAY-01'],
+      ['post', '/api/payments/{id}/retry', 'PAY-01'],
+      ['get', '/api/payments/{id}', 'PAY-01'],
+      ['post', '/api/payments/webhook', 'PAY-01'],
+      ['get', '/api/refunds/{id}', 'PAY-03'],
+      ['post', '/api/dev/payments/{id}/confirm', 'PAY-01'],
+    ];
+    for (const [method, path, req] of expected) {
+      const op = (
+        doc.paths[path] as Record<
+          string,
+          {
+            summary?: string;
+            tags?: string[];
+            responses: Record<string, unknown>;
+          }
+        >
+      )?.[method];
+      expect({ path, method, summary: op?.summary }).toEqual({
+        path,
+        method,
+        summary: expect.stringContaining(req),
+      });
+      expect(Object.keys(op.responses).length).toBeGreaterThan(1);
+    }
+    const tags = new Set(
+      Object.values(doc.paths).flatMap((p) =>
+        Object.values(p as Record<string, { tags?: string[] }>).flatMap(
+          (o) => o.tags ?? [],
+        ),
+      ),
+    );
+    for (const t of [
+      'Payments',
+      'Policies',
+      'Refunds',
+      'Dev (test mode only)',
+    ]) {
+      expect(tags).toContain(t);
+    }
   });
 
   it('validates input with 400 and requires login with 401', async () => {
