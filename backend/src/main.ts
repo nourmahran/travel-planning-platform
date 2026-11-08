@@ -8,7 +8,8 @@ import { AppModule } from './app.module';
 dns.setServers(['8.8.8.8']);
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // rawBody: Stripe webhook signature verification needs the exact raw bytes (PAY-01)
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   app.useGlobalFilters(new HttpExceptionFilter());
 
   app.useGlobalPipes(
