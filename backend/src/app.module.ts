@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { DevPaymentsModule } from './payments/dev-payments.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PoliciesModule } from './policies/policies.module';
 
@@ -30,6 +31,8 @@ import { PoliciesModule } from './policies/policies.module';
     EventEmitterModule.forRoot(),
     PaymentsModule,
     PoliciesModule,
+    // Dev-only Swagger helper; registers nothing unless ENABLE_DEV_PAYMENT_ENDPOINTS=true
+    DevPaymentsModule.register(),
   ],
   controllers: [AppController],
   providers: [AppService],
