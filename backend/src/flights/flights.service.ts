@@ -4,10 +4,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  InjectConnection,
-  InjectModel,
-} from '@nestjs/mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { DateTime } from 'luxon';
 import { Types } from 'mongoose';
 import type { Connection, Model } from 'mongoose';
@@ -17,14 +14,13 @@ import {
   FlightDocument,
   FlightStatus,
 } from './schemas/flight.schema';
-
 import {
   Airline,
   AirlineDocument,
 } from '../airlines/schemas/airline.schema';
-
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
+import { UpdateFlightDto } from './dto/update-flight.dto';
 
 type AirportRecord = {
   iata_code: string;
@@ -93,6 +89,30 @@ export class FlightsService {
     return local.toUTC().toJSDate();
   }
 
+  private async getAirport(
+    code: string,
+  ): Promise<AirportRecord> {
+    const database = this.connection.db;
+
+    if (!database) {
+      throw new BadRequestException(
+        'Database connection is unavailable',
+      );
+    }
+
+    const airport = await database
+      .collection<AirportRecord>('airports')
+      .findOne({ iata_code: code });
+
+    if (!airport) {
+      throw new BadRequestException(
+        `Airport ${code} does not exist`,
+      );
+    }
+
+    return airport;
+  }
+
   async create(dto: CreateFlightDto) {
     const airline = await this.airlineModel
       .findById(dto.airlineId)
@@ -112,32 +132,11 @@ export class FlightsService {
       );
     }
 
-    const database = this.connection.db;
-
-    if (!database) {
-      throw new BadRequestException(
-        'Database connection is unavailable',
-      );
-    }
-
-    const airports =
-      database.collection<AirportRecord>('airports');
-
     const [departureAirport, arrivalAirport] =
       await Promise.all([
-        airports.findOne({
-          iata_code: dto.departureAirport,
-        }),
-        airports.findOne({
-          iata_code: dto.arrivalAirport,
-        }),
+        this.getAirport(dto.departureAirport),
+        this.getAirport(dto.arrivalAirport),
       ]);
-
-    if (!departureAirport || !arrivalAirport) {
-      throw new BadRequestException(
-        'Departure or arrival airport does not exist',
-      );
-    }
 
     const departure = this.convertLocalTimeToUtc(
       dto.departureLocalTime,
@@ -174,9 +173,7 @@ export class FlightsService {
     }
 
     for (const cabin of dto.cabins) {
-      if (
-        cabin.availableSeats !== cabin.totalSeats
-      ) {
+      if (cabin.availableSeats !== cabin.totalSeats) {
         throw new BadRequestException(
           'Available seats must initially equal total seats',
         );
@@ -204,48 +201,84 @@ export class FlightsService {
 
   async searchFlights(query: SearchFlightsDto) {
     const now = new Date();
+
     if (query.returnDate === undefined) {
-      if (query.returnPage !== undefined || query.returnLimit !== undefined) {
-        throw new BadRequestException('Return pagination requires returnDate');
+      if (
+        query.returnPage !== undefined ||
+        query.returnLimit !== undefined
+      ) {
+        throw new BadRequestException(
+          'Return pagination requires returnDate',
+        );
       }
+
       return this.searchLeg(query, now);
     }
 
-    const { departureAirport, arrivalAirport, departureDate, returnDate } = query;
-    if (!departureAirport || !arrivalAirport || !departureDate || !returnDate) {
+    const {
+      departureAirport,
+      arrivalAirport,
+      departureDate,
+      returnDate,
+    } = query;
+
+    if (
+      !departureAirport ||
+      !arrivalAirport ||
+      !departureDate ||
+      !returnDate
+    ) {
       throw new BadRequestException(
         'Round-trip search requires departureAirport, arrivalAirport, departureDate and returnDate',
       );
     }
+
     if (departureAirport === arrivalAirport) {
-      throw new BadRequestException('Departure and arrival airports must be different');
+      throw new BadRequestException(
+        'Departure and arrival airports must be different',
+      );
     }
+
     for (const date of [departureDate, returnDate]) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-          !DateTime.fromISO(date, { zone: 'utc' }).isValid) {
-        throw new BadRequestException('Dates must be valid calendar dates in YYYY-MM-DD format');
+      if (
+        !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !DateTime.fromISO(date, { zone: 'utc' }).isValid
+      ) {
+        throw new BadRequestException(
+          'Dates must be valid calendar dates in YYYY-MM-DD format',
+        );
       }
     }
+
     if (returnDate < departureDate) {
-      throw new BadRequestException('Return date cannot be before departure date');
+      throw new BadRequestException(
+        'Return date cannot be before departure date',
+      );
     }
 
     const [outbound, inbound] = await Promise.all([
       this.searchLeg(query, now),
-      this.searchLeg({
-        departureAirport: arrivalAirport,
-        arrivalAirport: departureAirport,
-        departureDate: returnDate,
-        cabinClass: query.cabinClass,
-        passengers: query.passengers,
-        page: query.returnPage ?? 1,
-        limit: query.returnLimit ?? query.limit ?? 10,
-      }, now),
+      this.searchLeg(
+        {
+          departureAirport: arrivalAirport,
+          arrivalAirport: departureAirport,
+          departureDate: returnDate,
+          cabinClass: query.cabinClass,
+          passengers: query.passengers,
+          page: query.returnPage ?? 1,
+          limit: query.returnLimit ?? query.limit ?? 10,
+        },
+        now,
+      ),
     ]);
+
     return { outbound, inbound };
   }
 
-  private async searchLeg(query: SearchFlightsDto, now: Date) {
+  private async searchLeg(
+    query: SearchFlightsDto,
+    now: Date,
+  ) {
     const {
       departureAirport,
       arrivalAirport,
@@ -283,7 +316,6 @@ export class FlightsService {
       filter.arrivalAirport = arrivalAirport;
     }
 
-    // Search by the departure airport's local date.
     if (departureDate) {
       if (!departureAirport) {
         throw new BadRequestException(
@@ -291,25 +323,9 @@ export class FlightsService {
         );
       }
 
-      const database = this.connection.db;
-
-      if (!database) {
-        throw new BadRequestException(
-          'Database connection is unavailable',
-        );
-      }
-
-      const airport = await database
-        .collection<AirportRecord>('airports')
-        .findOne({
-          iata_code: departureAirport,
-        });
-
-      if (!airport) {
-        throw new BadRequestException(
-          'Departure airport does not exist',
-        );
-      }
+      const airport = await this.getAirport(
+        departureAirport,
+      );
 
       const localStart = DateTime.fromISO(
         `${departureDate}T00:00:00`,
@@ -326,30 +342,30 @@ export class FlightsService {
         );
       }
 
-      const localEnd = localStart.plus({ days: 1 }).startOf('day');
-
-      const start = localStart.toUTC().toJSDate();
-      const end = localEnd.toUTC().toJSDate();
+      const localEnd = localStart
+        .plus({ days: 1 })
+        .startOf('day');
 
       filter.departureTimeUtc = {
         $gt: now,
-        $gte: start,
-        $lt: end,
+        $gte: localStart.toUTC().toJSDate(),
+        $lt: localEnd.toUTC().toJSDate(),
       };
     }
 
     filter.cabins = {
       $elemMatch: {
         ...(cabinClass ? { cabinClass } : {}),
-        availableSeats: {
-          $gte: passengers,
-        },
+        availableSeats: { $gte: passengers },
       },
     };
 
     const skip = (page - 1) * limit;
+
     if (!Number.isSafeInteger(skip)) {
-      throw new BadRequestException('Page offset is too large');
+      throw new BadRequestException(
+        'Page offset is too large',
+      );
     }
 
     const [flights, total] = await Promise.all([
@@ -396,5 +412,278 @@ export class FlightsService {
 
     return flight;
   }
-}
 
+  async update(id: string, dto: UpdateFlightDto) {
+    const flight = await this.findOne(id);
+
+    if (flight.status !== FlightStatus.SCHEDULED) {
+      throw new BadRequestException(
+        'Only scheduled flights can be updated',
+      );
+    }
+
+    if (flight.departureTimeUtc <= new Date()) {
+      throw new BadRequestException(
+        'Flights that have reached their departure time cannot be updated',
+      );
+    }
+
+    const newDepartureAirport =
+      dto.departureAirport ?? flight.departureAirport;
+
+    const newArrivalAirport =
+      dto.arrivalAirport ?? flight.arrivalAirport;
+
+    if (newDepartureAirport === newArrivalAirport) {
+      throw new BadRequestException(
+        'Departure and arrival airports must be different',
+      );
+    }
+
+    const departureAirportChanged =
+      newDepartureAirport !== flight.departureAirport;
+
+    const arrivalAirportChanged =
+      newArrivalAirport !== flight.arrivalAirport;
+
+    if (
+      departureAirportChanged &&
+      !dto.departureLocalTime
+    ) {
+      throw new BadRequestException(
+        'departureLocalTime is required when changing the departure airport',
+      );
+    }
+
+    if (
+      arrivalAirportChanged &&
+      !dto.arrivalLocalTime
+    ) {
+      throw new BadRequestException(
+        'arrivalLocalTime is required when changing the arrival airport',
+      );
+    }
+
+    const scheduleOrRouteChanged =
+      departureAirportChanged ||
+      arrivalAirportChanged ||
+      dto.departureLocalTime !== undefined ||
+      dto.arrivalLocalTime !== undefined ||
+      dto.airlineId !== undefined;
+
+    const hasAllocatedSeats = flight.cabins.some(
+      (cabin) =>
+        cabin.availableSeats !== cabin.totalSeats,
+    );
+
+    if (
+      scheduleOrRouteChanged &&
+      hasAllocatedSeats
+    ) {
+      throw new BadRequestException(
+        'Cannot change route, schedule or airline after seats have been allocated',
+      );
+    }
+
+    if (dto.airlineId !== undefined) {
+      const airline = await this.airlineModel
+        .findById(dto.airlineId)
+        .exec();
+
+      if (!airline) {
+        throw new NotFoundException('Airline not found');
+      }
+
+      if (!airline.isActive) {
+        throw new BadRequestException(
+          'Airline is inactive',
+        );
+      }
+
+      flight.airlineId = new Types.ObjectId(
+        dto.airlineId,
+      );
+    }
+
+    const [departureAirport, arrivalAirport] =
+      await Promise.all([
+        this.getAirport(newDepartureAirport),
+        this.getAirport(newArrivalAirport),
+      ]);
+
+    const existingDepartureLocal = DateTime
+      .fromJSDate(flight.departureTimeUtc, {
+        zone: flight.departureTimeZone,
+      })
+      .toFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+    const existingArrivalLocal = DateTime
+      .fromJSDate(flight.arrivalTimeUtc, {
+        zone: flight.arrivalTimeZone,
+      })
+      .toFormat("yyyy-MM-dd'T'HH:mm:ss");
+
+    const departure = this.convertLocalTimeToUtc(
+      dto.departureLocalTime ??
+        existingDepartureLocal,
+      departureAirport.time_zone,
+    );
+
+    const arrival = this.convertLocalTimeToUtc(
+      dto.arrivalLocalTime ?? existingArrivalLocal,
+      arrivalAirport.time_zone,
+    );
+
+    if (departure <= new Date()) {
+      throw new BadRequestException(
+        'Departure must be in the future',
+      );
+    }
+
+    if (arrival <= departure) {
+      throw new BadRequestException(
+        'Arrival must be after departure',
+      );
+    }
+
+    if (dto.cabins !== undefined) {
+      if (dto.cabins.length === 0) {
+        throw new BadRequestException(
+          'Cabin updates cannot be empty',
+        );
+      }
+
+      const cabinClasses = dto.cabins.map(
+        (cabin) => cabin.cabinClass,
+      );
+
+      if (
+        new Set(cabinClasses).size !==
+        cabinClasses.length
+      ) {
+        throw new BadRequestException(
+          'Duplicate cabin classes are not allowed',
+        );
+      }
+
+      for (const update of dto.cabins) {
+        const existingCabin = flight.cabins.find(
+          (cabin) =>
+            cabin.cabinClass === update.cabinClass,
+        );
+
+        if (!existingCabin) {
+          throw new BadRequestException(
+            `Cabin class ${update.cabinClass} does not exist on this flight`,
+          );
+        }
+
+        if (update.price !== undefined) {
+          existingCabin.price = update.price;
+        }
+
+        if (
+          update.baggageAllowanceKg !== undefined
+        ) {
+          existingCabin.baggageAllowanceKg =
+            update.baggageAllowanceKg;
+        }
+
+        if (
+          update.extraBaggagePricePerKg !==
+          undefined
+        ) {
+          existingCabin.extraBaggagePricePerKg =
+            update.extraBaggagePricePerKg;
+        }
+      }
+    }
+
+    if (dto.flightNumber !== undefined) {
+      flight.flightNumber = dto.flightNumber;
+    }
+
+    flight.departureAirport = newDepartureAirport;
+    flight.arrivalAirport = newArrivalAirport;
+    flight.departureTimeUtc = departure;
+    flight.arrivalTimeUtc = arrival;
+    flight.departureTimeZone =
+      departureAirport.time_zone;
+    flight.arrivalTimeZone =
+      arrivalAirport.time_zone;
+
+    return flight.save();
+  }
+
+  async cancel(id: string) {
+    const flight = await this.findOne(id);
+
+    if (flight.status !== FlightStatus.SCHEDULED) {
+      throw new BadRequestException(
+        'Only scheduled flights can be cancelled',
+      );
+    }
+
+    if (flight.departureTimeUtc <= new Date()) {
+      throw new BadRequestException(
+        'Flights that have reached their departure time cannot be cancelled',
+      );
+    }
+
+    const hasAllocatedSeats = flight.cabins.some(
+      (cabin) =>
+        cabin.availableSeats !== cabin.totalSeats,
+    );
+
+    if (hasAllocatedSeats) {
+      throw new BadRequestException(
+        'Cannot cancel a flight with allocated seats until booking and refund handling is integrated',
+      );
+    }
+
+    // Check status, departure time and cabin inventory
+    // again within the same database update operation.
+    const cancelledFlight = await this.flightModel
+      .findOneAndUpdate(
+        {
+          _id: flight._id,
+          status: FlightStatus.SCHEDULED,
+          departureTimeUtc: { $gt: new Date() },
+          $expr: {
+            $allElementsTrue: [
+              {
+                $map: {
+                  input: '$cabins',
+                  as: 'cabin',
+                  in: {
+                    $eq: [
+                      '$$cabin.availableSeats',
+                      '$$cabin.totalSeats',
+                    ],
+                  },
+                },
+              },
+            ],
+          },
+        },
+        {
+          $set: {
+            status: FlightStatus.CANCELLED,
+          },
+        },
+        {
+          new: true,
+          runValidators: true,
+        },
+      )
+      .exec();
+
+    if (!cancelledFlight) {
+      throw new BadRequestException(
+        'Flight could not be cancelled because its state changed',
+      );
+    }
+
+    return cancelledFlight;
+  }
+}
