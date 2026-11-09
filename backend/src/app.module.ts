@@ -4,6 +4,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AirlinesModule } from './airlines/airlines.module';
+import { FlightsModule } from './flights/flights.module';
+
 
 @Module({
   imports: [
@@ -23,6 +26,8 @@ import { AppService } from './app.service';
         return { uri };
       },
     }),
+    AirlinesModule,
+    FlightsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
