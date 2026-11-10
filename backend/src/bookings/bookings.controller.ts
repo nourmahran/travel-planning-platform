@@ -17,6 +17,7 @@ import {
 } from '@nestjs/swagger';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -61,13 +62,15 @@ export class BookingsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Booking cannot be confirmed',
+    description: 'Invalid booking ID or booking cannot be confirmed',
   })
   @ApiResponse({
     status: 404,
     description: 'Booking or flight not found',
   })
-  async confirm(@Param('id') id: string) {
+  async confirm(
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.bookingsService.confirm(id);
   }
 
@@ -85,14 +88,15 @@ export class BookingsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Booking cannot be cancelled',
+    description: 'Invalid booking ID or booking cannot be cancelled',
   })
   @ApiResponse({
     status: 404,
     description: 'Booking or flight not found',
   })
-  async cancel(@Param('id') id: string) {
+  async cancel(
+    @Param('id', ParseObjectIdPipe) id: string,
+  ) {
     return this.bookingsService.cancel(id);
   }
 }
-    
