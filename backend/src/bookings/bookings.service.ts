@@ -329,4 +329,39 @@ export class BookingsService {
       await session.endSession();
     }
   }
+
+  async findOne(id: string, userId: string) {
+    if (!Types.ObjectId.isValid(id)) {
+      throw new BadRequestException('Invalid booking ID');
+    }
+
+    if (!userId || !userId.trim()) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    const booking = await this.bookingModel
+      .findOne({
+        _id: id,
+        userId,
+      })
+      .exec();
+
+    if (!booking) {
+      throw new NotFoundException('Booking not found');
+    }
+
+    return booking;
+  }
+
+  async findByUser(userId: string) {
+    if (!userId || !userId.trim()) {
+      throw new BadRequestException('User ID is required');
+    }
+
+    return this.bookingModel
+      .find({ userId })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
+
 }
