@@ -2,6 +2,7 @@ import { Cron } from '@nestjs/schedule';
 
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -30,6 +31,7 @@ type FlightSearchFilter = {
   };
   departureAirport?: string;
   arrivalAirport?: string;
+  airlineId?: { $in: Types.ObjectId[] };
   cabins?: {
     $elemMatch: {
       cabinClass?: string;
@@ -167,6 +169,7 @@ export class FlightsService {
       departureAirport: dto.departureAirport,
       arrivalAirport: dto.arrivalAirport,
       departureTimeUtc: departure,
+      departureLocalDate: dto.departureLocalTime.slice(0, 10),
       arrivalTimeUtc: arrival,
       departureTimeZone: departureAirport.time_zone,
       arrivalTimeZone: arrivalAirport.time_zone,
@@ -176,12 +179,25 @@ export class FlightsService {
         totalSeats: cabin.totalSeats,
         baggageAllowanceKg: cabin.baggageAllowanceKg,
         extraBaggagePricePerKg: cabin.extraBaggagePricePerKg,
+        freeBagsPerPassenger: cabin.freeBagsPerPassenger,
+        maxWeightKgPerBag: cabin.maxWeightKgPerBag,
+        extraBagPrice: cabin.extraBagPrice,
+        maxExtraBagsPerPassenger: cabin.maxExtraBagsPerPassenger,
         availableSeats: cabin.totalSeats,
       })),
       status: FlightStatus.SCHEDULED,
     });
 
-    return flight.save();
+    try {
+      return await flight.save();
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throw new ConflictException(
+          'Flight number already exists for this airline and departure date',
+        );
+      }
+      throw error;
+    }
   }
 
   async searchFlights(query: SearchFlightsDto) {
@@ -282,7 +298,13 @@ export class FlightsService {
       (minPrice !== undefined &&
         maxPrice !== undefined &&
         minPrice > maxPrice) ||
-      !['departure', 'price_asc', 'price_desc'].includes(sortBy)
+      ![
+        'departure',
+        'price_asc',
+        'price_desc',
+        'duration_asc',
+        'duration_desc',
+      ].includes(sortBy)
     ) {
       throw new BadRequestException('Invalid price range or sort order');
     }
@@ -295,6 +317,16 @@ export class FlightsService {
       status: FlightStatus.SCHEDULED,
       departureTimeUtc: { $gt: now },
     };
+
+    await Promise.all([
+      departureAirport ? this.getAirport(departureAirport) : Promise.resolve(),
+      arrivalAirport ? this.getAirport(arrivalAirport) : Promise.resolve(),
+    ]);
+    const activeAirlines = await this.airlineModel
+      .find({ isActive: true })
+      .select('_id')
+      .exec();
+    filter.airlineId = { $in: activeAirlines.map((airline) => airline._id) };
 
     if (departureAirport) {
       filter.departureAirport = departureAirport;
@@ -348,6 +380,10 @@ export class FlightsService {
     }
 
     if (sortBy !== 'departure') {
+      const sortField = sortBy.startsWith('duration')
+        ? 'durationMinutes'
+        : 'matchingPrice';
+      const sortDirection: 1 | -1 = sortBy.endsWith('_asc') ? 1 : -1;
       const conditions: object[] = [
         { $gte: ['$$c.availableSeats', passengers] },
       ];
@@ -376,6 +412,12 @@ export class FlightsService {
                   },
                 },
               },
+              durationMinutes: {
+                $divide: [
+                  { $subtract: ['$arrivalTimeUtc', '$departureTimeUtc'] },
+                  60000,
+                ],
+              },
             },
           },
           {
@@ -383,7 +425,7 @@ export class FlightsService {
               flights: [
                 {
                   $sort: {
-                    matchingPrice: sortBy === 'price_asc' ? 1 : -1,
+                    [sortField]: sortDirection,
                     departureTimeUtc: 1,
                     _id: 1,
                   },
@@ -441,6 +483,32 @@ export class FlightsService {
     }
 
     return flight;
+  }
+
+  async details(id: string) {
+    const flight = await this.findOne(id);
+    const airline = await this.airlineModel.findById(flight.airlineId).exec();
+    if (!airline) throw new NotFoundException('Airline not found');
+    return {
+      flight,
+      airline: {
+        id: airline._id,
+        name: airline.name,
+        code: airline.code,
+        logoUrl: airline.logoUrl,
+      },
+      departureLocalTime: DateTime.fromJSDate(flight.departureTimeUtc, {
+        zone: flight.departureTimeZone,
+      }).toISO(),
+      arrivalLocalTime: DateTime.fromJSDate(flight.arrivalTimeUtc, {
+        zone: flight.arrivalTimeZone,
+      }).toISO(),
+      durationMinutes: Math.round(
+        (flight.arrivalTimeUtc.getTime() - flight.departureTimeUtc.getTime()) /
+          60000,
+      ),
+      cancellationTiers: airline.flightPolicies?.cancellationTiers ?? [],
+    };
   }
 
   async update(id: string, dto: UpdateFlightDto) {
@@ -593,11 +661,23 @@ export class FlightsService {
     flight.departureAirport = newDepartureAirport;
     flight.arrivalAirport = newArrivalAirport;
     flight.departureTimeUtc = departure;
+    flight.departureLocalDate = DateTime.fromJSDate(departure, {
+      zone: departureAirport.time_zone,
+    }).toISODate()!;
     flight.arrivalTimeUtc = arrival;
     flight.departureTimeZone = departureAirport.time_zone;
     flight.arrivalTimeZone = arrivalAirport.time_zone;
 
-    return flight.save();
+    try {
+      return await flight.save();
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        throw new ConflictException(
+          'Flight number already exists for this airline and departure date',
+        );
+      }
+      throw error;
+    }
   }
 
   async cancel(id: string) {

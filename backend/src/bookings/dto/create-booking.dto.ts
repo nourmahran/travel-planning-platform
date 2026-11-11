@@ -1,4 +1,3 @@
-
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
@@ -7,6 +6,9 @@ import {
   IsEnum,
   IsMongoId,
   IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  Matches,
   IsString,
   ValidateNested,
 } from 'class-validator';
@@ -27,6 +29,24 @@ export class BookingPassengerDto {
   @IsString()
   @IsNotEmpty()
   passportNumber: string;
+
+  @ApiProperty({
+    example: '1995-06-15',
+    description:
+      'Birth date used to determine adult, child or infant fare at departure',
+  })
+  @Matches(/^\d{4}-\d{2}-\d{2}$/)
+  dateOfBirth: string;
+
+  @ApiProperty({
+    type: [Number],
+    required: false,
+    description: 'Weight in kilograms of each extra bag',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsNumber({}, { each: true })
+  extraBagWeightsKg?: number[];
 }
 
 export class CreateBookingDto {
@@ -36,6 +56,14 @@ export class CreateBookingDto {
   })
   @IsMongoId()
   flightId: string;
+
+  @ApiProperty({
+    required: false,
+    description: 'Return flight for one round-trip booking and payment',
+  })
+  @IsOptional()
+  @IsMongoId()
+  returnFlightId?: string;
 
   @ApiProperty({
     example: 'test-user-001',

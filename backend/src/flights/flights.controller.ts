@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -9,10 +8,7 @@ import {
   Query,
 } from '@nestjs/common';
 
-import {
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { FlightsService } from './flights.service';
 import { CreateFlightDto } from './dto/create-flight.dto';
@@ -23,9 +19,7 @@ import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 @ApiTags('Flights')
 @Controller('flights')
 export class FlightsController {
-  constructor(
-    private readonly flightsService: FlightsService,
-  ) {}
+  constructor(private readonly flightsService: FlightsService) {}
 
   @Post()
   @ApiOperation({
@@ -49,10 +43,8 @@ export class FlightsController {
   @ApiOperation({
     summary: 'Get flight details by ID',
   })
-  findOne(
-    @Param('id', ParseObjectIdPipe) id: string,
-  ) {
-    return this.flightsService.findOne(id);
+  findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.flightsService.details(id);
   }
 
   @Patch(':id')
@@ -70,9 +62,7 @@ export class FlightsController {
   @ApiOperation({
     summary: 'Cancel a scheduled flight without allocated seats',
   })
-  cancel(
-    @Param('id', ParseObjectIdPipe) id: string,
-  ) {
+  cancel(@Param('id', ParseObjectIdPipe) id: string) {
     return this.flightsService.cancel(id);
   }
 }

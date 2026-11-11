@@ -23,23 +23,25 @@ describe('Scheduled inventory maintenance', () => {
       findOneAndUpdate: jest.fn().mockReturnValue(query(booking)),
     };
     const flights = {
-      findById: jest
-        .fn()
-        .mockReturnValue({
-          session: () =>
-            query({
-              cabins: [
-                { cabinClass: 'Economy', availableSeats: 8, totalSeats: 10 },
-              ],
-            }),
-        }),
+      findById: jest.fn().mockReturnValue({
+        session: () =>
+          query({
+            cabins: [
+              { cabinClass: 'Economy', availableSeats: 8, totalSeats: 10 },
+            ],
+          }),
+      }),
       findOneAndUpdate: jest.fn().mockReturnValue(query({})),
     };
     return {
       session,
       bookings,
       flights,
-      service: new BookingsService(bookings as never, flights as never),
+      service: new BookingsService(
+        bookings as never,
+        flights as never,
+        {} as never,
+      ),
     };
   }
   it('claims only due unpaid holds and restores the exact seat count in the same transaction', async () => {

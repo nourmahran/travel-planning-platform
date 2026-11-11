@@ -8,15 +8,76 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { ClientSession, Model, Types } from 'mongoose';
 import { Booking, BookingStatus } from './schemas/booking.schema';
-import { Flight, FlightStatus } from '../flights/schemas/flight.schema';
+import {
+  CabinDetails,
+  Flight,
+  FlightStatus,
+} from '../flights/schemas/flight.schema';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { FLIGHT_HOLD_DURATION_MS } from './booking.constants';
+import {
+  Airline,
+  BaggagePolicy,
+  FlightPolicies,
+} from '../airlines/schemas/airline.schema';
+import { pricePassengers } from './passenger-pricing';
 
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
+
+  private baggageForCabin(
+    cabin: CabinDetails,
+    fallback?: BaggagePolicy,
+  ): BaggagePolicy | undefined {
+    if (
+      cabin.freeBagsPerPassenger !== undefined &&
+      cabin.maxWeightKgPerBag !== undefined &&
+      cabin.extraBagPrice !== undefined &&
+      cabin.maxExtraBagsPerPassenger !== undefined
+    ) {
+      return {
+        freeBagsPerPassenger: cabin.freeBagsPerPassenger,
+        maxWeightKgPerBag: cabin.maxWeightKgPerBag,
+        extraBagPrice: cabin.extraBagPrice,
+        maxExtraBagsPerPassenger: cabin.maxExtraBagsPerPassenger,
+      };
+    }
+    return fallback;
+  }
+
+  private async restoreReturnSeats(booking: Booking, session: ClientSession) {
+    if (!booking.returnFlightId) return;
+    const count =
+      booking.returnSeatCount ?? booking.seatCount ?? booking.passengers.length;
+    const flight = await this.flightModel
+      .findById(booking.returnFlightId)
+      .session(session)
+      .exec();
+    const cabin = flight?.cabins.find(
+      (item) => item.cabinClass === booking.cabinClass,
+    );
+    if (!cabin || count < 1)
+      throw new Error('Cannot restore return flight inventory');
+    const restored = await this.flightModel
+      .findOneAndUpdate(
+        {
+          _id: booking.returnFlightId,
+          cabins: {
+            $elemMatch: {
+              cabinClass: booking.cabinClass,
+              availableSeats: { $lte: cabin.totalSeats - count },
+            },
+          },
+        },
+        { $inc: { 'cabins.$.availableSeats': count } },
+        { new: true, session },
+      )
+      .exec();
+    if (!restored) throw new Error('Cannot restore return flight inventory');
+  }
 
   // A conditional booking transition and inventory restoration commit together.
   // Competing workers or cancellation transactions cannot release the same hold twice.
@@ -39,7 +100,7 @@ export class BookingsService {
             )
             .exec();
           if (!booking) return false;
-          const count = booking.passengers.length;
+          const count = booking.seatCount ?? booking.passengers.length;
           const flight = await this.flightModel
             .findById(booking.flightId)
             .session(session)
@@ -66,6 +127,7 @@ export class BookingsService {
             .exec();
           if (!restored)
             throw new Error('Cannot restore expired hold inventory');
+          await this.restoreReturnSeats(booking, session);
           return true;
         })) ?? false
       );
@@ -101,11 +163,131 @@ export class BookingsService {
 
     @InjectModel(Flight.name)
     private readonly flightModel: Model<Flight>,
+
+    @InjectModel(Airline.name)
+    private readonly airlineModel: Model<Airline>,
   ) {}
+
+  async findForPayment(id: string) {
+    if (!Types.ObjectId.isValid(id)) return null;
+    const booking = await this.bookingModel.findById(id).exec();
+    if (!booking) return null;
+    const flight = await this.flightModel.findById(booking.flightId).exec();
+    if (!flight) throw new NotFoundException('Flight not found');
+    return {
+      id: booking._id.toString(),
+      userId: booking.userId,
+      status: booking.status,
+      totalPrice: booking.totalPrice,
+      holdExpiresAt: booking.holdExpiresAt,
+      policiesAcceptedAt: booking.policiesAcceptedAt,
+      policySnapshot: booking.policySnapshot,
+      departureTimeUtc: flight.departureTimeUtc,
+      reference: booking.reference,
+    };
+  }
+
+  async getCurrentPolicies(id: string): Promise<FlightPolicies> {
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException('Invalid booking ID');
+    const booking = await this.bookingModel.findById(id).exec();
+    if (!booking) throw new NotFoundException('Booking not found');
+    const flight = await this.flightModel.findById(booking.flightId).exec();
+    if (!flight) throw new NotFoundException('Flight not found');
+    const airline = await this.airlineModel.findById(flight.airlineId).exec();
+    if (!airline?.flightPolicies)
+      throw new BadRequestException('Airline policies are not configured');
+    const cabin = flight.cabins.find(
+      (item) => item.cabinClass === booking.cabinClass,
+    );
+    if (!cabin) throw new BadRequestException('Booking cabin was not found');
+    return {
+      kind: 'flight',
+      cancellationTiers: airline.flightPolicies.cancellationTiers,
+      baggage: this.baggageForCabin(cabin, airline.flightPolicies.baggage)!,
+    };
+  }
+
+  async savePolicyAcceptance(
+    id: string,
+    snapshot: FlightPolicies,
+    acceptedAt: Date,
+  ): Promise<void> {
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException('Invalid booking ID');
+    const saved = await this.bookingModel
+      .findOneAndUpdate(
+        {
+          _id: id,
+          status: BookingStatus.PENDING_PAYMENT,
+          holdExpiresAt: { $gt: acceptedAt },
+          policiesAcceptedAt: { $exists: false },
+        },
+        { $set: { policiesAcceptedAt: acceptedAt, policySnapshot: snapshot } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (saved) return;
+    const existing = await this.bookingModel.findById(id).exec();
+    if (existing?.policiesAcceptedAt && existing.policySnapshot) return;
+    throw new BadRequestException('The booking hold is no longer payable');
+  }
+
+  async acceptPolicies(id: string, userId: string, now = new Date()) {
+    const booking = await this.findOne(id, userId);
+    if (booking.policySnapshot && booking.policiesAcceptedAt) return booking;
+    if (
+      booking.status !== BookingStatus.PENDING_PAYMENT ||
+      !booking.holdExpiresAt ||
+      booking.holdExpiresAt <= now
+    ) {
+      throw new BadRequestException('The booking hold is no longer payable');
+    }
+    const policy = await this.getCurrentPolicies(id);
+    const snapshot = {
+      kind: 'flight' as const,
+      cancellationTiers: policy.cancellationTiers.map((tier) => ({
+        daysBefore: tier.daysBefore,
+        refundPercent: tier.refundPercent,
+      })),
+      baggage: {
+        freeBagsPerPassenger: policy.baggage.freeBagsPerPassenger,
+        maxWeightKgPerBag: policy.baggage.maxWeightKgPerBag,
+        extraBagPrice: policy.baggage.extraBagPrice,
+        maxExtraBagsPerPassenger: policy.baggage.maxExtraBagsPerPassenger,
+      },
+    };
+    const accepted = await this.bookingModel
+      .findOneAndUpdate(
+        {
+          _id: booking._id,
+          userId,
+          status: BookingStatus.PENDING_PAYMENT,
+          holdExpiresAt: { $gt: now },
+          policiesAcceptedAt: { $exists: false },
+        },
+        { $set: { policiesAcceptedAt: now, policySnapshot: snapshot } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (accepted) return accepted;
+    const latest = await this.findOne(id, userId);
+    if (latest.policySnapshot && latest.policiesAcceptedAt) return latest;
+    throw new BadRequestException('The booking hold is no longer payable');
+  }
 
   async create(dto: CreateBookingDto) {
     const flightId = new Types.ObjectId(dto.flightId);
-    const passengerCount = dto.passengers.length;
+
+    if (
+      dto.returnFlightId &&
+      (!Types.ObjectId.isValid(dto.returnFlightId) ||
+        dto.returnFlightId === dto.flightId)
+    ) {
+      throw new BadRequestException(
+        'Return flight must be a different valid flight',
+      );
+    }
 
     const flight = await this.flightModel.findById(flightId).exec();
 
@@ -129,6 +311,70 @@ export class BookingsService {
 
     if (!cabin) {
       throw new BadRequestException('Selected cabin class is not available');
+    }
+
+    const wantsExtraBags = dto.passengers.some(
+      (p) => p.extraBagWeightsKg?.length,
+    );
+    const airline = wantsExtraBags
+      ? await this.airlineModel.findById(flight.airlineId).exec()
+      : null;
+    const quote = pricePassengers(
+      dto.passengers,
+      flight.departureTimeUtc,
+      flight.departureTimeZone ?? 'utc',
+      cabin.price,
+      this.baggageForCabin(cabin, airline?.flightPolicies?.baggage),
+    );
+    const passengerCount = quote.seats;
+
+    const returnFlightId = dto.returnFlightId
+      ? new Types.ObjectId(dto.returnFlightId)
+      : undefined;
+    const returnFlight = returnFlightId
+      ? await this.flightModel.findById(returnFlightId).exec()
+      : null;
+    if (returnFlightId && !returnFlight)
+      throw new NotFoundException('Return flight not found');
+    if (
+      returnFlight &&
+      (returnFlight.status !== FlightStatus.SCHEDULED ||
+        returnFlight.departureTimeUtc <= flight.arrivalTimeUtc ||
+        returnFlight.departureAirport !== flight.arrivalAirport ||
+        returnFlight.arrivalAirport !== flight.departureAirport)
+    ) {
+      throw new BadRequestException(
+        'Return flight must follow the outbound arrival on the reverse route',
+      );
+    }
+    const returnCabin = returnFlight?.cabins.find(
+      (item) => item.cabinClass === dto.cabinClass,
+    );
+    if (returnFlight && !returnCabin)
+      throw new BadRequestException('Return cabin is unavailable');
+    const returnAirline =
+      returnFlight && wantsExtraBags
+        ? await this.airlineModel.findById(returnFlight.airlineId).exec()
+        : null;
+    const returnQuote =
+      returnFlight && returnCabin
+        ? pricePassengers(
+            dto.passengers,
+            returnFlight.departureTimeUtc,
+            returnFlight.departureTimeZone ?? 'utc',
+            returnCabin.price,
+            this.baggageForCabin(
+              returnCabin,
+              returnAirline?.flightPolicies?.baggage,
+            ),
+          )
+        : null;
+    if (
+      returnCabin &&
+      returnQuote &&
+      returnCabin.availableSeats < returnQuote.seats
+    ) {
+      throw new BadRequestException('Not enough return seats');
     }
 
     if (cabin.availableSeats < passengerCount) {
@@ -182,7 +428,54 @@ export class BookingsService {
           );
         }
 
-        const totalPrice = reservedCabin.price * passengerCount;
+        const finalQuote = pricePassengers(
+          dto.passengers,
+          reservedFlight.departureTimeUtc,
+          reservedFlight.departureTimeZone ?? 'utc',
+          reservedCabin.price,
+          this.baggageForCabin(reservedCabin, airline?.flightPolicies?.baggage),
+        );
+        let totalPrice = finalQuote.totalPrice;
+        let finalReturnQuote: typeof finalQuote | null = null;
+        if (returnFlightId && returnQuote) {
+          const reservedReturn = await this.flightModel
+            .findOneAndUpdate(
+              {
+                _id: returnFlightId,
+                status: FlightStatus.SCHEDULED,
+                departureTimeUtc: { $gt: reservedFlight.arrivalTimeUtc },
+                cabins: {
+                  $elemMatch: {
+                    cabinClass: dto.cabinClass,
+                    availableSeats: { $gte: returnQuote.seats },
+                  },
+                },
+              },
+              { $inc: { 'cabins.$.availableSeats': -returnQuote.seats } },
+              { new: true, session },
+            )
+            .exec();
+          if (!reservedReturn)
+            throw new BadRequestException(
+              'Return seats are no longer available',
+            );
+          const reservedReturnCabin = reservedReturn.cabins.find(
+            (item) => item.cabinClass === dto.cabinClass,
+          );
+          if (!reservedReturnCabin)
+            throw new BadRequestException('Return cabin is unavailable');
+          finalReturnQuote = pricePassengers(
+            dto.passengers,
+            reservedReturn.departureTimeUtc,
+            reservedReturn.departureTimeZone ?? 'utc',
+            reservedReturnCabin.price,
+            this.baggageForCabin(
+              reservedReturnCabin,
+              returnAirline?.flightPolicies?.baggage,
+            ),
+          );
+          totalPrice += finalReturnQuote.totalPrice;
+        }
 
         const holdExpiresAt = new Date(Date.now() + FLIGHT_HOLD_DURATION_MS);
 
@@ -190,10 +483,13 @@ export class BookingsService {
           [
             {
               flightId,
+              returnFlightId,
               userId: dto.userId,
               cabinClass: dto.cabinClass,
-              passengers: dto.passengers,
+              passengers: finalQuote.passengers,
               totalPrice,
+              seatCount: finalQuote.seats,
+              returnSeatCount: finalReturnQuote?.seats,
               status: BookingStatus.PENDING_PAYMENT,
               holdExpiresAt,
             },
@@ -246,6 +542,19 @@ export class BookingsService {
       throw new BadRequestException(
         'Cannot confirm a booking for a cancelled or departed flight',
       );
+    }
+
+    if (booking.returnFlightId) {
+      const returnFlight = await this.flightModel
+        .findById(booking.returnFlightId)
+        .exec();
+      if (
+        !returnFlight ||
+        returnFlight.status !== FlightStatus.SCHEDULED ||
+        returnFlight.departureTimeUtc <= flight.arrivalTimeUtc
+      ) {
+        throw new BadRequestException('Return flight is no longer available');
+      }
     }
 
     const confirmedBooking = await this.bookingModel
@@ -331,7 +640,7 @@ export class BookingsService {
           );
         }
 
-        const passengerCount = booking.passengers.length;
+        const passengerCount = booking.seatCount ?? booking.passengers.length;
 
         const cabin = flight.cabins.find(
           (item) => item.cabinClass === booking.cabinClass,
@@ -377,6 +686,8 @@ export class BookingsService {
             'Unable to restore seats for this booking',
           );
         }
+
+        await this.restoreReturnSeats(booking, session);
 
         const result = await this.bookingModel
           .findOneAndUpdate(
@@ -427,15 +738,36 @@ export class BookingsService {
     }
     const flight = await this.flightModel.findById(booking.flightId).exec();
     if (!flight) throw new NotFoundException('Flight not found');
+    const returnFlight = booking.returnFlightId
+      ? await this.flightModel.findById(booking.returnFlightId).exec()
+      : null;
+    if (booking.returnFlightId && !returnFlight)
+      throw new NotFoundException('Return flight not found');
     return ticketPdf([
       'Reference: ' + (booking.reference ?? booking._id.toString()),
       'Flight: ' + flight.flightNumber,
       flight.departureAirport + ' to ' + flight.arrivalAirport,
       'Departure (UTC): ' + flight.departureTimeUtc.toISOString(),
       'Arrival (UTC): ' + flight.arrivalTimeUtc.toISOString(),
+      ...(returnFlight
+        ? [
+            'Return flight: ' + returnFlight.flightNumber,
+            returnFlight.departureAirport +
+              ' to ' +
+              returnFlight.arrivalAirport,
+            'Return departure (UTC): ' +
+              returnFlight.departureTimeUtc.toISOString(),
+            'Return arrival (UTC): ' +
+              returnFlight.arrivalTimeUtc.toISOString(),
+          ]
+        : []),
       'Cabin: ' + booking.cabinClass,
       'Passengers:',
-      ...booking.passengers.map((p) => p.firstName + ' ' + p.lastName),
+      ...booking.passengers.map((p) =>
+        [p.firstName, p.lastName, p.passengerType, p.dateOfBirth]
+          .filter(Boolean)
+          .join(' '),
+      ),
       'Total fare: ' + booking.totalPrice,
     ]);
   }
@@ -462,7 +794,13 @@ export class BookingsService {
     if (!flight || flight.airlineId.toString() !== airlineId)
       throw new NotFoundException('Flight not found');
     return this.bookingModel
-      .find({ flightId: new Types.ObjectId(flightId) })
+      .find({
+        $or: [
+          { flightId: new Types.ObjectId(flightId) },
+          { returnFlightId: new Types.ObjectId(flightId) },
+        ],
+        status: { $in: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED] },
+      })
       .sort({ createdAt: -1, _id: 1 })
       .skip((page - 1) * limit)
       .limit(limit)
@@ -488,7 +826,10 @@ export class BookingsService {
     ]);
     const cursor = this.bookingModel
       .find({
-        flightId: new Types.ObjectId(flightId),
+        $or: [
+          { flightId: new Types.ObjectId(flightId) },
+          { returnFlightId: new Types.ObjectId(flightId) },
+        ],
         status: { $in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] },
       })
       .sort({ _id: 1 })

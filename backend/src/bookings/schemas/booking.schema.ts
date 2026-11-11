@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { FlightPolicies } from '../../airlines/schemas/airline.schema';
 
 export type BookingDocument = HydratedDocument<Booking>;
 
@@ -24,6 +25,13 @@ export class BookingPassenger {
 
   @Prop({ required: true, trim: true })
   passportNumber: string;
+
+  @Prop({ required: true }) dateOfBirth: string;
+  @Prop({ required: true, enum: ['adult', 'child', 'infant'] })
+  passengerType: string;
+  @Prop({ type: [Number], default: [] }) extraBagWeightsKg: number[];
+  @Prop({ required: true, min: 0 }) fare: number;
+  @Prop({ default: 0, min: 0 }) baggageFee: number;
 }
 
 export const BookingPassengerSchema =
@@ -40,6 +48,9 @@ export class Booking {
     required: true,
   })
   flightId: Types.ObjectId;
+
+  @Prop({ type: Types.ObjectId, ref: 'Flight' })
+  returnFlightId?: Types.ObjectId;
 
   @Prop({ required: true, trim: true })
   userId: string;
@@ -62,6 +73,18 @@ export class Booking {
 
   @Prop({ required: true, min: 0 })
   totalPrice: number;
+
+  @Prop({ min: 0 })
+  seatCount?: number;
+
+  @Prop({ min: 0 })
+  returnSeatCount?: number;
+
+  @Prop()
+  policiesAcceptedAt?: Date;
+
+  @Prop({ type: Object })
+  policySnapshot?: FlightPolicies;
 
   @Prop()
   holdExpiresAt?: Date;

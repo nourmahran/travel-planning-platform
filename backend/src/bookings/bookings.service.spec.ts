@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
+import { Airline } from '../airlines/schemas/airline.schema';
 
 import { BookingsService } from './bookings.service';
 import { Booking, BookingStatus } from './schemas/booking.schema';
@@ -44,6 +45,10 @@ describe('BookingsService', () => {
         {
           provide: getModelToken(Flight.name),
           useValue: mockFlightModel,
+        },
+        {
+          provide: getModelToken(Airline.name),
+          useValue: { findById: jest.fn() },
         },
       ],
     }).compile();
@@ -391,11 +396,13 @@ describe('BookingsService', () => {
           firstName: 'Ahmed',
           lastName: 'Mohamed',
           passportNumber: 'TEST123456',
+          dateOfBirth: '1990-01-01',
         },
         {
           firstName: 'Omar',
           lastName: 'Hassan',
           passportNumber: 'TEST654321',
+          dateOfBirth: '1992-01-01',
         },
       ],
     };
@@ -506,7 +513,18 @@ describe('BookingsService', () => {
             totalPrice: 5000,
             status: BookingStatus.PENDING_PAYMENT,
             holdExpiresAt: expect.any(Date),
-            passengers: bookingDto.passengers,
+            passengers: expect.arrayContaining([
+              expect.objectContaining({
+                firstName: 'Ahmed',
+                passengerType: 'adult',
+                fare: 2500,
+              }),
+              expect.objectContaining({
+                firstName: 'Omar',
+                passengerType: 'adult',
+                fare: 2500,
+              }),
+            ]),
           }),
         ],
         {

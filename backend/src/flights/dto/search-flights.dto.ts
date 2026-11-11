@@ -27,7 +27,13 @@ export class SearchFlightsDto {
   maxPrice?: number;
 
   @ApiPropertyOptional({
-    enum: ['departure', 'price_asc', 'price_desc'],
+    enum: [
+      'departure',
+      'price_asc',
+      'price_desc',
+      'duration_asc',
+      'duration_desc',
+    ],
     description: 'Price ordering uses the cheapest eligible cabin.',
   })
   @IsOptional()
@@ -35,8 +41,11 @@ export class SearchFlightsDto {
     departure: 'departure',
     price_asc: 'price_asc',
     price_desc: 'price_desc',
+    duration_asc: 'duration_asc',
+    duration_desc: 'duration_desc',
   })
-  sortBy?: 'departure' | 'price_asc' | 'price_desc';
+  sortBy?:
+    'departure' | 'price_asc' | 'price_desc' | 'duration_asc' | 'duration_desc';
 
   @ApiPropertyOptional({ example: 'CAI' })
   @IsOptional()
