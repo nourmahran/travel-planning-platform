@@ -23,6 +23,7 @@ import {
   FlightPolicies,
 } from '../airlines/schemas/airline.schema';
 import { pricePassengers } from './passenger-pricing';
+import { cancellationPreview } from './cancellation-preview';
 
 @Injectable()
 export class BookingsService {
@@ -876,5 +877,76 @@ export class BookingsService {
     }
 
     return this.bookingModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  }
+
+  // A read-only preview. Payment/refund execution remains with Member 4.
+  async previewCancellation(id: string, userId: string, now = new Date()) {
+    const booking = await this.findOne(id, userId);
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException('Only confirmed bookings can be refunded');
+    }
+    const flight = await this.flightModel.findById(booking.flightId).exec();
+    if (!flight) throw new NotFoundException('Flight not found');
+    if (!booking.policySnapshot) {
+      throw new BadRequestException(
+        'Booking has no accepted cancellation policy',
+      );
+    }
+    try {
+      return {
+        reference: booking.reference,
+        ...cancellationPreview(
+          booking.totalPrice,
+          flight.departureTimeUtc,
+          booking.policySnapshot.cancellationTiers,
+          now,
+        ),
+      };
+    } catch {
+      throw new BadRequestException('Flight has departed');
+    }
+  }
+
+  // Expose through an owner-only route once Member 1 provides authenticated identity.
+  async historyForUser(userId: string, now = new Date()) {
+    const bookings = await this.findByUser(userId);
+    const flightIds = [
+      ...new Set(
+        bookings.flatMap((booking) => [
+          booking.flightId.toString(),
+          ...(booking.returnFlightId
+            ? [booking.returnFlightId.toString()]
+            : []),
+        ]),
+      ),
+    ];
+    const flights = flightIds.length
+      ? await this.flightModel.find({ _id: { $in: flightIds } }).exec()
+      : [];
+    const byId = new Map(
+      flights.map((flight) => [flight._id.toString(), flight]),
+    );
+    const result = {
+      upcoming: [] as typeof bookings,
+      past: [] as typeof bookings,
+      cancelled: [] as typeof bookings,
+    };
+    for (const booking of bookings) {
+      if (
+        [BookingStatus.CANCELLED, BookingStatus.EXPIRED].includes(
+          booking.status,
+        )
+      ) {
+        result.cancelled.push(booking);
+        continue;
+      }
+      const finalFlight = byId.get(
+        (booking.returnFlightId ?? booking.flightId).toString(),
+      );
+      if (finalFlight && finalFlight.departureTimeUtc > now)
+        result.upcoming.push(booking);
+      else result.past.push(booking);
+    }
+    return result;
   }
 }

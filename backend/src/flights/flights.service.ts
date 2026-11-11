@@ -16,6 +16,7 @@ import { Airline, AirlineDocument } from '../airlines/schemas/airline.schema';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
 import { UpdateFlightDto } from './dto/update-flight.dto';
+import { BookingStatus } from '../bookings/schemas/booking.schema';
 
 type AirportRecord = {
   iata_code: string;
@@ -514,6 +515,74 @@ export class FlightsService {
   async update(id: string, dto: UpdateFlightDto) {
     const flight = await this.findOne(id);
 
+    const capacityUpdates =
+      dto.cabins?.filter((cabin) => cabin.totalSeats !== undefined) ?? [];
+    if (capacityUpdates.length) {
+      if (
+        capacityUpdates.length !== 1 ||
+        dto.cabins?.length !== 1 ||
+        Object.keys(dto).some((key) => key !== 'cabins') ||
+        Object.keys(capacityUpdates[0]).some(
+          (key) => key !== 'cabinClass' && key !== 'totalSeats',
+        )
+      ) {
+        throw new BadRequestException(
+          'Change one cabin seat count at a time, separately from other edits',
+        );
+      }
+      if (
+        flight.status !== FlightStatus.SCHEDULED ||
+        flight.departureTimeUtc <= new Date()
+      ) {
+        throw new BadRequestException(
+          'Only future scheduled flights can be updated',
+        );
+      }
+      const change = capacityUpdates[0];
+      const cabin = flight.cabins.find(
+        (item) => item.cabinClass === change.cabinClass,
+      );
+      if (!cabin)
+        throw new BadRequestException(
+          'Cabin class does not exist on this flight',
+        );
+      const delta = change.totalSeats! - cabin.totalSeats;
+      if (cabin.availableSeats + delta < 0) {
+        throw new BadRequestException(
+          'Seat count cannot fall below held or booked seats',
+        );
+      }
+      if (delta === 0) return flight;
+      const updated = await this.flightModel
+        .findOneAndUpdate(
+          {
+            _id: flight._id,
+            status: FlightStatus.SCHEDULED,
+            departureTimeUtc: { $gt: new Date() },
+            cabins: {
+              $elemMatch: {
+                cabinClass: change.cabinClass,
+                totalSeats: cabin.totalSeats,
+                availableSeats: cabin.availableSeats,
+              },
+            },
+          },
+          {
+            $inc: {
+              'cabins.$.totalSeats': delta,
+              'cabins.$.availableSeats': delta,
+            },
+          },
+          { new: true, runValidators: true },
+        )
+        .exec();
+      if (!updated)
+        throw new ConflictException(
+          'Flight inventory changed; retry the seat count edit',
+        );
+      return updated;
+    }
+
     if (flight.status !== FlightStatus.SCHEDULED) {
       throw new BadRequestException('Only scheduled flights can be updated');
     }
@@ -551,20 +620,33 @@ export class FlightsService {
       );
     }
 
-    const scheduleOrRouteChanged =
+    const routeOrAirlineChanged =
       departureAirportChanged ||
       arrivalAirportChanged ||
-      dto.departureLocalTime !== undefined ||
-      dto.arrivalLocalTime !== undefined ||
       dto.airlineId !== undefined;
 
     const hasAllocatedSeats = flight.cabins.some(
       (cabin) => cabin.availableSeats !== cabin.totalSeats,
     );
 
-    if (scheduleOrRouteChanged && hasAllocatedSeats) {
+    if (routeOrAirlineChanged && hasAllocatedSeats) {
       throw new BadRequestException(
-        'Cannot change route, schedule or airline after seats have been allocated',
+        'Cannot change route or airline after seats have been allocated',
+      );
+    }
+
+    const requestedTimeChange =
+      dto.departureLocalTime !== undefined ||
+      dto.arrivalLocalTime !== undefined;
+    if (
+      hasAllocatedSeats &&
+      requestedTimeChange &&
+      Object.keys(dto).some(
+        (key) => key !== 'departureLocalTime' && key !== 'arrivalLocalTime',
+      )
+    ) {
+      throw new BadRequestException(
+        'Change booked flight times separately from other edits',
       );
     }
 
@@ -658,6 +740,8 @@ export class FlightsService {
       flight.flightNumber = dto.flightNumber;
     }
 
+    const oldDepartureTime = flight.departureTimeUtc;
+    const oldArrivalTime = flight.arrivalTimeUtc;
     flight.departureAirport = newDepartureAirport;
     flight.arrivalAirport = newArrivalAirport;
     flight.departureTimeUtc = departure;
@@ -667,6 +751,78 @@ export class FlightsService {
     flight.arrivalTimeUtc = arrival;
     flight.departureTimeZone = departureAirport.time_zone;
     flight.arrivalTimeZone = arrivalAirport.time_zone;
+
+    const timeChanged =
+      departure.getTime() !== oldDepartureTime.getTime() ||
+      arrival.getTime() !== oldArrivalTime.getTime();
+
+    if (hasAllocatedSeats && timeChanged) {
+      const session = await this.connection.startSession();
+      try {
+        let updated: FlightDocument | null = null;
+        await session.withTransaction(async () => {
+          updated = await this.flightModel
+            .findOneAndUpdate(
+              {
+                _id: flight._id,
+                status: FlightStatus.SCHEDULED,
+                departureTimeUtc: oldDepartureTime,
+                arrivalTimeUtc: oldArrivalTime,
+              },
+              {
+                $set: {
+                  departureTimeUtc: departure,
+                  arrivalTimeUtc: arrival,
+                  departureLocalDate: flight.departureLocalDate,
+                },
+              },
+              { new: true, runValidators: true, session },
+            )
+            .exec();
+          if (!updated)
+            throw new ConflictException(
+              'Flight schedule changed; retry the edit',
+            );
+          const bookings = await this.connection
+            .collection('bookings')
+            .find(
+              {
+                $or: [{ flightId: flight._id }, { returnFlightId: flight._id }],
+                status: BookingStatus.CONFIRMED,
+              },
+              { session },
+            )
+            .toArray();
+          if (bookings.length) {
+            await this.connection.collection('notifications').insertMany(
+              bookings.map((booking) => ({
+                userId: booking.userId as string,
+                bookingId: booking._id,
+                flightId: flight._id,
+                type: 'flight_schedule_changed',
+                previousDepartureTimeUtc: oldDepartureTime,
+                previousArrivalTimeUtc: oldArrivalTime,
+                departureTimeUtc: departure,
+                arrivalTimeUtc: arrival,
+                createdAt: new Date(),
+                readAt: null,
+              })),
+              { session },
+            );
+          }
+        });
+        return updated;
+      } catch (error) {
+        if ((error as { code?: number }).code === 11000) {
+          throw new ConflictException(
+            'Flight number already exists for this airline and departure date',
+          );
+        }
+        throw error;
+      } finally {
+        await session.endSession();
+      }
+    }
 
     try {
       return await flight.save();
