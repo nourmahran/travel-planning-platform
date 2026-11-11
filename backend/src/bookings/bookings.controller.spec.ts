@@ -56,30 +56,22 @@ describe('BookingsController', () => {
     expect(app).toBeDefined();
   });
 
-  it('should confirm a booking with a valid ID', async () => {
-    mockBookingsService.confirm.mockReturnValue({
-      id: validBookingId,
-      status: 'Confirmed',
-    });
-
-    const response = await request(
-      app.getHttpServer(),
-    )
+  it('should disable public booking confirmation', async () => {
+    await request(app.getHttpServer())
       .patch(`/bookings/${validBookingId}/confirm`)
-      .expect(200);
+      .expect(404);
 
-    expect(response.body.status).toBe('Confirmed');
-    expect(mockBookingsService.confirm).toHaveBeenCalledWith(
-      validBookingId,
-    );
+    expect(mockBookingsService.confirm)
+      .not.toHaveBeenCalled();
   });
 
-  it('should reject an invalid booking ID when confirming', async () => {
+  it('should not expose confirmation for invalid IDs', async () => {
     await request(app.getHttpServer())
       .patch('/bookings/invalid-id/confirm')
-      .expect(400);
+      .expect(404);
 
-    expect(mockBookingsService.confirm).not.toHaveBeenCalled();
+    expect(mockBookingsService.confirm)
+      .not.toHaveBeenCalled();
   });
 
   it('should cancel a booking with a valid ID', async () => {
@@ -95,9 +87,9 @@ describe('BookingsController', () => {
       .expect(200);
 
     expect(response.body.status).toBe('Cancelled');
-    expect(mockBookingsService.cancel).toHaveBeenCalledWith(
-      validBookingId,
-    );
+
+    expect(mockBookingsService.cancel)
+      .toHaveBeenCalledWith(validBookingId);
   });
 
   it('should reject an invalid booking ID when cancelling', async () => {
@@ -105,6 +97,7 @@ describe('BookingsController', () => {
       .patch('/bookings/invalid-id/cancel')
       .expect(400);
 
-    expect(mockBookingsService.cancel).not.toHaveBeenCalled();
+    expect(mockBookingsService.cancel)
+      .not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,6 @@
+import { AuthModule } from './auth/auth.module';
+import { AirportsController } from './airports/airports.controller';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -8,9 +11,9 @@ import { AirlinesModule } from './airlines/airlines.module';
 import { FlightsModule } from './flights/flights.module';
 import { BookingsModule } from './bookings/bookings.module';
 
-
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
@@ -30,8 +33,9 @@ import { BookingsModule } from './bookings/bookings.module';
     AirlinesModule,
     FlightsModule,
     BookingsModule,
+    AuthModule,
   ],
-  controllers: [AppController],
+  controllers: [AppController, AirportsController],
   providers: [AppService],
 })
 export class AppModule {}

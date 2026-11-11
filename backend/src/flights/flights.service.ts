@@ -1,3 +1,4 @@
+import { Cron } from '@nestjs/schedule';
 
 import {
   BadRequestException,
@@ -9,15 +10,8 @@ import { DateTime } from 'luxon';
 import { Types } from 'mongoose';
 import type { Connection, Model } from 'mongoose';
 
-import {
-  Flight,
-  FlightDocument,
-  FlightStatus,
-} from './schemas/flight.schema';
-import {
-  Airline,
-  AirlineDocument,
-} from '../airlines/schemas/airline.schema';
+import { Flight, FlightDocument, FlightStatus } from './schemas/flight.schema';
+import { Airline, AirlineDocument } from '../airlines/schemas/airline.schema';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
 import { UpdateFlightDto } from './dto/update-flight.dto';
@@ -40,12 +34,23 @@ type FlightSearchFilter = {
     $elemMatch: {
       cabinClass?: string;
       availableSeats: { $gte: number };
+      price?: { $gte?: number; $lte?: number };
     };
   };
 };
 
 @Injectable()
 export class FlightsService {
+  @Cron('*/15 * * * * *', { name: 'depart-flights', waitForCompletion: true })
+  async markDepartedFlights(now = new Date()) {
+    return this.flightModel
+      .updateMany(
+        { status: FlightStatus.SCHEDULED, departureTimeUtc: { $lte: now } },
+        { $set: { status: FlightStatus.DEPARTED } },
+      )
+      .exec();
+  }
+
   constructor(
     @InjectModel(Flight.name)
     private readonly flightModel: Model<FlightDocument>,
@@ -57,10 +62,7 @@ export class FlightsService {
     private readonly connection: Connection,
   ) {}
 
-  private convertLocalTimeToUtc(
-    localTime: string,
-    timeZone: string,
-  ): Date {
+  private convertLocalTimeToUtc(localTime: string, timeZone: string): Date {
     const local = DateTime.fromISO(localTime, {
       zone: timeZone,
       setZone: true,
@@ -72,9 +74,7 @@ export class FlightsService {
       );
     }
 
-    if (
-      local.toFormat("yyyy-MM-dd'T'HH:mm:ss") !== localTime
-    ) {
+    if (local.toFormat("yyyy-MM-dd'T'HH:mm:ss") !== localTime) {
       throw new BadRequestException(
         `Nonexistent local time: ${localTime} (${timeZone})`,
       );
@@ -89,15 +89,11 @@ export class FlightsService {
     return local.toUTC().toJSDate();
   }
 
-  private async getAirport(
-    code: string,
-  ): Promise<AirportRecord> {
+  private async getAirport(code: string): Promise<AirportRecord> {
     const database = this.connection.db;
 
     if (!database) {
-      throw new BadRequestException(
-        'Database connection is unavailable',
-      );
+      throw new BadRequestException('Database connection is unavailable');
     }
 
     const airport = await database
@@ -105,18 +101,14 @@ export class FlightsService {
       .findOne({ iata_code: code });
 
     if (!airport) {
-      throw new BadRequestException(
-        `Airport ${code} does not exist`,
-      );
+      throw new BadRequestException(`Airport ${code} does not exist`);
     }
 
     return airport;
   }
 
   async create(dto: CreateFlightDto) {
-    const airline = await this.airlineModel
-      .findById(dto.airlineId)
-      .exec();
+    const airline = await this.airlineModel.findById(dto.airlineId).exec();
 
     if (!airline) {
       throw new NotFoundException('Airline not found');
@@ -132,11 +124,10 @@ export class FlightsService {
       );
     }
 
-    const [departureAirport, arrivalAirport] =
-      await Promise.all([
-        this.getAirport(dto.departureAirport),
-        this.getAirport(dto.arrivalAirport),
-      ]);
+    const [departureAirport, arrivalAirport] = await Promise.all([
+      this.getAirport(dto.departureAirport),
+      this.getAirport(dto.arrivalAirport),
+    ]);
 
     const departure = this.convertLocalTimeToUtc(
       dto.departureLocalTime,
@@ -149,27 +140,17 @@ export class FlightsService {
     );
 
     if (departure <= new Date()) {
-      throw new BadRequestException(
-        'Departure must be in the future',
-      );
+      throw new BadRequestException('Departure must be in the future');
     }
 
     if (arrival <= departure) {
-      throw new BadRequestException(
-        'Arrival must be after departure',
-      );
+      throw new BadRequestException('Arrival must be after departure');
     }
 
-    const cabinClasses = dto.cabins.map(
-      (cabin) => cabin.cabinClass,
-    );
+    const cabinClasses = dto.cabins.map((cabin) => cabin.cabinClass);
 
-    if (
-      new Set(cabinClasses).size !== cabinClasses.length
-    ) {
-      throw new BadRequestException(
-        'Duplicate cabin classes are not allowed',
-      );
+    if (new Set(cabinClasses).size !== cabinClasses.length) {
+      throw new BadRequestException('Duplicate cabin classes are not allowed');
     }
 
     for (const cabin of dto.cabins) {
@@ -190,7 +171,11 @@ export class FlightsService {
       departureTimeZone: departureAirport.time_zone,
       arrivalTimeZone: arrivalAirport.time_zone,
       cabins: dto.cabins.map((cabin) => ({
-        ...cabin,
+        cabinClass: cabin.cabinClass,
+        price: cabin.price,
+        totalSeats: cabin.totalSeats,
+        baggageAllowanceKg: cabin.baggageAllowanceKg,
+        extraBaggagePricePerKg: cabin.extraBaggagePricePerKg,
         availableSeats: cabin.totalSeats,
       })),
       status: FlightStatus.SCHEDULED,
@@ -203,31 +188,17 @@ export class FlightsService {
     const now = new Date();
 
     if (query.returnDate === undefined) {
-      if (
-        query.returnPage !== undefined ||
-        query.returnLimit !== undefined
-      ) {
-        throw new BadRequestException(
-          'Return pagination requires returnDate',
-        );
+      if (query.returnPage !== undefined || query.returnLimit !== undefined) {
+        throw new BadRequestException('Return pagination requires returnDate');
       }
 
       return this.searchLeg(query, now);
     }
 
-    const {
-      departureAirport,
-      arrivalAirport,
-      departureDate,
-      returnDate,
-    } = query;
+    const { departureAirport, arrivalAirport, departureDate, returnDate } =
+      query;
 
-    if (
-      !departureAirport ||
-      !arrivalAirport ||
-      !departureDate ||
-      !returnDate
-    ) {
+    if (!departureAirport || !arrivalAirport || !departureDate || !returnDate) {
       throw new BadRequestException(
         'Round-trip search requires departureAirport, arrivalAirport, departureDate and returnDate',
       );
@@ -263,6 +234,9 @@ export class FlightsService {
           departureAirport: arrivalAirport,
           arrivalAirport: departureAirport,
           departureDate: returnDate,
+          minPrice: query.minPrice,
+          maxPrice: query.maxPrice,
+          sortBy: query.sortBy,
           cabinClass: query.cabinClass,
           passengers: query.passengers,
           page: query.returnPage ?? 1,
@@ -275,10 +249,7 @@ export class FlightsService {
     return { outbound, inbound };
   }
 
-  private async searchLeg(
-    query: SearchFlightsDto,
-    now: Date,
-  ) {
+  private async searchLeg(query: SearchFlightsDto, now: Date) {
     const {
       departureAirport,
       arrivalAirport,
@@ -303,6 +274,23 @@ export class FlightsService {
       );
     }
 
+    const { minPrice, maxPrice, sortBy = 'departure' } = query;
+    if (
+      [minPrice, maxPrice].some(
+        (p) => p !== undefined && (!Number.isFinite(p) || p < 0),
+      ) ||
+      (minPrice !== undefined &&
+        maxPrice !== undefined &&
+        minPrice > maxPrice) ||
+      !['departure', 'price_asc', 'price_desc'].includes(sortBy)
+    ) {
+      throw new BadRequestException('Invalid price range or sort order');
+    }
+    const price = {
+      ...(minPrice !== undefined ? { $gte: minPrice } : {}),
+      ...(maxPrice !== undefined ? { $lte: maxPrice } : {}),
+    };
+
     const filter: FlightSearchFilter = {
       status: FlightStatus.SCHEDULED,
       departureTimeUtc: { $gt: now },
@@ -323,28 +311,20 @@ export class FlightsService {
         );
       }
 
-      const airport = await this.getAirport(
-        departureAirport,
-      );
+      const airport = await this.getAirport(departureAirport);
 
-      const localStart = DateTime.fromISO(
-        `${departureDate}T00:00:00`,
-        { zone: airport.time_zone },
-      );
+      const localStart = DateTime.fromISO(`${departureDate}T00:00:00`, {
+        zone: airport.time_zone,
+      });
 
       if (
         !localStart.isValid ||
-        localStart.toFormat('yyyy-MM-dd') !==
-          departureDate
+        localStart.toFormat('yyyy-MM-dd') !== departureDate
       ) {
-        throw new BadRequestException(
-          'Invalid departure date',
-        );
+        throw new BadRequestException('Invalid departure date');
       }
 
-      const localEnd = localStart
-        .plus({ days: 1 })
-        .startOf('day');
+      const localEnd = localStart.plus({ days: 1 }).startOf('day');
 
       filter.departureTimeUtc = {
         $gt: now,
@@ -357,15 +337,73 @@ export class FlightsService {
       $elemMatch: {
         ...(cabinClass ? { cabinClass } : {}),
         availableSeats: { $gte: passengers },
+        ...(Object.keys(price).length ? { price } : {}),
       },
     };
 
     const skip = (page - 1) * limit;
 
     if (!Number.isSafeInteger(skip)) {
-      throw new BadRequestException(
-        'Page offset is too large',
-      );
+      throw new BadRequestException('Page offset is too large');
+    }
+
+    if (sortBy !== 'departure') {
+      const conditions: object[] = [
+        { $gte: ['$$c.availableSeats', passengers] },
+      ];
+      if (cabinClass) conditions.push({ $eq: ['$$c.cabinClass', cabinClass] });
+      if (minPrice !== undefined)
+        conditions.push({ $gte: ['$$c.price', minPrice] });
+      if (maxPrice !== undefined)
+        conditions.push({ $lte: ['$$c.price', maxPrice] });
+      const [result] = await this.flightModel
+        .aggregate([
+          { $match: filter },
+          {
+            $set: {
+              matchingPrice: {
+                $min: {
+                  $map: {
+                    input: {
+                      $filter: {
+                        input: '$cabins',
+                        as: 'c',
+                        cond: { $and: conditions },
+                      },
+                    },
+                    as: 'c',
+                    in: '$$c.price',
+                  },
+                },
+              },
+            },
+          },
+          {
+            $facet: {
+              flights: [
+                {
+                  $sort: {
+                    matchingPrice: sortBy === 'price_asc' ? 1 : -1,
+                    departureTimeUtc: 1,
+                    _id: 1,
+                  },
+                },
+                { $skip: skip },
+                { $limit: limit },
+              ],
+              count: [{ $count: 'total' }],
+            },
+          },
+        ])
+        .exec();
+      const total = result?.count[0]?.total ?? 0;
+      return {
+        flights: result?.flights ?? [],
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
     }
 
     const [flights, total] = await Promise.all([
@@ -379,9 +417,7 @@ export class FlightsService {
         .limit(limit)
         .exec(),
 
-      this.flightModel
-        .countDocuments(filter)
-        .exec(),
+      this.flightModel.countDocuments(filter).exec(),
     ]);
 
     return {
@@ -395,19 +431,13 @@ export class FlightsService {
 
   async findOne(id: string) {
     if (!Types.ObjectId.isValid(id)) {
-      throw new BadRequestException(
-        'Invalid flight ID',
-      );
+      throw new BadRequestException('Invalid flight ID');
     }
 
-    const flight = await this.flightModel
-      .findById(id)
-      .exec();
+    const flight = await this.flightModel.findById(id).exec();
 
     if (!flight) {
-      throw new NotFoundException(
-        'Flight not found',
-      );
+      throw new NotFoundException('Flight not found');
     }
 
     return flight;
@@ -417,9 +447,7 @@ export class FlightsService {
     const flight = await this.findOne(id);
 
     if (flight.status !== FlightStatus.SCHEDULED) {
-      throw new BadRequestException(
-        'Only scheduled flights can be updated',
-      );
+      throw new BadRequestException('Only scheduled flights can be updated');
     }
 
     if (flight.departureTimeUtc <= new Date()) {
@@ -428,11 +456,9 @@ export class FlightsService {
       );
     }
 
-    const newDepartureAirport =
-      dto.departureAirport ?? flight.departureAirport;
+    const newDepartureAirport = dto.departureAirport ?? flight.departureAirport;
 
-    const newArrivalAirport =
-      dto.arrivalAirport ?? flight.arrivalAirport;
+    const newArrivalAirport = dto.arrivalAirport ?? flight.arrivalAirport;
 
     if (newDepartureAirport === newArrivalAirport) {
       throw new BadRequestException(
@@ -443,22 +469,15 @@ export class FlightsService {
     const departureAirportChanged =
       newDepartureAirport !== flight.departureAirport;
 
-    const arrivalAirportChanged =
-      newArrivalAirport !== flight.arrivalAirport;
+    const arrivalAirportChanged = newArrivalAirport !== flight.arrivalAirport;
 
-    if (
-      departureAirportChanged &&
-      !dto.departureLocalTime
-    ) {
+    if (departureAirportChanged && !dto.departureLocalTime) {
       throw new BadRequestException(
         'departureLocalTime is required when changing the departure airport',
       );
     }
 
-    if (
-      arrivalAirportChanged &&
-      !dto.arrivalLocalTime
-    ) {
+    if (arrivalAirportChanged && !dto.arrivalLocalTime) {
       throw new BadRequestException(
         'arrivalLocalTime is required when changing the arrival airport',
       );
@@ -472,60 +491,47 @@ export class FlightsService {
       dto.airlineId !== undefined;
 
     const hasAllocatedSeats = flight.cabins.some(
-      (cabin) =>
-        cabin.availableSeats !== cabin.totalSeats,
+      (cabin) => cabin.availableSeats !== cabin.totalSeats,
     );
 
-    if (
-      scheduleOrRouteChanged &&
-      hasAllocatedSeats
-    ) {
+    if (scheduleOrRouteChanged && hasAllocatedSeats) {
       throw new BadRequestException(
         'Cannot change route, schedule or airline after seats have been allocated',
       );
     }
 
     if (dto.airlineId !== undefined) {
-      const airline = await this.airlineModel
-        .findById(dto.airlineId)
-        .exec();
+      const airline = await this.airlineModel.findById(dto.airlineId).exec();
 
       if (!airline) {
         throw new NotFoundException('Airline not found');
       }
 
       if (!airline.isActive) {
-        throw new BadRequestException(
-          'Airline is inactive',
-        );
+        throw new BadRequestException('Airline is inactive');
       }
 
-      flight.airlineId = new Types.ObjectId(
-        dto.airlineId,
-      );
+      flight.airlineId = new Types.ObjectId(dto.airlineId);
     }
 
-    const [departureAirport, arrivalAirport] =
-      await Promise.all([
-        this.getAirport(newDepartureAirport),
-        this.getAirport(newArrivalAirport),
-      ]);
+    const [departureAirport, arrivalAirport] = await Promise.all([
+      this.getAirport(newDepartureAirport),
+      this.getAirport(newArrivalAirport),
+    ]);
 
-    const existingDepartureLocal = DateTime
-      .fromJSDate(flight.departureTimeUtc, {
+    const existingDepartureLocal = DateTime.fromJSDate(
+      flight.departureTimeUtc,
+      {
         zone: flight.departureTimeZone,
-      })
-      .toFormat("yyyy-MM-dd'T'HH:mm:ss");
+      },
+    ).toFormat("yyyy-MM-dd'T'HH:mm:ss");
 
-    const existingArrivalLocal = DateTime
-      .fromJSDate(flight.arrivalTimeUtc, {
-        zone: flight.arrivalTimeZone,
-      })
-      .toFormat("yyyy-MM-dd'T'HH:mm:ss");
+    const existingArrivalLocal = DateTime.fromJSDate(flight.arrivalTimeUtc, {
+      zone: flight.arrivalTimeZone,
+    }).toFormat("yyyy-MM-dd'T'HH:mm:ss");
 
     const departure = this.convertLocalTimeToUtc(
-      dto.departureLocalTime ??
-        existingDepartureLocal,
+      dto.departureLocalTime ?? existingDepartureLocal,
       departureAirport.time_zone,
     );
 
@@ -535,32 +541,21 @@ export class FlightsService {
     );
 
     if (departure <= new Date()) {
-      throw new BadRequestException(
-        'Departure must be in the future',
-      );
+      throw new BadRequestException('Departure must be in the future');
     }
 
     if (arrival <= departure) {
-      throw new BadRequestException(
-        'Arrival must be after departure',
-      );
+      throw new BadRequestException('Arrival must be after departure');
     }
 
     if (dto.cabins !== undefined) {
       if (dto.cabins.length === 0) {
-        throw new BadRequestException(
-          'Cabin updates cannot be empty',
-        );
+        throw new BadRequestException('Cabin updates cannot be empty');
       }
 
-      const cabinClasses = dto.cabins.map(
-        (cabin) => cabin.cabinClass,
-      );
+      const cabinClasses = dto.cabins.map((cabin) => cabin.cabinClass);
 
-      if (
-        new Set(cabinClasses).size !==
-        cabinClasses.length
-      ) {
+      if (new Set(cabinClasses).size !== cabinClasses.length) {
         throw new BadRequestException(
           'Duplicate cabin classes are not allowed',
         );
@@ -568,8 +563,7 @@ export class FlightsService {
 
       for (const update of dto.cabins) {
         const existingCabin = flight.cabins.find(
-          (cabin) =>
-            cabin.cabinClass === update.cabinClass,
+          (cabin) => cabin.cabinClass === update.cabinClass,
         );
 
         if (!existingCabin) {
@@ -582,19 +576,12 @@ export class FlightsService {
           existingCabin.price = update.price;
         }
 
-        if (
-          update.baggageAllowanceKg !== undefined
-        ) {
-          existingCabin.baggageAllowanceKg =
-            update.baggageAllowanceKg;
+        if (update.baggageAllowanceKg !== undefined) {
+          existingCabin.baggageAllowanceKg = update.baggageAllowanceKg;
         }
 
-        if (
-          update.extraBaggagePricePerKg !==
-          undefined
-        ) {
-          existingCabin.extraBaggagePricePerKg =
-            update.extraBaggagePricePerKg;
+        if (update.extraBaggagePricePerKg !== undefined) {
+          existingCabin.extraBaggagePricePerKg = update.extraBaggagePricePerKg;
         }
       }
     }
@@ -607,10 +594,8 @@ export class FlightsService {
     flight.arrivalAirport = newArrivalAirport;
     flight.departureTimeUtc = departure;
     flight.arrivalTimeUtc = arrival;
-    flight.departureTimeZone =
-      departureAirport.time_zone;
-    flight.arrivalTimeZone =
-      arrivalAirport.time_zone;
+    flight.departureTimeZone = departureAirport.time_zone;
+    flight.arrivalTimeZone = arrivalAirport.time_zone;
 
     return flight.save();
   }
@@ -619,9 +604,7 @@ export class FlightsService {
     const flight = await this.findOne(id);
 
     if (flight.status !== FlightStatus.SCHEDULED) {
-      throw new BadRequestException(
-        'Only scheduled flights can be cancelled',
-      );
+      throw new BadRequestException('Only scheduled flights can be cancelled');
     }
 
     if (flight.departureTimeUtc <= new Date()) {
@@ -631,8 +614,7 @@ export class FlightsService {
     }
 
     const hasAllocatedSeats = flight.cabins.some(
-      (cabin) =>
-        cabin.availableSeats !== cabin.totalSeats,
+      (cabin) => cabin.availableSeats !== cabin.totalSeats,
     );
 
     if (hasAllocatedSeats) {
@@ -656,10 +638,7 @@ export class FlightsService {
                   input: '$cabins',
                   as: 'cabin',
                   in: {
-                    $eq: [
-                      '$$cabin.availableSeats',
-                      '$$cabin.totalSeats',
-                    ],
+                    $eq: ['$$cabin.availableSeats', '$$cabin.totalSeats'],
                   },
                 },
               },

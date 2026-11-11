@@ -26,7 +26,7 @@ describe('Flight search regression tests', () => {
   const query = { departureAirport: 'CAI', arrivalAirport: 'DXB', departureDate: '2026-12-01', returnDate: '2026-12-08', cabinClass: CabinClass.ECONOMY, passengers: 2 };
 
   it('preserves the one-way response', async () => {
-    const { returnDate, ...oneWay } = query;
+    const { returnDate: _returnDate, ...oneWay } = query;
     expect(await service.searchFlights(oneWay)).toEqual({ flights: [], total: 0, page: 1, limit: 10, totalPages: 0 });
     expect(find).toHaveBeenCalledTimes(1);
   });

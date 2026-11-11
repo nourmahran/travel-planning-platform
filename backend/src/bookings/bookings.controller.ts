@@ -29,12 +29,12 @@ export class BookingsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'Create a flight booking and reserve seats',
+    summary: 'Create a flight booking with a temporary seat hold',
   })
   @ApiBody({ type: CreateBookingDto })
   @ApiResponse({
     status: 201,
-    description: 'Booking created successfully',
+    description: 'Booking created with a temporary seat hold',
   })
   @ApiResponse({
     status: 400,
@@ -48,31 +48,9 @@ export class BookingsController {
     return this.bookingsService.create(dto);
   }
 
-  @Patch(':id/confirm')
-  @ApiOperation({
-    summary: 'Confirm a pending flight booking',
-  })
-  @ApiParam({
-    name: 'id',
-    description: 'MongoDB booking ID',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Booking confirmed successfully',
-  })
-  @ApiResponse({
-    status: 400,
-    description: 'Invalid booking ID or booking cannot be confirmed',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Booking or flight not found',
-  })
-  async confirm(
-    @Param('id', ParseObjectIdPipe) id: string,
-  ) {
-    return this.bookingsService.confirm(id);
-  }
+  // Confirmation must only be triggered after verified payment.
+  // The public confirmation endpoint is intentionally disabled
+  // until the payment integration is implemented.
 
   @Patch(':id/cancel')
   @ApiOperation({

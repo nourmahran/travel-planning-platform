@@ -1,3 +1,6 @@
+import { passengerCsv, ticketPdf } from './booking-exports';
+import { Cron } from '@nestjs/schedule';
+import { Logger } from '@nestjs/common';
 
 import {
   BadRequestException,
@@ -6,18 +9,92 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import {
-  Booking,
-  BookingStatus,
-} from './schemas/booking.schema';
-import {
-  Flight,
-  FlightStatus,
-} from '../flights/schemas/flight.schema';
+import { Booking, BookingStatus } from './schemas/booking.schema';
+import { Flight, FlightStatus } from '../flights/schemas/flight.schema';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import { FLIGHT_HOLD_DURATION_MS } from './booking.constants';
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
+
+  // A conditional booking transition and inventory restoration commit together.
+  // Competing workers or cancellation transactions cannot release the same hold twice.
+  async expireHold(id: string, now = new Date()): Promise<boolean> {
+    const session = await this.bookingModel.db.startSession();
+    try {
+      return (
+        (await session.withTransaction(async () => {
+          const booking = await this.bookingModel
+            .findOneAndUpdate(
+              {
+                _id: id,
+                status: {
+                  $in: [BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT],
+                },
+                holdExpiresAt: { $lte: now },
+              },
+              { $set: { status: BookingStatus.EXPIRED, expiredAt: now } },
+              { new: true, session },
+            )
+            .exec();
+          if (!booking) return false;
+          const count = booking.passengers.length;
+          const flight = await this.flightModel
+            .findById(booking.flightId)
+            .session(session)
+            .exec();
+          const cabin = flight?.cabins.find(
+            (c) => c.cabinClass === booking.cabinClass,
+          );
+          if (!cabin || count < 1)
+            throw new Error('Cannot restore expired hold inventory');
+          const restored = await this.flightModel
+            .findOneAndUpdate(
+              {
+                _id: booking.flightId,
+                cabins: {
+                  $elemMatch: {
+                    cabinClass: booking.cabinClass,
+                    availableSeats: { $lte: cabin.totalSeats - count },
+                  },
+                },
+              },
+              { $inc: { 'cabins.$.availableSeats': count } },
+              { new: true, session },
+            )
+            .exec();
+          if (!restored)
+            throw new Error('Cannot restore expired hold inventory');
+          return true;
+        })) ?? false
+      );
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  @Cron('*/15 * * * * *', {
+    name: 'expire-seat-holds',
+    waitForCompletion: true,
+  })
+  async expireHolds(now = new Date()): Promise<void> {
+    const bookings = this.bookingModel
+      .find({
+        status: { $in: [BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT] },
+        holdExpiresAt: { $lte: now },
+      })
+      .select('_id')
+      .cursor();
+    for await (const booking of bookings) {
+      try {
+        await this.expireHold(booking._id.toString(), now);
+      } catch {
+        this.logger.error('Failed to release hold ' + booking._id.toString());
+      }
+    }
+  }
+
   constructor(
     @InjectModel(Booking.name)
     private readonly bookingModel: Model<Booking>,
@@ -37,9 +114,7 @@ export class BookingsService {
     }
 
     if (flight.status !== FlightStatus.SCHEDULED) {
-      throw new BadRequestException(
-        'Only scheduled flights can be booked',
-      );
+      throw new BadRequestException('Only scheduled flights can be booked');
     }
 
     if (flight.departureTimeUtc <= new Date()) {
@@ -53,15 +128,11 @@ export class BookingsService {
     );
 
     if (!cabin) {
-      throw new BadRequestException(
-        'Selected cabin class is not available',
-      );
+      throw new BadRequestException('Selected cabin class is not available');
     }
 
     if (cabin.availableSeats < passengerCount) {
-      throw new BadRequestException(
-        'Not enough available seats',
-      );
+      throw new BadRequestException('Not enough available seats');
     }
 
     const session = await this.bookingModel.db.startSession();
@@ -113,6 +184,8 @@ export class BookingsService {
 
         const totalPrice = reservedCabin.price * passengerCount;
 
+        const holdExpiresAt = new Date(Date.now() + FLIGHT_HOLD_DURATION_MS);
+
         const bookings = await this.bookingModel.create(
           [
             {
@@ -121,7 +194,8 @@ export class BookingsService {
               cabinClass: dto.cabinClass,
               passengers: dto.passengers,
               totalPrice,
-              status: BookingStatus.PENDING,
+              status: BookingStatus.PENDING_PAYMENT,
+              holdExpiresAt,
             },
           ],
           { session },
@@ -147,15 +221,19 @@ export class BookingsService {
       throw new NotFoundException('Booking not found');
     }
 
-    if (booking.status !== BookingStatus.PENDING) {
-      throw new BadRequestException(
-        'Only pending bookings can be confirmed',
-      );
+    if (
+      ![BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT].includes(
+        booking.status,
+      )
+    ) {
+      throw new BadRequestException('Only pending bookings can be confirmed');
     }
 
-    const flight = await this.flightModel
-      .findById(booking.flightId)
-      .exec();
+    if (!booking.holdExpiresAt || booking.holdExpiresAt <= new Date()) {
+      throw new BadRequestException('Booking hold has expired');
+    }
+
+    const flight = await this.flightModel.findById(booking.flightId).exec();
 
     if (!flight) {
       throw new NotFoundException('Flight not found');
@@ -174,7 +252,10 @@ export class BookingsService {
       .findOneAndUpdate(
         {
           _id: booking._id,
-          status: BookingStatus.PENDING,
+          status: {
+            $in: [BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT],
+          },
+          holdExpiresAt: { $gt: new Date() },
         },
         {
           $set: {
@@ -219,8 +300,16 @@ export class BookingsService {
         }
 
         if (booking.status === BookingStatus.CANCELLED) {
+          throw new BadRequestException('Booking is already cancelled');
+        }
+
+        if (
+          ![BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT].includes(
+            booking.status,
+          )
+        ) {
           throw new BadRequestException(
-            'Booking is already cancelled',
+            'Only unpaid holds can be cancelled until refund integration is available',
           );
         }
 
@@ -254,8 +343,7 @@ export class BookingsService {
           );
         }
 
-        const maximumAvailableSeats =
-          cabin.totalSeats - passengerCount;
+        const maximumAvailableSeats = cabin.totalSeats - passengerCount;
 
         const updatedFlight = await this.flightModel
           .findOneAndUpdate(
@@ -295,10 +383,7 @@ export class BookingsService {
             {
               _id: booking._id,
               status: {
-                $in: [
-                  BookingStatus.PENDING,
-                  BookingStatus.CONFIRMED,
-                ],
+                $in: [BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT],
               },
             },
             {
@@ -330,6 +415,97 @@ export class BookingsService {
     }
   }
 
+  // Internal only until the authenticated user/airline scope comes from Member 1.
+  async generateTicket(id: string, userId: string): Promise<Buffer> {
+    const booking = await this.findOne(id, userId);
+    if (
+      ![BookingStatus.CONFIRMED, BookingStatus.COMPLETED].includes(
+        booking.status,
+      )
+    ) {
+      throw new BadRequestException('Only confirmed bookings have e-tickets');
+    }
+    const flight = await this.flightModel.findById(booking.flightId).exec();
+    if (!flight) throw new NotFoundException('Flight not found');
+    return ticketPdf([
+      'Reference: ' + (booking.reference ?? booking._id.toString()),
+      'Flight: ' + flight.flightNumber,
+      flight.departureAirport + ' to ' + flight.arrivalAirport,
+      'Departure (UTC): ' + flight.departureTimeUtc.toISOString(),
+      'Arrival (UTC): ' + flight.arrivalTimeUtc.toISOString(),
+      'Cabin: ' + booking.cabinClass,
+      'Passengers:',
+      ...booking.passengers.map((p) => p.firstName + ' ' + p.lastName),
+      'Total fare: ' + booking.totalPrice,
+    ]);
+  }
+
+  async listForAirline(
+    flightId: string,
+    airlineId: string,
+    page = 1,
+    limit = 50,
+  ) {
+    if (
+      !Types.ObjectId.isValid(flightId) ||
+      !Types.ObjectId.isValid(airlineId) ||
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      !Number.isSafeInteger(limit) ||
+      limit < 1 ||
+      limit > 100 ||
+      !Number.isSafeInteger((page - 1) * limit)
+    ) {
+      throw new BadRequestException('Invalid airline booking query');
+    }
+    const flight = await this.flightModel.findById(flightId).exec();
+    if (!flight || flight.airlineId.toString() !== airlineId)
+      throw new NotFoundException('Flight not found');
+    return this.bookingModel
+      .find({ flightId: new Types.ObjectId(flightId) })
+      .sort({ createdAt: -1, _id: 1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .exec();
+  }
+
+  async *exportPassengers(
+    flightId: string,
+    airlineId: string,
+  ): AsyncGenerator<string> {
+    // Validate airline scope before querying any passenger records.
+    if (
+      !Types.ObjectId.isValid(flightId) ||
+      !Types.ObjectId.isValid(airlineId)
+    ) {
+      throw new BadRequestException('Invalid airline or flight ID');
+    }
+    const flight = await this.flightModel.findById(flightId).exec();
+    if (!flight || flight.airlineId.toString() !== airlineId)
+      throw new NotFoundException('Flight not found');
+    yield passengerCsv([
+      ['Reference', 'Cabin', 'First name', 'Last name', 'Passport'],
+    ]);
+    const cursor = this.bookingModel
+      .find({
+        flightId: new Types.ObjectId(flightId),
+        status: { $in: [BookingStatus.CONFIRMED, BookingStatus.COMPLETED] },
+      })
+      .sort({ _id: 1 })
+      .cursor();
+    for await (const booking of cursor) {
+      yield passengerCsv(
+        booking.passengers.map((p) => [
+          booking.reference ?? booking._id.toString(),
+          booking.cabinClass,
+          p.firstName,
+          p.lastName,
+          p.passportNumber,
+        ]),
+      ).slice(1);
+    }
+  }
+
   async findOne(id: string, userId: string) {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid booking ID');
@@ -358,10 +534,6 @@ export class BookingsService {
       throw new BadRequestException('User ID is required');
     }
 
-    return this.bookingModel
-      .find({ userId })
-      .sort({ createdAt: -1 })
-      .exec();
+    return this.bookingModel.find({ userId }).sort({ createdAt: -1 }).exec();
   }
-
 }

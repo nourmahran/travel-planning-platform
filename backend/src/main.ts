@@ -42,4 +42,7 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  console.error('Application startup failed', error);
+  process.exitCode = 1;
+});

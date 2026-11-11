@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -41,8 +40,7 @@ export class CabinDetails {
   extraBaggagePricePerKg: number;
 }
 
-export const CabinDetailsSchema =
-  SchemaFactory.createForClass(CabinDetails);
+export const CabinDetailsSchema = SchemaFactory.createForClass(CabinDetails);
 
 @Schema({ timestamps: true })
 export class Flight {
@@ -94,3 +92,5 @@ FlightSchema.index({
   arrivalAirport: 1,
   departureTimeUtc: 1,
 });
+
+FlightSchema.index({ status: 1, departureTimeUtc: 1 });
