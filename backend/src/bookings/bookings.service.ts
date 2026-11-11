@@ -909,7 +909,13 @@ export class BookingsService {
 
   // Expose through an owner-only route once Member 1 provides authenticated identity.
   async historyForUser(userId: string, now = new Date()) {
-    const bookings = await this.findByUser(userId);
+    const bookings = (await this.findByUser(userId)).filter((booking) =>
+      [
+        BookingStatus.CONFIRMED,
+        BookingStatus.COMPLETED,
+        BookingStatus.CANCELLED,
+      ].includes(booking.status),
+    );
     const flightIds = [
       ...new Set(
         bookings.flatMap((booking) => [
@@ -932,11 +938,7 @@ export class BookingsService {
       cancelled: [] as typeof bookings,
     };
     for (const booking of bookings) {
-      if (
-        [BookingStatus.CANCELLED, BookingStatus.EXPIRED].includes(
-          booking.status,
-        )
-      ) {
+      if (booking.status === BookingStatus.CANCELLED) {
         result.cancelled.push(booking);
         continue;
       }

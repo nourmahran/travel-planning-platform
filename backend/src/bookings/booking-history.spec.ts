@@ -15,6 +15,7 @@ describe('owner booking history', () => {
         status: BookingStatus.CONFIRMED,
       },
       { flightId: outbound, status: BookingStatus.CANCELLED },
+      { flightId: outbound, status: BookingStatus.EXPIRED },
     ];
     const bookingFind = jest
       .fn()
