@@ -178,6 +178,7 @@ export class BookingsService {
     return {
       id: booking._id.toString(),
       userId: booking.userId,
+      providerId: flight.airlineId.toString(),
       status: booking.status,
       totalPrice: booking.totalPrice,
       holdExpiresAt: booking.holdExpiresAt,
@@ -185,6 +186,48 @@ export class BookingsService {
       policySnapshot: booking.policySnapshot,
       departureTimeUtc: flight.departureTimeUtc,
       reference: booking.reference,
+    };
+  }
+
+  async getPaymentPolicyContext(id: string) {
+    if (!Types.ObjectId.isValid(id))
+      throw new BadRequestException('Invalid booking ID');
+    const booking = await this.bookingModel.findById(id).exec();
+    if (!booking) throw new NotFoundException('Booking not found');
+    const flight = await this.flightModel.findById(booking.flightId).exec();
+    if (!flight) throw new NotFoundException('Flight not found');
+    const airline = await this.airlineModel.findById(flight.airlineId).exec();
+    if (!airline?.flightPolicies)
+      throw new BadRequestException('Airline policies are not configured');
+    const selected = flight.cabins.find(
+      (c) => c.cabinClass === booking.cabinClass,
+    );
+    if (!selected) throw new BadRequestException('Booking cabin was not found');
+    const baggage = this.baggageForCabin(
+      selected,
+      airline.flightPolicies.baggage,
+    )!;
+    return {
+      providerId: flight.airlineId.toString(),
+      providerName: airline.name,
+      cancellationTiers: airline.flightPolicies.cancellationTiers.map(
+        (tier) => ({
+          daysBefore: tier.daysBefore,
+          refundPercent: tier.refundPercent,
+        }),
+      ),
+      baggagePolicy: {
+        freeAllowanceByCabin: Object.fromEntries(
+          flight.cabins.map((c) => [
+            c.cabinClass,
+            c.freeBagsPerPassenger ??
+              airline.flightPolicies!.baggage.freeBagsPerPassenger,
+          ]),
+        ),
+        extraBagPrice: baggage.extraBagPrice,
+        maxExtraBags: baggage.maxExtraBagsPerPassenger,
+        maxWeightKg: baggage.maxWeightKgPerBag,
+      },
     };
   }
 
@@ -507,12 +550,15 @@ export class BookingsService {
     }
   }
 
-  async confirm(id: string) {
+  async confirm(id: string, session?: ClientSession) {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('Invalid booking ID');
     }
 
-    const booking = await this.bookingModel.findById(id).exec();
+    const bookingQuery = this.bookingModel.findById(id);
+    const booking = await (
+      session ? bookingQuery.session(session) : bookingQuery
+    ).exec();
 
     if (!booking) {
       throw new NotFoundException('Booking not found');
@@ -530,7 +576,10 @@ export class BookingsService {
       throw new BadRequestException('Booking hold has expired');
     }
 
-    const flight = await this.flightModel.findById(booking.flightId).exec();
+    const flightQuery = this.flightModel.findById(booking.flightId);
+    const flight = await (
+      session ? flightQuery.session(session) : flightQuery
+    ).exec();
 
     if (!flight) {
       throw new NotFoundException('Flight not found');
@@ -546,9 +595,10 @@ export class BookingsService {
     }
 
     if (booking.returnFlightId) {
-      const returnFlight = await this.flightModel
-        .findById(booking.returnFlightId)
-        .exec();
+      const returnQuery = this.flightModel.findById(booking.returnFlightId);
+      const returnFlight = await (
+        session ? returnQuery.session(session) : returnQuery
+      ).exec();
       if (
         !returnFlight ||
         returnFlight.status !== FlightStatus.SCHEDULED ||
@@ -576,6 +626,7 @@ export class BookingsService {
         {
           new: true,
           runValidators: true,
+          ...(session ? { session } : {}),
         },
       )
       .exec();
@@ -583,6 +634,20 @@ export class BookingsService {
     if (!confirmedBooking) {
       throw new BadRequestException(
         'Booking could not be confirmed because its status changed',
+      );
+    }
+
+    if (session) {
+      await this.bookingModel.db.collection('notifications').insertOne(
+        {
+          userId: booking.userId,
+          bookingId: booking._id,
+          type: 'flight_booking_confirmed',
+          reference: booking.reference,
+          createdAt: new Date(),
+          readAt: null,
+        },
+        { session },
       );
     }
 
@@ -877,6 +942,51 @@ export class BookingsService {
     }
 
     return this.bookingModel.find({ userId }).sort({ createdAt: -1 }).exec();
+  }
+
+  async findExpiredHoldIds(now: Date): Promise<string[]> {
+    const bookings = await this.bookingModel
+      .find({
+        status: { $in: [BookingStatus.PENDING, BookingStatus.PENDING_PAYMENT] },
+        holdExpiresAt: { $lte: now },
+      })
+      .select('_id')
+      .exec();
+    return bookings.map((booking) => booking._id.toString());
+  }
+
+  async findCompletableIds(now: Date): Promise<string[]> {
+    const bookings = await this.bookingModel
+      .find({ status: BookingStatus.CONFIRMED })
+      .select('_id flightId returnFlightId')
+      .exec();
+    const result: string[] = [];
+    for (const booking of bookings) {
+      const lastFlight = await this.flightModel
+        .findById(booking.returnFlightId ?? booking.flightId)
+        .exec();
+      if (lastFlight && lastFlight.arrivalTimeUtc <= now)
+        result.push(booking._id.toString());
+    }
+    return result;
+  }
+
+  async markCompleted(id: string, now = new Date()): Promise<boolean> {
+    if (!Types.ObjectId.isValid(id)) return false;
+    const booking = await this.bookingModel.findById(id).exec();
+    if (!booking || booking.status !== BookingStatus.CONFIRMED) return false;
+    const lastFlight = await this.flightModel
+      .findById(booking.returnFlightId ?? booking.flightId)
+      .exec();
+    if (!lastFlight || lastFlight.arrivalTimeUtc > now) return false;
+    const updated = await this.bookingModel
+      .findOneAndUpdate(
+        { _id: booking._id, status: BookingStatus.CONFIRMED },
+        { $set: { status: BookingStatus.COMPLETED, completedAt: now } },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    return !!updated;
   }
 
   // A read-only preview. Payment/refund execution remains with Member 4.

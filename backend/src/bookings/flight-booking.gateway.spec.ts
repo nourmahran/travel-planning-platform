@@ -7,6 +7,7 @@ describe('FlightBookingGateway payment boundary', () => {
   const booking = {
     id: '507f1f77bcf86cd799439011',
     userId: '507f1f77bcf86cd799439012',
+    providerId: '507f1f77bcf86cd799439013',
     status: BookingStatus.PENDING_PAYMENT,
     totalPrice: 250.5,
     holdExpiresAt: new Date('2030-01-01'),
@@ -17,10 +18,12 @@ describe('FlightBookingGateway payment boundary', () => {
   };
   const service = {
     findForPayment: jest.fn<() => Promise<typeof booking | null>>(),
-    getCurrentPolicies: jest.fn(),
-    savePolicyAcceptance: jest.fn(),
+    getPaymentPolicyContext: jest.fn(),
     confirm: jest.fn<() => Promise<unknown>>(),
     expireHold: jest.fn<() => Promise<boolean>>(),
+    markCompleted: jest.fn<() => Promise<boolean>>(),
+    findExpiredHoldIds: jest.fn<() => Promise<string[]>>(),
+    findCompletableIds: jest.fn<() => Promise<string[]>>(),
   };
   const gateway = new FlightBookingGateway(
     service as never,
@@ -33,18 +36,16 @@ describe('FlightBookingGateway payment boundary', () => {
   });
 
   it('maps the flight booking into Member 4 payment fields', async () => {
-    await expect(gateway.findById(booking.id)).resolves.toEqual({
+    await expect(gateway.findForPayment(booking.id)).resolves.toEqual({
       id: booking.id,
       type: 'flight',
       userId: booking.userId,
-      status: 'PendingPayment',
+      status: 'PENDING_PAYMENT',
       totalAmount: 250.5,
       currency: 'usd',
       holdExpiresAt: booking.holdExpiresAt,
-      policiesAcceptedAt: null,
-      policySnapshot: null,
-      startsAt: booking.departureTimeUtc,
-      reference: booking.reference,
+      providerId: booking.providerId,
+      refundReferenceDate: booking.departureTimeUtc,
     });
   });
 
@@ -52,8 +53,29 @@ describe('FlightBookingGateway payment boundary', () => {
     service.confirm.mockRejectedValue(
       new BadRequestException('Booking hold has expired'),
     );
-    await expect(gateway.confirm(booking.id)).resolves.toBe(false);
+    const session = {} as never;
+    await expect(
+      gateway.confirmAfterPayment(booking.id, session),
+    ).resolves.toBe(false);
     service.expireHold.mockResolvedValue(false);
-    await expect(gateway.expire(booking.id)).resolves.toBe(false);
+    await expect(gateway.expireHold(booking.id)).resolves.toBe(false);
+  });
+
+  it('maps airline policies to Member 4’s policy shape', async () => {
+    service.getPaymentPolicyContext.mockReturnValue({
+      providerId: booking.providerId,
+      cancellationTiers: [{ daysBefore: 7, refundPercent: 50 }],
+      baggagePolicy: {
+        freeAllowanceByCabin: { Economy: 1 },
+        extraBagPrice: 30,
+        maxExtraBags: 2,
+        maxWeightKg: 23,
+      },
+    });
+    await expect(gateway.getPolicies(booking.id)).resolves.toMatchObject({
+      type: 'flight',
+      providerId: booking.providerId,
+      baggagePolicy: { maxWeightKg: 23 },
+    });
   });
 });
