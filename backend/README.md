@@ -6,7 +6,7 @@ NestJS, MongoDB and TypeScript backend for the Travel Planning and Booking Platf
 
 From this directory, install dependencies and copy .env.example to .env. Set MONGODB_URI to a MongoDB Atlas connection string (the database must support transactions) and optionally set PORT (defaults to 3000). Keep .env private.
 
-Run npm run seed to import the checked-in countries, cities, airports and attractions CSV files. The seeder inserts missing records and leaves existing records unchanged. Start the API with npm run start:dev. Swagger is available at http://localhost:3000/api.
+Run npm run seed to import the checked-in countries, cities, airports and attractions CSV files plus the configured supported currencies. Set SUPPORTED_CURRENCIES to a comma-separated list of ISO currency codes; PLATFORM_CURRENCY is always included (USD by default). The seeder inserts missing records and leaves existing records unchanged. Start the API with npm run start:dev. Swagger is available at http://localhost:3000/api.
 
 ## Backend routes
 
@@ -22,4 +22,4 @@ The API applies DTO validation globally and returns normalized HTTP errors. Sche
 
 npm run build, npm run lint, and npm test -- --runInBand.
 
-Booking history, ticket download and airline moderator routes require authenticated identity and role claims. Paid cancellation/refunds require the payment integration. See MEMBER2_HANDOFF.md for their boundaries and outstanding policy inputs.
+Booking history, ticket download and airline moderator routes require authenticated identity and role claims. Paid cancellation/refunds require the payment integration. See MEMBER2_HANDOFF.md for the current integration boundaries.

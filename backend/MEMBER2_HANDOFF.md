@@ -30,11 +30,11 @@ The reviewed requirements spreadsheet is `Final_ SP1_Reviewed_Requirements.xlsx`
 
 Added since the previous push: seat-count edits use a conditional atomic update and reject reductions below allocated seats. Schedule changes on flights with held/booked seats write confirmed-passenger in-app notification records in the same MongoDB transaction as the time change. Owner history grouping and a read-only cancellation refund preview are available internally. The preview chooses the highest eligible days-before tier, or zero if none applies. These owner-facing methods await authenticated routes.
 
-Still open: flight/booking cancellation notifications, supported-currency seed data, public owner/moderator routes with Member 1 authentication, and paid cancellation/refunds with Member 4 payments. In-app notifications currently have no authenticated read endpoint. The schedule update and notifications require MongoDB transactions.
+Still open: flight/booking cancellation notifications, public owner/moderator routes with Member 1 authentication, and paid cancellation/refunds with Member 4 payments. In-app notifications currently have no authenticated read endpoint. The schedule update and notifications require MongoDB transactions.
 
 ## Setup and API documentation
 
-The backend README and backend/.env.example now describe local setup. `npm run seed` exposes the existing idempotent CSV seeder. No live seeding was run because it writes to the configured MongoDB database.
+The backend README and backend/.env.example now describe local setup. `npm run seed` imports the CSV reference data and configured supported ISO currencies, always including PLATFORM_CURRENCY. No live seeding was run because it writes to the configured MongoDB database.
 
 ## Operational notes
 
