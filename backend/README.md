@@ -23,3 +23,27 @@ The API applies DTO validation globally and returns normalized HTTP errors. Sche
 npm run build, npm run lint, and npm test -- --runInBand.
 
 Booking history, ticket download and airline moderator routes require authenticated identity and role claims. Paid cancellation/refunds require the payment integration. See MEMBER2_HANDOFF.md for the current integration boundaries.
+
+## Payments (Member 4: PAY-01 to PAY-04, GEN-11)
+
+**Requires Node.js 24.9 or newer.** The tests use Jest with ESM; older Node versions fail with
+"Must use import to load ES Module".
+
+### Environment variables (values only in `.env`, never committed)
+`STRIPE_SECRET_KEY` (test key, `sk_test_...`), `STRIPE_WEBHOOK_SECRET` (`whsec_...`),
+`PLATFORM_CURRENCY` (default `usd`).
+
+### Testing a payment from Swagger
+1. Install the Stripe CLI and run `stripe login`.
+2. In a second terminal: `stripe listen --forward-to localhost:3000/api/payments/webhook`
+   and put the printed `whsec_...` value in `.env` as `STRIPE_WEBHOOK_SECRET`.
+3. Create a flight booking hold, then call
+   `GET /api/bookings/flight/:id/policies` and `POST /api/bookings/flight/:id/accept-policies`.
+4. `POST /api/payments` with the booking type and id.
+5. Confirm the payment with a Stripe test card, either with the dev endpoint
+   `POST /api/dev/payments/:id/confirm` or with the CLI:
+   `stripe payment_intents confirm <pi_id> --payment-method pm_card_visa`
+   (use `pm_card_chargeDeclined` to test a failed payment).
+6. The webhook confirms the booking; `GET /api/payments/:id` shows the status.
+
+More detail: `docs/api/payments-explained.md` and `docs/api/payments-integration.md`.

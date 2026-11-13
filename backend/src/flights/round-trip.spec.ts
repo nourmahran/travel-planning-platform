@@ -1,5 +1,3 @@
-import { jest as esmJest } from '@jest/globals';
-const jest = esmJest as unknown as typeof globalThis.jest;
 import { BadRequestException, ValidationPipe } from '@nestjs/common';
 import { Connection, Model } from 'mongoose';
 import { FlightsService } from './flights.service';
