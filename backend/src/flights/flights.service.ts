@@ -17,6 +17,8 @@ import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
 import { UpdateFlightDto } from './dto/update-flight.dto';
 import { BookingStatus } from '../bookings/schemas/booking.schema';
+import { notificationRecord } from '../common/notification-record';
+import { randomUUID } from 'node:crypto';
 
 type AirportRecord = {
   iata_code: string;
@@ -757,6 +759,7 @@ export class FlightsService {
       arrival.getTime() !== oldArrivalTime.getTime();
 
     if (hasAllocatedSeats && timeChanged) {
+      const scheduleEventId = randomUUID();
       const session = await this.connection.startSession();
       try {
         let updated: FlightDocument | null = null;
@@ -795,18 +798,16 @@ export class FlightsService {
             .toArray();
           if (bookings.length) {
             await this.connection.collection('notifications').insertMany(
-              bookings.map((booking) => ({
-                userId: booking.userId as string,
-                bookingId: booking._id,
-                flightId: flight._id,
-                type: 'flight_schedule_changed',
-                previousDepartureTimeUtc: oldDepartureTime,
-                previousArrivalTimeUtc: oldArrivalTime,
-                departureTimeUtc: departure,
-                arrivalTimeUtc: arrival,
-                createdAt: new Date(),
-                readAt: null,
-              })),
+              bookings.map((booking) =>
+                notificationRecord({
+                  recipientId: booking.userId as string,
+                  eventId: `flight:schedule:${scheduleEventId}:${booking._id.toString()}`,
+                  type: 'flight.schedule_changed',
+                  title: 'Flight schedule changed',
+                  message: `Flight ${flight.flightNumber} now departs ${departure.toISOString()} UTC and arrives ${arrival.toISOString()} UTC.`,
+                  link: `/bookings/${booking._id.toString()}`,
+                }),
+              ),
               { session },
             );
           }

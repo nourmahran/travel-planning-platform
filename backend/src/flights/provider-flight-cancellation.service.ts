@@ -10,6 +10,7 @@ import { BookingType } from '../common/booking';
 import { RefundsService } from '../payments/refunds.service';
 import { RefundReason } from '../payments/schemas/refund.schema';
 import { Flight, FlightStatus } from './schemas/flight.schema';
+import { notificationRecord } from '../common/notification-record';
 
 @Injectable()
 export class ProviderFlightCancellationService {
@@ -210,14 +211,17 @@ export class ProviderFlightCancellationService {
         if (!cancelled) throw new BadRequestException('Flight status changed');
         if (affected.length) {
           await this.connection.collection('notifications').insertMany(
-            affected.map((booking) => ({
-              userId: booking.userId,
-              bookingId: booking._id,
-              flightId: flight._id,
-              type: 'flight_cancelled',
-              createdAt: now,
-              readAt: null,
-            })),
+            affected.map((booking) =>
+              notificationRecord({
+                recipientId: booking.userId,
+                eventId: `flight:provider:cancelled:${flight._id.toString()}:${booking._id.toString()}`,
+                type: 'booking.cancelled',
+                title: 'Flight cancelled',
+                message: `Flight ${flight.flightNumber} was cancelled by the airline.`,
+                link: `/bookings/${booking._id.toString()}`,
+                createdAt: now,
+              }),
+            ),
             { session },
           );
         }

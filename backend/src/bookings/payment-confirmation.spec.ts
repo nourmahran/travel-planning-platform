@@ -12,7 +12,7 @@ describe('payment confirmation transaction', () => {
     const booking = {
       _id: id,
       flightId,
-      userId: 'owner-1',
+      userId: '507f1f77bcf86cd799439012',
       reference: 'REF-1',
       status: BookingStatus.PENDING_PAYMENT,
       holdExpiresAt: new Date(Date.now() + 600_000),
@@ -45,9 +45,8 @@ describe('payment confirmation transaction', () => {
     expect(findOneAndUpdate.mock.calls[0][2]).toMatchObject({ session });
     expect(insertOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: 'owner-1',
-        bookingId: id,
-        type: 'flight_booking_confirmed',
+        eventId: `flight:booking:confirmed:${id.toString()}`,
+        type: 'booking.confirmed',
       }),
       { session },
     );

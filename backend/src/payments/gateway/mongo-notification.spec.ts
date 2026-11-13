@@ -3,20 +3,28 @@ import { MongoNotificationAdapter } from './notification.port';
 
 describe('payment in-app notifications', () => {
   it('stores refund messages for the owning user', async () => {
-    const insertOne = jest.fn(async () => ({}));
+    const updateOne = jest.fn(async () => ({}));
     const adapter = new MongoNotificationAdapter({
-      collection: () => ({ insertOne }),
+      collection: () => ({ updateOne }),
     } as never);
-    await adapter.notify('owner-1', 'REFUND_ISSUED', 'Refund issued', {
-      bookingId: 'booking-1',
-    });
-    expect(insertOne).toHaveBeenCalledWith(
-      expect.objectContaining({
-        userId: 'owner-1',
-        type: 'REFUND_ISSUED',
-        data: { bookingId: 'booking-1' },
-        readAt: null,
-      }),
+    await adapter.notify(
+      '507f1f77bcf86cd799439011',
+      'REFUND_ISSUED',
+      'Refund issued',
+      {
+        bookingId: 'booking-1',
+        refundId: 'refund-1',
+      },
+    );
+    expect(updateOne).toHaveBeenCalledWith(
+      expect.objectContaining({ eventId: 'payment:REFUND_ISSUED:refund-1' }),
+      {
+        $setOnInsert: expect.objectContaining({
+          type: 'refund.updated',
+          message: 'Refund issued',
+        }),
+      },
+      { upsert: true },
     );
   });
 });

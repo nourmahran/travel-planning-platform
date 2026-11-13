@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection } from 'mongoose';
+import { randomUUID } from 'node:crypto';
+import { notificationRecord } from '../../common/notification-record';
 
 export type PaymentNotificationType =
   'REFUND_ISSUED' | 'REFUND_FAILED' | 'PAYMENT_FAILED';
@@ -33,13 +35,25 @@ export class MongoNotificationAdapter implements NotificationPort {
     message: string,
     data?: Record<string, unknown>,
   ): Promise<void> {
-    await this.connection.collection('notifications').insertOne({
-      userId,
-      type,
+    const eventKey =
+      (typeof data?.refundId === 'string' && data.refundId) ||
+      (typeof data?.paymentId === 'string' && data.paymentId) ||
+      randomUUID();
+    const bookingId = typeof data?.bookingId === 'string' ? data.bookingId : undefined;
+    const record = notificationRecord({
+      recipientId: userId,
+      eventId: `payment:${type}:${eventKey}`,
+      type: type === 'PAYMENT_FAILED' ? 'payment.failed' : 'refund.updated',
+      title: type === 'PAYMENT_FAILED' ? 'Payment failed' : 'Refund update',
       message,
-      data: data ?? {},
-      createdAt: new Date(),
-      readAt: null,
+      link: bookingId ? `/bookings/${bookingId}` : undefined,
     });
+    await this.connection
+      .collection('notifications')
+      .updateOne(
+        { recipientId: record.recipientId, eventId: record.eventId },
+        { $setOnInsert: record },
+        { upsert: true },
+      );
   }
 }

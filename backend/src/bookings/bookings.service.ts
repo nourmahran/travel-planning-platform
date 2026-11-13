@@ -24,6 +24,7 @@ import {
 } from '../airlines/schemas/airline.schema';
 import { pricePassengers } from './passenger-pricing';
 import { cancellationPreview } from './cancellation-preview';
+import { notificationRecord } from '../common/notification-record';
 
 @Injectable()
 export class BookingsService {
@@ -639,14 +640,14 @@ export class BookingsService {
 
     if (session) {
       await this.bookingModel.db.collection('notifications').insertOne(
-        {
-          userId: booking.userId,
-          bookingId: booking._id,
-          type: 'flight_booking_confirmed',
-          reference: booking.reference,
-          createdAt: new Date(),
-          readAt: null,
-        },
+        notificationRecord({
+          recipientId: booking.userId,
+          eventId: `flight:booking:confirmed:${booking._id.toString()}`,
+          type: 'booking.confirmed',
+          title: 'Flight booking confirmed',
+          message: `Booking ${booking.reference ?? booking._id.toString()} is confirmed.`,
+          link: `/bookings/${booking._id.toString()}`,
+        }),
         { session },
       );
     }
@@ -860,14 +861,15 @@ export class BookingsService {
           .exec();
         if (!result) throw new BadRequestException('Booking status changed');
         await this.bookingModel.db.collection('notifications').insertOne(
-          {
-            userId,
-            bookingId: booking._id,
-            type: 'flight_booking_cancelled',
-            reference: booking.reference,
+          notificationRecord({
+            recipientId: userId,
+            eventId: `flight:booking:cancelled:${booking._id.toString()}`,
+            type: 'booking.cancelled',
+            title: 'Flight booking cancelled',
+            message: `Booking ${booking.reference ?? booking._id.toString()} was cancelled.`,
+            link: `/bookings/${booking._id.toString()}`,
             createdAt: now,
-            readAt: null,
-          },
+          }),
           { session },
         );
         cancelled = result;

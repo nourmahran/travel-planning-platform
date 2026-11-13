@@ -27,7 +27,7 @@ describe('airline flight cancellation', () => {
     };
     const booking = {
       _id: bookingId,
-      userId: 'owner-1',
+      userId: '507f1f77bcf86cd799439012',
       flightId: id,
       status: BookingStatus.CONFIRMED,
       cabinClass: CabinClass.ECONOMY,
@@ -100,8 +100,7 @@ describe('airline flight cancellation', () => {
     expect(insertMany).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          userId: 'owner-1',
-          type: 'flight_cancelled',
+          type: 'booking.cancelled',
         }),
       ],
       { session },

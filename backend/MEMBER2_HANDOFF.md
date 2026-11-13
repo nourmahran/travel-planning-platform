@@ -32,6 +32,8 @@ Added since the previous push: seat-count edits use a conditional atomic update 
 
 On `feature/member2-cancellation-integration`, built from Member 4's payment branch, internal owner cancellation now checks payment, releases both flight legs transactionally, records an in-app notification and issues the tier-based refund. Internal airline cancellation cancels affected bookings, releases pending holds and other scheduled legs, records notifications and issues full refunds for confirmed bookings. Refund dispatches are durable and retried if interrupted. Member 4's refund notifications now write to the same in-app notifications collection. These flows are internal until Member 1 provides verified identity, airline ownership and role guards. Authenticated notification-list and mark-read routes also remain open. Real MongoDB/Stripe end-to-end verification has not been run.
 
+Member 6's published `feature/member6-eyad` branch provides the notification list, unread-count and mark-read APIs, plus a session helper that still depends on Member 1's verified login. Flight and refund notification records on this integration branch now use Member 6's recipientId/eventId/type/title/message fields and leave readAt unset. The branches have not been merged. Member 6's NotificationType enum should include `payment.failed` before the shared notification model is used to create or validate payment-failure records.
+
 ## Setup and API documentation
 
 The backend README and backend/.env.example now describe local setup. `npm run seed` imports the CSV reference data and configured supported ISO currencies, always including PLATFORM_CURRENCY. No live seeding was run because it writes to the configured MongoDB database.

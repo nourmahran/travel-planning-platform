@@ -12,7 +12,7 @@ describe('paid booking cancellation state', () => {
     const booking = {
       _id: id,
       flightId,
-      userId: 'owner-1',
+      userId: '507f1f77bcf86cd799439012',
       status: BookingStatus.CONFIRMED,
       cabinClass: CabinClass.ECONOMY,
       seatCount: 2,
@@ -54,18 +54,21 @@ describe('paid booking cancellation state', () => {
       {} as never,
     );
 
-    await service.cancelConfirmedState(id.toString(), 'owner-1', now);
+    await service.cancelConfirmedState(
+      id.toString(),
+      '507f1f77bcf86cd799439012',
+      now,
+    );
     expect(flightUpdate.mock.calls[0][1]).toEqual({
       $inc: { 'cabins.$.availableSeats': 2 },
     });
     expect(bookingUpdate.mock.calls[0][0]).toMatchObject({
-      userId: 'owner-1',
+      userId: '507f1f77bcf86cd799439012',
       status: BookingStatus.CONFIRMED,
     });
     expect(insertOne).toHaveBeenCalledWith(
       expect.objectContaining({
-        userId: 'owner-1',
-        type: 'flight_booking_cancelled',
+        type: 'booking.cancelled',
       }),
       { session },
     );
