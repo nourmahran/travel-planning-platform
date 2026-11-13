@@ -1,0 +1,1979 @@
+{
+  "openapi": "3.0.0",
+  "paths": {
+    "/api/posts": {
+      "post": {
+        "operationId": "PostsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-01 Create a Draft or Published post; upload images through the image endpoint",
+        "tags": [
+          "Blog"
+        ]
+      },
+      "get": {
+        "operationId": "PostsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "Keyword in title, tags or author name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "tag",
+            "required": false,
+            "in": "query",
+            "description": "Exact tag, ignoring case",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "BLG-02, BLG-09 Search public posts; score = likes + visible comments, newest breaks ties",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/mine": {
+      "get": {
+        "operationId": "PostsController_mine",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Draft",
+                "Published"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-03 List your own posts, including drafts and hidden posts, 10 per page",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/{id}": {
+      "get": {
+        "operationId": "PostsController_detail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "BLG-02 View a post with images, counts and the first comments page",
+        "tags": [
+          "Blog"
+        ]
+      },
+      "patch": {
+        "operationId": "PostsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdatePostDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-04, BLG-08 Edit your own post; authors cannot unhide moderated content",
+        "tags": [
+          "Blog"
+        ]
+      },
+      "delete": {
+        "operationId": "PostsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-04, GEN-03 Delete your post and its comments, likes and images after confirmation",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/{id}/comments": {
+      "get": {
+        "operationId": "PostsController_comments",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "BLG-05 List comments in chronological order, 10 per page",
+        "tags": [
+          "Blog"
+        ]
+      },
+      "post": {
+        "operationId": "PostsController_comment",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-05 Add a non-empty comment, at most 500 characters",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/{id}/like": {
+      "post": {
+        "operationId": "PostsController_like",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-06 Like a published post; repeating the request cannot add another like",
+        "tags": [
+          "Blog"
+        ]
+      },
+      "delete": {
+        "operationId": "PostsController_unlike",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-06 Remove your like; repeating the request is safe",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/{id}/images": {
+      "post": {
+        "operationId": "PostsController_upload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "images"
+                ],
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-10, GEN-08 Upload JPG/PNG images to your post, maximum 5 total and 5 MB each",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/posts/{id}/images/{imageId}": {
+      "delete": {
+        "operationId": "PostsController_removeImage",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-10 Remove an image from your post after confirmation",
+        "tags": [
+          "Blog"
+        ]
+      }
+    },
+    "/api/comments/{id}": {
+      "patch": {
+        "operationId": "CommentsController_edit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-07 Edit your own comment, maximum 500 characters",
+        "tags": [
+          "Comments"
+        ]
+      },
+      "delete": {
+        "operationId": "CommentsController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "BLG-07 Delete your own comment after confirmation",
+        "tags": [
+          "Comments"
+        ]
+      }
+    },
+    "/api/tags/{tag}/posts": {
+      "get": {
+        "operationId": "DiscoveryController_tag",
+        "parameters": [
+          {
+            "name": "tag",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "maxLength": 30,
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "BLG-08 List public posts with this exact tag",
+        "tags": [
+          "Authors and tags"
+        ]
+      }
+    },
+    "/api/authors/{id}": {
+      "get": {
+        "operationId": "DiscoveryController_author",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "postsPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "object"
+            }
+          },
+          {
+            "name": "itinerariesPage",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": 1,
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "BLG-12 View author name, join date, published posts and public itineraries",
+        "tags": [
+          "Authors and tags"
+        ]
+      }
+    },
+    "/api/media/{id}": {
+      "get": {
+        "operationId": "MediaController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "summary": "GEN-08 Read an image, enforcing the parent content visibility on every request",
+        "tags": [
+          "Shared media"
+        ]
+      }
+    },
+    "/api/media/{targetType}/{targetId}/images": {
+      "post": {
+        "operationId": "MediaController_upload",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "images"
+                ],
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-08 Shared upload for posts, activities, hotels (5 images) and airlines (1 logo)",
+        "tags": [
+          "Shared media"
+        ]
+      }
+    },
+    "/api/media/{targetType}/{targetId}/images/{imageId}": {
+      "delete": {
+        "operationId": "MediaController_remove",
+        "parameters": [
+          {
+            "name": "targetType",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-03, GEN-08 Remove an image after ownership/provider authorization and confirmation",
+        "tags": [
+          "Shared media"
+        ]
+      }
+    },
+    "/api/activities/{id}/images": {
+      "post": {
+        "operationId": "MediaController_activityUpload",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "images"
+                ],
+                "properties": {
+                  "images": {
+                    "type": "array",
+                    "maxItems": 5,
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "ITN-12, GEN-08 Upload images to an activity in your itinerary",
+        "tags": [
+          "Shared media"
+        ]
+      }
+    },
+    "/api/activities/{id}/images/{imageId}": {
+      "delete": {
+        "operationId": "MediaController_activityRemove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "imageId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "ITN-12 Remove an activity image after confirmation",
+        "tags": [
+          "Shared media"
+        ]
+      }
+    },
+    "/api/reports": {
+      "post": {
+        "operationId": "ReportsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "csrf": []
+          },
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-09 Report a visible post, comment, review or public itinerary once, with a reason",
+        "tags": [
+          "Reports"
+        ]
+      }
+    },
+    "/api/admin/reports": {
+      "get": {
+        "operationId": "ModerationController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          },
+          {
+            "name": "status",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "default": "Open",
+              "type": "string",
+              "enum": [
+                "Open",
+                "Dismissed",
+                "Hidden",
+                "Deleted"
+              ]
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "post",
+                "comment",
+                "review",
+                "itinerary"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-09, GEN-10 List open reports by default, 10 per page",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      }
+    },
+    "/api/admin/reports/{id}": {
+      "patch": {
+        "operationId": "ModerationController_resolve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveReportDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "csrf": []
+          }
+        ],
+        "summary": "GEN-10 Dismiss, hide or delete; hide/delete also resolve other open reports on that item",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      }
+    },
+    "/api/admin/content/{type}/{id}": {
+      "get": {
+        "operationId": "ModerationController_read",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-10 Inspect reported or hidden content",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      },
+      "delete": {
+        "operationId": "ModerationController_remove",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HideContentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "csrf": []
+          }
+        ],
+        "summary": "GEN-10 Delete content directly after confirmation, with an atomic audit record",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      }
+    },
+    "/api/admin/content/{type}/{id}/hide": {
+      "patch": {
+        "operationId": "ModerationController_hide",
+        "parameters": [
+          {
+            "name": "type",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HideContentDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "csrf": []
+          }
+        ],
+        "summary": "GEN-10 Hide content directly, even when it has no reports; confirm=true required",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      }
+    },
+    "/api/admin/audit-logs": {
+      "get": {
+        "operationId": "ModerationController_logs",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          },
+          {
+            "name": "actorId",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "action",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "example": "content.hidden",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-07 Read administrator audit logs, newest first, 10 per page",
+        "tags": [
+          "Administration: moderation and audit"
+        ]
+      }
+    },
+    "/api/notifications": {
+      "get": {
+        "operationId": "NotificationsController_list",
+        "parameters": [
+          {
+            "name": "page",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "default": 1,
+              "type": "object"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-01 List your own notifications, newest first, 10 per page",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/unread-count": {
+      "get": {
+        "operationId": "NotificationsController_count",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          }
+        ],
+        "summary": "GEN-01 Count your unread notifications",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/read-all": {
+      "patch": {
+        "operationId": "NotificationsController_readAll",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "csrf": []
+          }
+        ],
+        "summary": "GEN-01 Mark all your notifications as read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "operationId": "NotificationsController_read",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "400": {
+            "description": "Invalid input; field messages are returned in errors"
+          },
+          "401": {
+            "description": "Login required, invalid or expired session, or unavailable account"
+          },
+          "403": {
+            "description": "Ownership, role or CSRF check failed"
+          },
+          "404": {
+            "description": "Item does not exist or is not visible to this caller"
+          },
+          "409": {
+            "description": "Duplicate report or already-resolved report"
+          }
+        },
+        "security": [
+          {
+            "session": []
+          },
+          {
+            "csrf": []
+          }
+        ],
+        "summary": "GEN-01 Mark one of your notifications as read",
+        "tags": [
+          "Notifications"
+        ]
+      }
+    }
+  },
+  "info": {
+    "title": "Travel Platform - Member 6",
+    "description": "Eyad El Safty (16003613). Blog, community, media, reporting, notifications and audit APIs. Authentication uses an httpOnly session cookie issued after Member 1 login. For writes, authorize the X-CSRF-Token value from the csrf cookie. Lists use page size 10. Delete and hide requests require confirm=true. Notification creation and audit recording are internal services.",
+    "version": "1.0",
+    "contact": {}
+  },
+  "tags": [],
+  "servers": [],
+  "components": {
+    "securitySchemes": {
+      "session": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "session"
+      },
+      "csrf": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token"
+      }
+    },
+    "schemas": {
+      "CreatePostDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "A weekend in Aswan",
+            "maxLength": 300
+          },
+          "body": {
+            "type": "string",
+            "example": "We spent the morning exploring the Nile.",
+            "maxLength": 100000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published"
+            ],
+            "default": "Draft"
+          },
+          "tags": {
+            "maxItems": 5,
+            "example": [
+              "egypt",
+              "aswan"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "body"
+        ]
+      },
+      "UpdatePostDto": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "example": "A weekend in Aswan",
+            "maxLength": 300
+          },
+          "body": {
+            "type": "string",
+            "example": "We spent the morning exploring the Nile.",
+            "maxLength": 100000
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Draft",
+              "Published"
+            ],
+            "default": "Draft"
+          },
+          "tags": {
+            "maxItems": 5,
+            "example": [
+              "egypt",
+              "aswan"
+            ],
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "ConfirmDto": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Send true only after user confirmation"
+          }
+        },
+        "required": [
+          "confirm"
+        ]
+      },
+      "CommentDto": {
+        "type": "object",
+        "properties": {
+          "body": {
+            "type": "string",
+            "example": "This was helpful!",
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "body"
+        ]
+      },
+      "CreateReportDto": {
+        "type": "object",
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "post",
+              "comment",
+              "review",
+              "itinerary"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "example": "507f1f77bcf86cd799439011"
+          },
+          "reason": {
+            "type": "string",
+            "example": "This contains harassment.",
+            "maxLength": 2000
+          }
+        },
+        "required": [
+          "targetType",
+          "targetId",
+          "reason"
+        ]
+      },
+      "ResolveReportDto": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "dismiss",
+              "hide",
+              "delete"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Required for hide and delete"
+          }
+        },
+        "required": [
+          "action"
+        ]
+      },
+      "HideContentDto": {
+        "type": "object",
+        "properties": {
+          "confirm": {
+            "type": "boolean",
+            "enum": [
+              true
+            ],
+            "description": "Send true only after user confirmation"
+          },
+          "note": {
+            "type": "string",
+            "maxLength": 1000
+          }
+        },
+        "required": [
+          "confirm"
+        ]
+      }
+    }
+  }
+}
