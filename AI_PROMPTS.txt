@@ -1,0 +1,83 @@
+AI PROMPT LOG
+Software Project I — Winter 2026
+
+========================================
+Date: 2026-10-28
+Student: Nour Mahran
+Tool: ChatGPT
+Related Requirement: Project Setup / Git Workflow
+
+Prompt:
+Guide me through setting up the university
+Travel Planning and Booking Platform project
+according to the official PDF requirements.
+
+How the output was used:
+Used the guidance to install development tools,
+create the project folder structure, initialize
+Git, and prepare project documentation.
+========================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: GEN-11, PAY-04
+Prompt:
+Following my CLAUDE-part1-independent.md plan, create the shared booking
+basics: booking status enum, allowed-transition guard, platform currency
+and money helpers (amounts in cents), with unit tests for all 25 status
+combinations.
+How the output was used:
+Kept backend/src/common/booking/* and the tests. Reviewed the transition
+table against GEN-11 and the rounding rules (toMinorUnits, percentOf).
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02
+Prompt:
+Build the Stripe wrapper (test keys only), the Payment/Refund/
+ProcessedEvent schemas, policy retrieval and acceptance with a stored
+snapshot, and the payment create/retry/get/cancel-on-expiry service,
+talking to bookings only through a BookingGateway interface.
+How the output was used:
+Kept the payments and policies modules. Checked the order of the payment
+checks (404/409/410/400/400/409/400), that the amount comes only from the
+booking, that the client secret is never stored, and the idempotency keys.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-03
+Prompt:
+Implement the Stripe webhook (raw body signature check, duplicate event
+protection, succeeded/failed/canceled/refund handlers, late-payment
+refund) and the refund calculator and refunds service (tier rule, policy
+snapshot, 100% for provider cancellations, Stripe failure recorded
+without throwing).
+How the output was used:
+Kept webhook.service/controller, refund-calculator and refunds.service.
+Reviewed the tier examples (30/7/0 days), the days-remaining rule for
+flights vs hotels, and the redelivery/late-payment logic against the tests.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02, PAY-03
+Prompt:
+Add the dev-only Stripe test confirm endpoint for Swagger demos, Swagger
+docs with requirement IDs, unit and HTTP wiring tests with fake gateways,
+the integration guide for Members 2 and 3, a decisions log and a study
+guide for the discussion.
+How the output was used:
+Kept the dev endpoint (disabled in production), the tests (164 passing)
+and docs/api/payments-integration.md, payments-decisions.md and
+payments-explained.md. Sent the integration guide to the team.
+================================================

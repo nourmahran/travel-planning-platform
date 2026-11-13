@@ -1,8 +1,5 @@
-/**
- * Which booking module a booking belongs to. Used in routes
- * (`/api/bookings/:type/:id/...`) and to pick the right adapter.
- */
+/** The two kinds of bookings that can be paid for (used as `:type` in routes). */
 export enum BookingType {
-  FLIGHT = 'flight',
-  HOTEL = 'hotel',
+  Flight = 'flight',
+  Hotel = 'hotel',
 }
