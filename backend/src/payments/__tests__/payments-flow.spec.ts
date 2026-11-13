@@ -12,6 +12,7 @@ import { HttpExceptionFilter } from '../../common/filters/http-exception.filter'
 import { PoliciesModule } from '../../policies/policies.module';
 import { DevPaymentsModule } from '../dev-payments.module';
 import { BookingGatewayRegistry } from '../gateway/booking-gateway.registry';
+import { NOTIFICATION_PORT } from '../gateway/notification.port';
 import { PaymentsModule } from '../payments.module';
 import { Payment } from '../schemas/payment.schema';
 import { ProcessedEvent } from '../schemas/processed-event.schema';
@@ -68,6 +69,8 @@ describe('Payments flow over HTTP (module wiring)', () => {
       .useValue({})
       .overrideProvider(StripeService)
       .useValue(stripe)
+      .overrideProvider(NOTIFICATION_PORT)
+      .useValue({ notify: async () => {} })
       .compile();
 
     app = moduleRef.createNestApplication({ rawBody: true });

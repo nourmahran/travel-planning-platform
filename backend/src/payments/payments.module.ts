@@ -4,7 +4,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { PaymentsAuthGuard } from './auth/payments-auth.guard';
 import { BookingGatewayRegistry } from './gateway/booking-gateway.registry';
 import {
-  LoggerNotificationAdapter,
+  MongoNotificationAdapter,
   NOTIFICATION_PORT,
 } from './gateway/notification.port';
 import { assertDevFlagSafe } from './payments.config';
@@ -46,7 +46,7 @@ import { WebhookService } from './webhook.service';
     RefundsService,
     WebhookService,
     PaymentsAuthGuard,
-    { provide: NOTIFICATION_PORT, useClass: LoggerNotificationAdapter },
+    { provide: NOTIFICATION_PORT, useClass: MongoNotificationAdapter },
   ],
   exports: [
     BookingGatewayRegistry,

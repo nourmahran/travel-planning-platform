@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { InjectConnection } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 
 export type PaymentNotificationType =
   'REFUND_ISSUED' | 'REFUND_FAILED' | 'PAYMENT_FAILED';
@@ -19,19 +21,25 @@ export interface NotificationPort {
 export const NOTIFICATION_PORT = Symbol('NOTIFICATION_PORT');
 
 /**
- * Default adapter used until the notifications module exists.
- * TODO(part2): replace with an adapter that writes to the notifications collection.
+ * Persist payment and refund events alongside flight notifications.
  */
 @Injectable()
-export class LoggerNotificationAdapter implements NotificationPort {
-  private readonly logger = new Logger('PaymentNotifications');
+export class MongoNotificationAdapter implements NotificationPort {
+  constructor(@InjectConnection() private readonly connection: Connection) {}
 
-  notify(
+  async notify(
     userId: string,
     type: PaymentNotificationType,
     message: string,
+    data?: Record<string, unknown>,
   ): Promise<void> {
-    this.logger.log(`[${type}] user=${userId}: ${message}`);
-    return Promise.resolve();
+    await this.connection.collection('notifications').insertOne({
+      userId,
+      type,
+      message,
+      data: data ?? {},
+      createdAt: new Date(),
+      readAt: null,
+    });
   }
 }

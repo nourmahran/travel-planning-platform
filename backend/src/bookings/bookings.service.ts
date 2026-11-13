@@ -792,6 +792,99 @@ export class BookingsService {
     }
   }
 
+  // Internal only. The caller must supply identity from Member 1's auth guard.
+  async cancelConfirmedState(id: string, userId: string, now = new Date()) {
+    if (!Types.ObjectId.isValid(id) || !userId?.trim())
+      throw new BadRequestException('Invalid booking or user ID');
+    const session = await this.bookingModel.db.startSession();
+    try {
+      let cancelled: Booking | undefined;
+      await session.withTransaction(async () => {
+        const booking = await this.bookingModel
+          .findOne({ _id: id, userId, status: BookingStatus.CONFIRMED })
+          .session(session)
+          .exec();
+        if (!booking)
+          throw new NotFoundException('Confirmed booking not found');
+        const flight = await this.flightModel
+          .findById(booking.flightId)
+          .session(session)
+          .exec();
+        if (!flight) throw new NotFoundException('Flight not found');
+        if (
+          flight.status !== FlightStatus.SCHEDULED ||
+          flight.departureTimeUtc <= now
+        )
+          throw new BadRequestException(
+            'Flight has departed or been cancelled',
+          );
+        const seats = booking.seatCount ?? booking.passengers.length;
+        const cabin = flight.cabins.find(
+          (c) => c.cabinClass === booking.cabinClass,
+        );
+        if (!cabin || seats < 1)
+          throw new BadRequestException('Booking inventory is invalid');
+        const released = await this.flightModel
+          .findOneAndUpdate(
+            {
+              _id: booking.flightId,
+              status: FlightStatus.SCHEDULED,
+              departureTimeUtc: { $gt: now },
+              cabins: {
+                $elemMatch: {
+                  cabinClass: booking.cabinClass,
+                  availableSeats: { $lte: cabin.totalSeats - seats },
+                },
+              },
+            },
+            { $inc: { 'cabins.$.availableSeats': seats } },
+            { new: true, session },
+          )
+          .exec();
+        if (!released)
+          throw new BadRequestException('Unable to restore booked seats');
+        await this.restoreReturnSeats(booking, session);
+        const result = await this.bookingModel
+          .findOneAndUpdate(
+            { _id: booking._id, userId, status: BookingStatus.CONFIRMED },
+            {
+              $set: {
+                status: BookingStatus.CANCELLED,
+                cancelledAt: now,
+                refundDispatchPending: true,
+                refundDispatchReason: 'UserCancellation',
+              },
+            },
+            { new: true, runValidators: true, session },
+          )
+          .exec();
+        if (!result) throw new BadRequestException('Booking status changed');
+        await this.bookingModel.db.collection('notifications').insertOne(
+          {
+            userId,
+            bookingId: booking._id,
+            type: 'flight_booking_cancelled',
+            reference: booking.reference,
+            createdAt: now,
+            readAt: null,
+          },
+          { session },
+        );
+        cancelled = result;
+      });
+      return cancelled;
+    } finally {
+      await session.endSession();
+    }
+  }
+
+  async markRefundDispatched(id: string) {
+    await this.bookingModel.updateOne(
+      { _id: id, refundDispatchPending: true },
+      { $set: { refundDispatchPending: false } },
+    );
+  }
+
   // Internal only until the authenticated user/airline scope comes from Member 1.
   async generateTicket(id: string, userId: string): Promise<Buffer> {
     const booking = await this.findOne(id, userId);

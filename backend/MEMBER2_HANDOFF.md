@@ -16,13 +16,13 @@
 
 Member 1 registration from feature/ACC-01-user-registration is now present in this working tree: bcrypt password hashing, normalized unique emails, required terms/privacy consent and a safe response. Its imported tests were adjusted for this repository's Jest ESM setup. This is registration only; there is no login/session or verified identity/role guard yet. Never trust user or airline IDs from request bodies/query strings. Booking creation/cancellation, history, tickets and moderator routes must derive scope from authenticated claims before they are exposed.
 
-## Member 4 boundary (flight adapter ready; registry wiring still needed)
+## Member 4 payment integration
 
-Keep confirmation internal. The payment module must verify the provider signature, successful payment state, booking association, amount and currency, and persist a unique provider event/payment ID for idempotency before confirming. Do not call confirm from an unverified request. Member 4’s published PAY branch defines a BookingGateway contract with totalAmount, currency, accepted policy snapshots, conditional confirm and expiry. The flight adapter is present but is not registered with Member 4's registry because that module has not been integrated. Currency follows PLATFORM_CURRENCY (default usd) in the adapter.
+This branch starts from Member 4's current payment branch. Its payment module verifies provider signatures and successful PaymentIntents, and the flight gateway registers with the payment registry. Confirmation remains internal to the verified payment path. Currency follows PLATFORM_CURRENCY (default usd).
 
 Payment completion and departure/cancellation must be coordinated transactionally. A paid callback arriving after the hold deadline must not resurrect expired inventory: route it to Member 4 reconciliation/refund handling. Existing confirm is only an integration primitive, not a complete payment workflow.
 
-Paid booking cancellation now rejects until refund integration is available. Unpaid cancellation restores seats transactionally. Flight cancellation with allocated seats remains blocked by the existing guard. The flight-side policy fields and acceptance snapshot are present. The flight adapter now implements the shared interface from Member 4's `feature/member-4` branch and is registered under `FLIGHT_BOOKING_ADAPTER`. It maps the flight module's existing stored status strings to the shared payment statuses. Confirmation uses the payment transaction and writes an in-app notification in that transaction. Member 4's Stripe payment/refund module has not been published or integrated, so webhook, refund and currency reconciliation remain open. No payment/refund events have been sent and no teammates have been messaged.
+The existing public booking cancellation route still handles unpaid holds only. Paid owner and provider cancellations are internal until Member 1's authenticated guards can supply user identity and airline ownership. Refund dispatch markers support idempotent retry after a process interruption. No live payment/refund events have been sent or shared Atlas data changed.
 
 ## Reviewed requirements and current progress
 
@@ -30,7 +30,7 @@ The reviewed requirements spreadsheet is `Final_ SP1_Reviewed_Requirements.xlsx`
 
 Added since the previous push: seat-count edits use a conditional atomic update and reject reductions below allocated seats. Schedule changes on flights with held/booked seats write confirmed-passenger in-app notification records in the same MongoDB transaction as the time change. Owner history grouping and a read-only cancellation refund preview are available internally. The preview chooses the highest eligible days-before tier, or zero if none applies. These owner-facing methods await authenticated routes.
 
-Still open: flight/booking cancellation notifications, public owner/moderator routes with Member 1 authentication, and paid cancellation/refunds with Member 4 payments. In-app notifications currently have no authenticated read endpoint. The schedule update and notifications require MongoDB transactions.
+On `feature/member2-cancellation-integration`, built from Member 4's payment branch, internal owner cancellation now checks payment, releases both flight legs transactionally, records an in-app notification and issues the tier-based refund. Internal airline cancellation cancels affected bookings, releases pending holds and other scheduled legs, records notifications and issues full refunds for confirmed bookings. Refund dispatches are durable and retried if interrupted. Member 4's refund notifications now write to the same in-app notifications collection. These flows are internal until Member 1 provides verified identity, airline ownership and role guards. Authenticated notification-list and mark-read routes also remain open. Real MongoDB/Stripe end-to-end verification has not been run.
 
 ## Setup and API documentation
 
