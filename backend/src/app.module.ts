@@ -1,22 +1,27 @@
-
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { MongooseModule } from '@nestjs/mongoose';
-
+import { ScheduleModule } from '@nestjs/schedule';
+import { AdminModule } from './admin/admin.module';
+import { AirlinesModule } from './airlines/airlines.module';
+import { AirportsController } from './airports/airports.controller';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { AirlinesModule } from './airlines/airlines.module';
-import { FlightsModule } from './flights/flights.module';
 import { AuthModule } from './auth/auth.module';
+import { BookingsModule } from './bookings/bookings.module';
+import { FlightsModule } from './flights/flights.module';
+import { DevPaymentsModule } from './payments/dev-payments.module';
+import { PaymentsModule } from './payments/payments.module';
+import { PoliciesModule } from './policies/policies.module';
 import { UsersModule } from './users/users.module';
-import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
+    ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -41,10 +46,7 @@ import { AdminModule } from './admin/admin.module';
               const reason = (
                 error as Error & {
                   reason?: {
-                    servers?: Map<
-                      string,
-                      { error?: Error }
-                    >;
+                    servers?: Map<string, { error?: Error }>;
                   };
                 }
               ).reason;
@@ -66,15 +68,18 @@ import { AdminModule } from './admin/admin.module';
         };
       },
     }),
-
-    AirlinesModule,
-    FlightsModule,
+    EventEmitterModule.forRoot(),
     AuthModule,
     UsersModule,
     AdminModule,
+    AirlinesModule,
+    FlightsModule,
+    BookingsModule,
+    PaymentsModule,
+    PoliciesModule,
+    DevPaymentsModule.register(),
   ],
-
-  controllers: [AppController],
+  controllers: [AppController, AirportsController],
   providers: [AppService],
 })
 export class AppModule {}

@@ -1,4 +1,3 @@
-
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 
@@ -25,24 +24,28 @@ export class CabinDetails {
   })
   cabinClass: CabinClass;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({ required: true, min: 0.01 })
   price: number;
 
-  @Prop({ required: true, min: 0 })
+  @Prop({ required: true, min: 1 })
   totalSeats: number;
 
   @Prop({ required: true, min: 0 })
   availableSeats: number;
 
-  @Prop({ required: true, min: 0 })
-  baggageAllowanceKg: number;
+  @Prop({ min: 0 })
+  baggageAllowanceKg?: number;
 
   @Prop({ default: 0, min: 0 })
-  extraBaggagePricePerKg: number;
+  extraBaggagePricePerKg?: number;
+
+  @Prop({ min: 0 }) freeBagsPerPassenger?: number;
+  @Prop({ min: 0.01 }) maxWeightKgPerBag?: number;
+  @Prop({ min: 0.01 }) extraBagPrice?: number;
+  @Prop({ min: 0 }) maxExtraBagsPerPassenger?: number;
 }
 
-export const CabinDetailsSchema =
-  SchemaFactory.createForClass(CabinDetails);
+export const CabinDetailsSchema = SchemaFactory.createForClass(CabinDetails);
 
 @Schema({ timestamps: true })
 export class Flight {
@@ -64,6 +67,9 @@ export class Flight {
 
   @Prop({ required: true })
   departureTimeUtc: Date;
+
+  @Prop({ required: true })
+  departureLocalDate: string;
 
   @Prop({ required: true })
   arrivalTimeUtc: Date;
@@ -94,3 +100,12 @@ FlightSchema.index({
   arrivalAirport: 1,
   departureTimeUtc: 1,
 });
+
+FlightSchema.index({ status: 1, departureTimeUtc: 1 });
+FlightSchema.index(
+  { airlineId: 1, flightNumber: 1, departureLocalDate: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { departureLocalDate: { $exists: true } },
+  },
+);

@@ -17,6 +17,10 @@ import {
 } from '../auth/schemas/refresh-session.schema';
 import { User, UserDocument } from '../auth/schemas/user.schema';
 import { toSafeUser } from '../auth/utils/safe-user';
+import {
+  Booking,
+  BookingDocument,
+} from '../bookings/schemas/booking.schema';
 import { CreateModeratorDto } from './dto/create-moderator.dto';
 import { ListAccountsDto } from './dto/list-accounts.dto';
 import { ListAdminBookingsDto } from './dto/list-bookings.dto';
@@ -30,6 +34,8 @@ export class AdminService {
     private readonly refreshSessionModel: Model<RefreshSessionDocument>,
     @InjectModel(Airline.name)
     private readonly airlineModel: Model<AirlineDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
     @InjectConnection()
     private readonly connection: Connection,
   ) {}
@@ -245,110 +251,86 @@ export class AdminService {
   }
 
   async listBookings(query: ListAdminBookingsDto) {
-    const db = this.connection.db;
-    if (!db) {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+
+    // Hotel bookings are not on this branch yet (Member 3).
+    if (query.type === 'hotel') {
       return {
-        page: query.page ?? 1,
-        limit: query.limit ?? 10,
+        page,
+        limit,
         total: 0,
         totalPages: 0,
         bookings: [],
+        note: 'Hotel bookings require Member 3 hotel reservation data.',
       };
     }
 
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 10;
     const filter: Record<string, unknown> = {};
-
-    if (query.type) {
-      filter.$or = [
-        { type: query.type },
-        { bookingType: query.type },
-        { kind: query.type },
-      ];
-    }
     if (query.status) {
       filter.status = query.status;
     }
     if (query.from || query.to) {
-      const dateFilter: Record<string, Date> = {};
+      const createdAt: { $gte?: Date; $lte?: Date } = {};
       if (query.from) {
-        dateFilter.$gte = new Date(query.from);
+        createdAt.$gte = new Date(query.from);
       }
       if (query.to) {
         const end = new Date(query.to);
         end.setHours(23, 59, 59, 999);
-        dateFilter.$lte = end;
+        createdAt.$lte = end;
       }
-      filter.$and = [
-        {
-          $or: [
-            { createdAt: dateFilter },
-            { bookingDate: dateFilter },
-            { departureDate: dateFilter },
-            { checkInDate: dateFilter },
-          ],
-        },
-      ];
+      filter.createdAt = createdAt;
     }
 
-    const collection = db.collection('bookings');
-    const total = await collection.countDocuments(filter);
-    const rows = await collection
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray();
+    const [total, rows] = await Promise.all([
+      this.bookingModel.countDocuments(filter),
+      this.bookingModel
+        .find(filter)
+        .sort({ createdAt: -1 })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .populate('flightId', 'airlineId departureTimeUtc arrivalTimeUtc')
+        .exec(),
+    ]);
 
     return {
       page,
       limit,
       total,
       totalPages: Math.ceil(total / limit) || 0,
-      bookings: rows.map((row) => this.mapBooking(row)),
+      bookings: rows.map((row) => this.mapFlightBooking(row)),
     };
   }
 
-  private mapBooking(row: Record<string, unknown>) {
-    const id =
-      row._id instanceof Types.ObjectId
-        ? row._id.toString()
-        : String(row._id ?? '');
+  private mapFlightBooking(row: BookingDocument) {
+    const flight = row.flightId as unknown as {
+      _id?: Types.ObjectId;
+      airlineId?: Types.ObjectId;
+      departureTimeUtc?: Date;
+      arrivalTimeUtc?: Date;
+    } | null;
 
     return {
-      id,
-      reference:
-        (row.bookingReference as string) ??
-        (row.reference as string) ??
-        id,
-      type:
-        (row.type as string) ??
-        (row.bookingType as string) ??
-        (row.kind as string) ??
-        null,
-      userId:
-        row.userId?.toString?.() ??
-        (row.user_id as string) ??
-        null,
-      providerId:
-        row.providerId?.toString?.() ??
-        row.airlineId?.toString?.() ??
-        row.hotelId?.toString?.() ??
-        null,
+      id: row._id.toString(),
+      reference: row.reference,
+      type: 'flight',
+      userId: row.userId,
+      providerId: flight?.airlineId?.toString?.() ?? null,
+      flightId:
+        flight?._id?.toString?.() ??
+        (row.flightId instanceof Types.ObjectId
+          ? row.flightId.toString()
+          : String(row.flightId)),
       dates: {
-        createdAt: row.createdAt ?? null,
-        departureDate: row.departureDate ?? null,
-        checkInDate: row.checkInDate ?? null,
-        checkOutDate: row.checkOutDate ?? null,
+        createdAt: (row as BookingDocument & { createdAt?: Date }).createdAt ?? null,
+        departureDate: flight?.departureTimeUtc ?? null,
+        arrivalDate: flight?.arrivalTimeUtc ?? null,
+        confirmedAt: row.confirmedAt ?? null,
       },
-      amount:
-        (row.totalAmount as number) ??
-        (row.amount as number) ??
-        (row.price as number) ??
-        null,
-      currency: (row.currency as string) ?? null,
-      status: (row.status as string) ?? null,
+      amount: row.totalPrice,
+      status: row.status,
+      cabinClass: row.cabinClass,
     };
   }
 

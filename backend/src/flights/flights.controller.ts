@@ -3,18 +3,17 @@ import {
   Controller,
   Get,
   Param,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
 
-import {
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { FlightsService } from './flights.service';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
+import { UpdateFlightDto } from './dto/update-flight.dto';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
@@ -23,9 +22,7 @@ import { UserRole } from '../auth/constants/roles';
 @ApiTags('Flights')
 @Controller('flights')
 export class FlightsController {
-  constructor(
-    private readonly flightsService: FlightsService,
-  ) {}
+  constructor(private readonly flightsService: FlightsService) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
@@ -40,11 +37,10 @@ export class FlightsController {
   @Get()
   @ApiOperation({
     summary: 'Search available one-way or round-trip flights',
-    description: 'Omit returnDate for the existing paginated response. Supply returnDate for separate outbound and inbound paginated results. page/limit control outbound; returnPage/returnLimit control inbound.',
+    description:
+      'Omit returnDate for the existing paginated response. Supply returnDate for separate outbound and inbound paginated results. page/limit control outbound; returnPage/returnLimit control inbound.',
   })
-  searchFlights(
-    @Query() query: SearchFlightsDto,
-  ) {
+  searchFlights(@Query() query: SearchFlightsDto) {
     return this.flightsService.searchFlights(query);
   }
 
@@ -53,9 +49,26 @@ export class FlightsController {
   @ApiOperation({
     summary: 'Get flight details by ID',
   })
-  findOne(
+  findOne(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.flightsService.details(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({
+    summary: 'Update flight details and cabin pricing',
+  })
+  update(
     @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: UpdateFlightDto,
   ) {
-    return this.flightsService.findOne(id);
+    return this.flightsService.update(id, dto);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({
+    summary: 'Cancel a scheduled flight without allocated seats',
+  })
+  cancel(@Param('id', ParseObjectIdPipe) id: string) {
+    return this.flightsService.cancel(id);
   }
 }

@@ -1,10 +1,10 @@
-
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsEnum,
   IsMongoId,
   IsNumber,
+  IsInt,
   IsOptional,
   IsString,
   Matches,
@@ -23,8 +23,14 @@ export class UpdateCabinDto {
   @ApiPropertyOptional({ example: 3000 })
   @IsOptional()
   @IsNumber()
-  @Min(0)
+  @Min(0.01)
   price?: number;
+
+  @ApiPropertyOptional({ example: 120 })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  totalSeats?: number;
 
   @ApiPropertyOptional({ example: 23 })
   @IsOptional()

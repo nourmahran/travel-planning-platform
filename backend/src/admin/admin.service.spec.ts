@@ -5,6 +5,7 @@ import { AdminService } from './admin.service';
 import { User } from '../auth/schemas/user.schema';
 import { RefreshSession } from '../auth/schemas/refresh-session.schema';
 import { Airline } from '../airlines/schemas/airline.schema';
+import { Booking } from '../bookings/schemas/booking.schema';
 import { AccountStatus } from '../auth/constants/account-status';
 import { UserRole } from '../auth/constants/roles';
 
@@ -27,6 +28,11 @@ describe('AdminService', () => {
     findById: jest.fn(),
   };
 
+  const mockBookingModel = {
+    countDocuments: jest.fn(),
+    find: jest.fn(),
+  };
+
   const mockConnection = {
     db: {
       collection: jest.fn(),
@@ -45,6 +51,7 @@ describe('AdminService', () => {
           useValue: mockRefreshSessionModel,
         },
         { provide: getModelToken(Airline.name), useValue: mockAirlineModel },
+        { provide: getModelToken(Booking.name), useValue: mockBookingModel },
         { provide: getConnectionToken(), useValue: mockConnection },
       ],
     }).compile();

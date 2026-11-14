@@ -3,8 +3,8 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model } from 'mongoose';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
 import { AccountStatus } from '../auth/constants/account-status';
 import {
   RefreshSession,
@@ -13,6 +13,11 @@ import {
 import { User, UserDocument } from '../auth/schemas/user.schema';
 import { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { toSafeUser } from '../auth/utils/safe-user';
+import {
+  Booking,
+  BookingDocument,
+  BookingStatus,
+} from '../bookings/schemas/booking.schema';
 import { DeactivateAccountDto } from './dto/deactivate-account.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 
@@ -23,8 +28,8 @@ export class UsersService {
     private readonly userModel: Model<UserDocument>,
     @InjectModel(RefreshSession.name)
     private readonly refreshSessionModel: Model<RefreshSessionDocument>,
-    @InjectConnection()
-    private readonly connection: Connection,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
   ) {}
 
   async getMe(userId: string) {
@@ -101,34 +106,26 @@ export class UsersService {
 
   /**
    * ACC-12 — block deactivation when upcoming Confirmed bookings exist.
-   * Uses the shared bookings collection when Member 2/3 data is present.
+   * Uses Member 2 flight bookings (hotel bookings arrive with Member 3).
    */
   private async hasUpcomingConfirmedBookings(userId: string): Promise<boolean> {
-    const db = this.connection.db;
-    if (!db) {
-      return false;
-    }
-
     const now = new Date();
-    const upcoming = await db.collection('bookings').findOne({
-      $and: [
-        {
-          $or: [{ userId }, { user_id: userId }],
-        },
-        {
-          status: { $in: ['Confirmed', 'confirmed', 'CONFIRMED'] },
-        },
-        {
-          $or: [
-            { departureDate: { $gte: now } },
-            { checkInDate: { $gte: now } },
-            { startDate: { $gte: now } },
-            { travelDate: { $gte: now } },
-          ],
-        },
-      ],
-    });
+    const confirmed = await this.bookingModel
+      .find({
+        userId,
+        status: BookingStatus.CONFIRMED,
+      })
+      .populate('flightId', 'departureTimeUtc')
+      .exec();
 
-    return upcoming !== null;
+    return confirmed.some((booking) => {
+      const flight = booking.flightId as unknown as {
+        departureTimeUtc?: Date;
+      } | null;
+      return (
+        !!flight?.departureTimeUtc &&
+        flight.departureTimeUtc.getTime() >= now.getTime()
+      );
+    });
   }
 }
