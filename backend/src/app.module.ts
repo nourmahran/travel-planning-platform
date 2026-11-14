@@ -9,7 +9,10 @@ import { AirportsController } from './airports/airports.controller';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { JwtCommunityIdentity } from './auth/community/jwt-community.identity';
 import { BookingsModule } from './bookings/bookings.module';
+import { CommunityIdentity } from './community/auth';
+import { CommunityModule } from './community/community.module';
 import { FlightsModule } from './flights/flights.module';
 import { DevPaymentsModule } from './payments/dev-payments.module';
 import { PaymentsModule } from './payments/payments.module';
@@ -78,6 +81,13 @@ import { UsersModule } from './users/users.module';
     PaymentsModule,
     PoliciesModule,
     DevPaymentsModule.register(),
+    CommunityModule.register({
+      imports: [AuthModule],
+      identityProvider: {
+        provide: CommunityIdentity,
+        useClass: JwtCommunityIdentity,
+      },
+    }),
   ],
   controllers: [AppController, AirportsController],
   providers: [AppService],

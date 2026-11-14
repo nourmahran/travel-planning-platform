@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "ES2022",
+    "moduleResolution": "node",
+    "outDir": ".member6-test-dist",
+    "rootDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "src/community/**/*.ts",
+    "test/member6/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".member6-test-dist"
+  ]
+}
