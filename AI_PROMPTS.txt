@@ -16,4 +16,25 @@ How the output was used:
 Used the guidance to install development tools,
 create the project folder structure, initialize
 Git, and prepare project documentation.
+================================================================================
+Date: 2026-11-14
+Student: roba
+Tool: Cursor
+Related Requirement IDs: ACC-04, ACC-05, ACC-06, ACC-07a, ACC-08, ACC-09, ACC-10, ACC-11, ACC-12, ACC-13, ACC-14, ACC-15, ACC-16, ACC-17, ACC-18, ACC-19
+
+Prompt summary:
+Continue Member 1 backend authentication and administration after installing @nestjs/jwt and cookie-parser. Implement login, HTTP-only cookies, refresh/logout, lockout, guards, profile, admin APIs, and tests without rewriting registration or teammates' modules.
+
+How the output was used:
+Implemented and verified NestJS auth/admin/users modules on feature/ACC-04-login-logout. Kept registration intact. Used JWT access cookies, opaque hashed refresh sessions, CSRF double-submit, role guards, ownership helper, admin seed, and Swagger tags.
+
+Files implemented or changed:
+backend/src/auth/**, backend/src/users/**, backend/src/admin/**, backend/src/main.ts, backend/src/app.module.ts, backend/src/database/seeds/seed.ts, backend/src/airlines/airlines.service.ts, backend/src/flights/flights.service.ts, .env.example, backend/package.json
+
+Tests completed:
+npm run build (pass)
+npm test -- --testPathPatterns="auth|admin|ownership" -> 4 suites, 24 tests passed
+
+Corrections made:
+Fixed mongoose Prop types for enum/nullable User fields; added JWT_SECRET to local .env (not committed); FilterQuery replaced for mongoose 9; forced password-change gate; refresh token rotation; inactive airline filtering for ACC-15.
 ========================================

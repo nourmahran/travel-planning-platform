@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -17,6 +16,9 @@ import { FlightsService } from './flights.service';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/constants/roles';
 
 @ApiTags('Flights')
 @Controller('flights')
@@ -26,6 +28,7 @@ export class FlightsController {
   ) {}
 
   @Post()
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
   @ApiOperation({
     summary: 'Create a new flight',
   })
@@ -33,6 +36,7 @@ export class FlightsController {
     return this.flightsService.create(dto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({
     summary: 'Search available one-way or round-trip flights',
@@ -44,6 +48,7 @@ export class FlightsController {
     return this.flightsService.searchFlights(query);
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({
     summary: 'Get flight details by ID',

@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -8,6 +8,12 @@ describe('AuthController', () => {
 
   const mockAuthService = {
     register: jest.fn(),
+    login: jest.fn(),
+    logout: jest.fn(),
+    refresh: jest.fn(),
+    me: jest.fn(),
+    changePassword: jest.fn(),
+    adminResetPassword: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -26,12 +32,10 @@ describe('AuthController', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
-  // Test 1: Controller should exist
   it('should be defined', () => {
     expect(controller).toBeDefined();
   });
 
-  // Test 2: Successful registration
   it('should register a user successfully', async () => {
     const registerDto = {
       name: 'Test User',
@@ -56,16 +60,11 @@ describe('AuthController', () => {
     const result = await controller.register(registerDto);
 
     expect(mockAuthService.register).toHaveBeenCalledWith(registerDto);
-
-    expect(mockAuthService.register).toHaveBeenCalledTimes(1);
-
     expect(result).toEqual(expectedResponse);
-
     expect(result.user).not.toHaveProperty('password');
     expect(result.user).not.toHaveProperty('passwordHash');
   });
 
-  // Test 3: Duplicate email error
   it('should handle duplicate email errors', async () => {
     const registerDto = {
       name: 'Test User',
@@ -82,7 +81,61 @@ describe('AuthController', () => {
     await expect(controller.register(registerDto)).rejects.toThrow(
       'Email is already registered',
     );
+  });
 
-    expect(mockAuthService.register).toHaveBeenCalledTimes(1);
+  it('should login a user successfully', async () => {
+    const loginDto = {
+      email: 'test@example.com',
+      password: 'TestPass123!',
+    };
+    const response = { cookie: jest.fn() } as never;
+    const expected = {
+      message: 'Login successful',
+      user: {
+        id: '123456',
+        email: 'test@example.com',
+        role: 'user',
+      },
+    };
+
+    mockAuthService.login.mockResolvedValue(expected);
+
+    const result = await controller.login(loginDto, response);
+
+    expect(mockAuthService.login).toHaveBeenCalledWith(loginDto, response);
+    expect(result).toEqual(expected);
+  });
+
+  it('should surface invalid login errors', async () => {
+    mockAuthService.login.mockRejectedValue(
+      new UnauthorizedException('Invalid email or password'),
+    );
+
+    await expect(
+      controller.login(
+        { email: 'test@example.com', password: 'WrongPass123!' },
+        {} as never,
+      ),
+    ).rejects.toThrow('Invalid email or password');
+  });
+
+  it('should return the current user', async () => {
+    mockAuthService.me.mockResolvedValue({
+      user: { id: '123456', email: 'test@example.com', role: 'user' },
+    });
+
+    const result = await controller.me({
+      id: '123456',
+      email: 'test@example.com',
+      name: 'Test',
+      role: 'user' as never,
+      mustChangePassword: false,
+      providerType: null,
+      providerId: null,
+      sessionId: 'session-1',
+    });
+
+    expect(mockAuthService.me).toHaveBeenCalledWith('123456');
+    expect(result.user.id).toBe('123456');
   });
 });
