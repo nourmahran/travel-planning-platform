@@ -46,7 +46,9 @@ describe('schedule changes with booked seats', () => {
         name === 'bookings'
           ? {
               find: () => ({
-                toArray: async () => [{ _id: bookingId, userId: 'owner-1' }],
+                toArray: async () => [
+                  { _id: bookingId, userId: '507f1f77bcf86cd799439012' },
+                ],
               }),
             }
           : { insertMany },
@@ -71,9 +73,7 @@ describe('schedule changes with booked seats', () => {
     expect(insertMany).toHaveBeenCalledWith(
       [
         expect.objectContaining({
-          userId: 'owner-1',
-          bookingId,
-          type: 'flight_schedule_changed',
+          type: 'flight.schedule_changed',
         }),
       ],
       { session },

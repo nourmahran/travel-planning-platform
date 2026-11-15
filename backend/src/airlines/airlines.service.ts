@@ -48,7 +48,11 @@ export class AirlinesService {
   }
 
   async findAll() {
-    return this.airlineModel.find().sort({ name: 1 }).exec();
+    // ACC-15: deactivated providers are hidden from public listings/search.
+    return this.airlineModel
+      .find({ isActive: true })
+      .sort({ name: 1 })
+      .exec();
   }
 
   async findOne(id: string) {

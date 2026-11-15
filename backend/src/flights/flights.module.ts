@@ -1,23 +1,21 @@
-
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
 import { FlightsController } from './flights.controller';
 import { FlightsService } from './flights.service';
+import { ProviderFlightCancellationService } from './provider-flight-cancellation.service';
+import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
+import { PaymentsModule } from '../payments/payments.module';
 
-import {
-  Flight,
-  FlightSchema,
-} from './schemas/flight.schema';
+import { Flight, FlightSchema } from './schemas/flight.schema';
 
-import {
-  Airline,
-  AirlineSchema,
-} from '../airlines/schemas/airline.schema';
+import { Airline, AirlineSchema } from '../airlines/schemas/airline.schema';
 
 @Module({
   imports: [
+    PaymentsModule,
     MongooseModule.forFeature([
+      { name: Booking.name, schema: BookingSchema },
       {
         name: Flight.name,
         schema: FlightSchema,
@@ -29,7 +27,7 @@ import {
     ]),
   ],
   controllers: [FlightsController],
-  providers: [FlightsService],
-  exports: [FlightsService],
+  providers: [FlightsService, ProviderFlightCancellationService],
+  exports: [FlightsService, ProviderFlightCancellationService],
 })
 export class FlightsModule {}

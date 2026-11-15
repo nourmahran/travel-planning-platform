@@ -28,13 +28,16 @@
     "@nestjs/config": "^12.1.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/event-emitter": "^12.0.2",
+    "@nestjs/jwt": "^12.0.5",
     "@nestjs/mongoose": "^12.0.1",
     "@nestjs/observe": "^0.3.0",
     "@nestjs/platform-express": "^12.0.1",
     "@nestjs/schedule": "^12.0.3",
     "@nestjs/swagger": "^12.1.1",
+    "bcrypt": "^6.0.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.15.1",
+    "cookie-parser": "^1.4.7",
     "csv-parse": "^7.0.3",
     "dotenv": "^18.0.9",
     "luxon": "^3.7.2",
@@ -42,14 +45,15 @@
     "pdfkit": "^0.20.2",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "stripe": "^23.1.0",
-    "bcrypt": "^6.0.0"
+    "stripe": "^23.1.0"
   },
   "devDependencies": {
     "@nestjs/cli": "^12.0.0",
     "@nestjs/mau": "^0.2.6",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
+    "@types/bcrypt": "^6.0.0",
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/luxon": "^3.7.6",
@@ -66,7 +70,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^6.0.2",
-    "@types/bcrypt": "^6.0.0"
+    "typescript": "^6.0.2"
   }
 }

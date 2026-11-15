@@ -7,6 +7,8 @@ import { Flight, FlightSchema } from '../flights/schemas/flight.schema';
 import { Airline, AirlineSchema } from '../airlines/schemas/airline.schema';
 import { PaymentsModule } from '../payments/payments.module';
 import { FlightBookingGateway } from './flight-booking.gateway';
+import { FlightCancellationService } from './flight-cancellation.service';
+import { CancellationRefundRecoveryService } from './cancellation-refund-recovery.service';
 
 @Module({
   imports: [
@@ -20,7 +22,12 @@ import { FlightBookingGateway } from './flight-booking.gateway';
     PaymentsModule,
   ],
   controllers: [BookingsController],
-  providers: [BookingsService, FlightBookingGateway],
-  exports: [BookingsService],
+  providers: [
+    BookingsService,
+    FlightBookingGateway,
+    FlightCancellationService,
+    CancellationRefundRecoveryService,
+  ],
+  exports: [BookingsService, FlightCancellationService],
 })
 export class BookingsModule {}

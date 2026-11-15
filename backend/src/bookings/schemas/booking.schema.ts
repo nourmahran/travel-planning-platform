@@ -98,6 +98,15 @@ export class Booking {
   @Prop()
   cancelledAt?: Date;
 
+  @Prop({ type: Types.ObjectId, ref: 'Flight' })
+  providerCancelledFlightId?: Types.ObjectId;
+
+  @Prop({ default: false })
+  refundDispatchPending?: boolean;
+
+  @Prop({ enum: ['UserCancellation', 'ProviderCancellation'] })
+  refundDispatchReason?: string;
+
   @Prop()
   completedAt?: Date;
 }

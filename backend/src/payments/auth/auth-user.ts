@@ -10,5 +10,5 @@ export interface AuthUser {
 export const ADMIN_ROLE = 'ADMIN';
 
 export function isAdmin(user: AuthUser): boolean {
-  return user.role === ADMIN_ROLE;
+  return user.role === ADMIN_ROLE || user.role === 'admin';
 }

@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
@@ -90,3 +90,7 @@ export class CreateBookingDto {
   @Type(() => BookingPassengerDto)
   passengers: BookingPassengerDto[];
 }
+
+export class CreateBookingRequestDto extends OmitType(CreateBookingDto, [
+  'userId',
+] as const) {}

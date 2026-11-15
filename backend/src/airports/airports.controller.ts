@@ -9,8 +9,10 @@ import {
 import { InjectConnection } from '@nestjs/mongoose';
 import type { Connection } from 'mongoose';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('Airports')
+@Public()
 @Controller('airports')
 export class AirportsController {
   constructor(@InjectConnection() private readonly connection: Connection) {}

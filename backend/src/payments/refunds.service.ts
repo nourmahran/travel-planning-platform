@@ -93,6 +93,15 @@ export class RefundsService {
   }
 
   /** What the user would get back if they cancelled now (no side effects). */
+  async assertSuccessfulPayment(
+    type: BookingType,
+    bookingId: string,
+  ): Promise<void> {
+    if (!(await this.findSucceededPayment(type, bookingId))) {
+      throw new ConflictException('No successful payment found');
+    }
+  }
+
   async previewRefund(
     type: BookingType,
     bookingId: string,
