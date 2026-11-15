@@ -285,8 +285,9 @@ GET /currency/convert?amount=100&from=EGP&to=EUR
   When it fails, the newest cached document is served as `stale`; when nothing
   is cached the route answers `503` rather than inventing a rate.
 - Cross rates go through USD: `rate = rates[to] / rates[from]`.
-- Both codes must be display currencies (the distinct `countries.currency`
-  values), not Member 2's booking-side `PLATFORM_CURRENCY`.
+- Both codes must be display currencies: the union of the distinct
+  `countries.currency` values and the codes `SUPPORTED_CURRENCIES` declares, not
+  Member 2's booking-side `PLATFORM_CURRENCY`.
 
 | Env var | Meaning |
 |---|---|
@@ -396,7 +397,7 @@ Frankfurt).
 | `200` | read, edit or subdocument delete succeeded (`DELETE /itineraries/:id` is the only `204`) |
 | `201` | created (itinerary, day, activity, budget, transport cost, image) |
 | `204` | itinerary deleted |
-| `400` | body/query validation failed, unknown reference code or city, unknown origin airport, return date before the start date, bad `startDate`, 60-day cap, 20-activity cap, 5-image cap, image not JPG/PNG or over 5 MB, transport city not in the itinerary, missing transport mode, unsupported currency (display or entry), rate missing for a code |
+| `400` | body/query validation failed, unknown reference code or city, unknown origin airport, return date before the start date, bad `startDate`, 60-day cap, 20-activity cap, 5-image cap, image not JPG/PNG or over 5 MB, transport city not in the itinerary, missing transport mode, unsupported currency (display or entry), rate missing for a code — the body names the code and the entries that need it, e.g. `rate missing for CAD (budget <id>)` |
 | `401` | no session cookie, an expired session, or a write without the matching `x-csrf-token` |
 | `403` | the itinerary belongs to another user (owner routes only) |
 | `404` | itinerary/subdocument/public itinerary not found (also covers another user's private itinerary on clone and public detail) |
@@ -419,7 +420,7 @@ category enum, currency membership), so direct service calls are testable.
 | image size | 1 byte - 5 MB, JPG or PNG only |
 | rooms per hotel stay | 1-10, default 1 |
 | money | ≥ 0, at most 2 decimals |
-| entry currency | 3-letter ISO code from the reference currencies; defaults to the itinerary currency |
+| entry currency | 3-letter ISO code from the display currencies (`countries.currency` union `SUPPORTED_CURRENCIES`); defaults to the itinerary currency |
 | page size | 10 default, 100 max |
 | countries per itinerary | 10 |
 | airport pairs per leg | 3 × 3 |
