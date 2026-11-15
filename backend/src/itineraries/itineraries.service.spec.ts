@@ -20,7 +20,7 @@ type FakeItinerary = {
   currency: string;
   visibility: string;
   isHidden: boolean;
-  days: { cityId: string }[];
+  days: { cityId: string; dayNumber?: number; date?: string }[];
   transportCosts: unknown[];
   cloneCount: number;
   save: jest.Mock;
@@ -246,6 +246,22 @@ describe('ItinerariesService', () => {
         service.update(OWNER, ITINERARY_ID, { countries: ['EG'] }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(itinerary.save).not.toHaveBeenCalled();
+    });
+    it('recalculates the day dates when the start date moves', async () => {
+      const itinerary = makeItinerary({
+        days: [
+          { cityId: 'cairo', dayNumber: 1, date: '2026-11-20' },
+          { cityId: 'cairo', dayNumber: 2, date: '2026-11-21' },
+        ],
+      });
+      findByIdReturns(itinerary);
+
+      await service.update(OWNER, ITINERARY_ID, { startDate: '2027-03-01' });
+
+      expect(itinerary.days.map((day) => day.date)).toEqual([
+        '2027-03-01',
+        '2027-03-02',
+      ]);
     });
   });
 

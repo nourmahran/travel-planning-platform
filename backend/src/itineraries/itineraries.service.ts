@@ -19,6 +19,7 @@ import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { toItinerarySummary } from './itinerary-summary';
 import { DEFAULT_VISIBILITY, ITINERARY_LIMITS } from './itinerary.constants';
+import { renumberDays } from './days-and-dates';
 
 @Injectable()
 export class ItinerariesService {
@@ -124,6 +125,8 @@ export class ItinerariesService {
       itinerary.startDate = this.parseStartDate(dto.startDate).toFormat(
         'yyyy-MM-dd',
       );
+
+      renumberDays(itinerary.startDate, itinerary.days);
     }
 
     if (dto.title !== undefined) {
