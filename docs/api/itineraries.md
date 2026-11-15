@@ -63,8 +63,8 @@ against the stored `ownerId`.
 ```json
 POST /itineraries
 {
-  "title": "Cairo and Luxor",
-  "countries": ["EG"],
+  "title": "Cairo and Dubai",
+  "countries": ["EG", "AE"],
   "startDate": "2026-12-01",
   "currency": "EGP"
 }
@@ -84,15 +84,15 @@ The response is the owner detail object.
 
 ```json
 {
-  "id": "…", "title": "…", "countries": ["EG"], "startDate": "2026-12-01",
+  "id": "…", "title": "Cairo and Dubai", "countries": ["EG", "AE"], "startDate": "2026-12-01",
   "currency": "EGP", "visibility": "private", "isHidden": false,
-  "cloneCount": 0, "dayCount": 2, "updatedAt": "…", "createdAt": "…",
+  "cloneCount": 0, "dayCount": 3, "updatedAt": "…", "createdAt": "…",
   "days": [
     {
       "id": "…", "dayNumber": 1, "date": "2026-12-01", "cityId": "cairo",
       "activities": [
         {
-          "id": "…", "title": "Pyramids of Giza", "attractionId": "cairo",
+          "id": "…", "title": "Pyramids of Giza", "attractionId": "att-1",
           "startTime": "09:00", "durationMinutes": 180,
           "notes": "Tickets bought online.", "cost": 450,
           "images": [{ "id": "…", "url": "https://…", "mimeType": "image/png", "sizeBytes": 204800 }]
@@ -102,7 +102,7 @@ The response is the owner detail object.
     }
   ],
   "transportCosts": [
-    { "id": "…", "fromCityId": "cairo", "toCityId": "luxor", "amount": 300, "date": "2026-12-02", "note": "Train" }
+    { "id": "…", "fromCityId": "cairo", "toCityId": "dubai", "amount": 300, "date": "2026-12-02", "note": "Flight" }
   ],
   "clonedFrom": { "itineraryId": "…", "authorId": "…", "authorName": "Sara", "clonedAt": "…" }
 }
@@ -128,7 +128,7 @@ it answers `204`.
 |---|---|---|
 | `POST …/days` | `{ "cityId": "cairo" }` | city must exist and belong to the itinerary countries; `dayNumber = n+1`; `date` derived from `startDate`; max 60 days |
 | `PATCH …/days/reorder` | `{ "dayIds": ["…", "…"] }` | must list every day exactly once; dates are recalculated in the new order |
-| `PATCH …/days/:dayId` | `{ "cityId": "luxor" }` | same city rule as create |
+| `PATCH …/days/:dayId` | `{ "cityId": "dubai" }` | same city rule as create |
 | `DELETE …/days/:dayId` | — | remaining days renumber to 1…n and their dates close the gap |
 
 Every day response carries `id`, `dayNumber`, `date`, `cityId`, `activities`
@@ -144,7 +144,7 @@ city form one group, and the same city appearing twice forms two groups.
 POST /itineraries/:itineraryId/days/:dayId/activities
 {
   "title": "Pyramids of Giza",
-  "attractionId": "cairo",
+  "attractionId": "att-1",
   "startTime": "09:00",
   "durationMinutes": 180,
   "notes": "Tickets bought online.",
@@ -190,7 +190,7 @@ POST /itineraries/:itineraryId/days/:dayId/budgets
 
 ```json
 POST /itineraries/:itineraryId/transport-costs
-{ "fromCityId": "cairo", "toCityId": "luxor", "amount": 300, "date": "2026-12-02", "note": "Train" }
+{ "fromCityId": "cairo", "toCityId": "dubai", "amount": 300, "date": "2026-12-02", "note": "Flight" }
 ```
 
 - Both cities must differ and must already appear in the itinerary days.
@@ -217,7 +217,7 @@ GET /itineraries/:id/budget-summary?currency=USD
   },
   "byDay": [ { "dayId": "…", "dayNumber": 1, "date": "…", "cityId": "cairo", "categories": { … }, "total": 20.0 } ],
   "byCityGroup": [ { "cityId": "cairo", "cityName": "Cairo", "countryCode": "EG", "fromDay": 1, "toDay": 2, "dateFrom": "…", "dateTo": "…", "categories": { … }, "total": 44.0 } ],
-  "transportCosts": [ { "id": "…", "fromCityId": "cairo", "toCityId": "luxor", "date": "…", "amount": 300, "convertedAmount": 22.0 } ]
+  "transportCosts": [ { "id": "…", "fromCityId": "cairo", "toCityId": "dubai", "date": "…", "amount": 300, "convertedAmount": 22.0 } ]
 }
 ```
 
@@ -332,6 +332,13 @@ GET /cities?country=EG&q=cai&page=1&limit=10
 
 Read-only `{ city_id, name, country_code }` records sorted by name, `_id`
 excluded, paginated. Used by the client when adding a day.
+
+The seed (`npm run seed`) loads 8 countries, 8 cities and 8 airports. Only these
+city ids are valid in a day: `cairo`, `dubai`, `london`, `new_york`, `paris`,
+`tokyo`, `riyadh`, `frankfurt`; each has exactly one airport (`CAI`, `DXB`,
+`LHR`, `JFK`, `CDG`, `HND`, `RUH`, `FRA`). Attractions: `att-1` … `att-8`, one
+per city in that order (Cairo, Dubai, London, New York, Paris, Tokyo, Riyadh,
+Frankfurt).
 
 ## 12. Status codes
 
