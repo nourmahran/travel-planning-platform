@@ -21,9 +21,9 @@ describe('PAY-01 PaymentsService', () => {
   let stripe: FakeStripe;
   let payments: FakeModel;
   let service: PaymentsService;
-  const user = { id: oid(), role: 'USER' };
-  const stranger = { id: oid(), role: 'USER' };
-  const admin = { id: oid(), role: 'ADMIN' };
+  const user = { id: oid(), role: 'user' };
+  const stranger = { id: oid(), role: 'user' };
+  const admin = { id: oid(), role: 'admin' };
 
   /** A payable booking: PendingPayment, active hold, policies accepted. */
   function payableBooking(overrides = {}) {

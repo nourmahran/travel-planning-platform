@@ -8,7 +8,7 @@ import type { ConfigReader } from '../common/booking';
 export const API_PREFIX = 'api';
 
 /**
- * Dev-only helpers (dev confirm endpoint, x-dev-user-id header) are enabled
+ * Dev-only helper (the dev confirm endpoint) is enabled
  * only when ENABLE_DEV_PAYMENT_ENDPOINTS=true AND NODE_ENV is not production.
  */
 export function isDevPaymentsEnabled(config: ConfigReader): boolean {

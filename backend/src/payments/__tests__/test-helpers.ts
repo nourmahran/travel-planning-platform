@@ -1,3 +1,11 @@
+import {
+  type CanActivate,
+  type ExecutionContext,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import { IS_PUBLIC_KEY } from '../../auth/decorators/public.decorator';
 import { BadGatewayException } from '@nestjs/common';
 import type { ConfigService } from '@nestjs/config';
 import type { Model } from 'mongoose';
@@ -172,3 +180,33 @@ export const fakeEmitter = () => ({ emit: jest.fn() });
 export const fakeNotifier = () => ({
   notify: jest.fn().mockResolvedValue(undefined),
 });
+
+/**
+ * Test stand-in for the auth module's global JwtAuthGuard (ACC-04 / ACC-19):
+ * honours @Public() and puts `{ id, role }` on req.user from the
+ * `x-test-user-id` / `x-test-user-role` headers. Used only in tests, so the
+ * payments wiring test doesn't need real JWT cookies or a user collection.
+ */
+@Injectable()
+export class TestAuthGuard implements CanActivate {
+  constructor(private readonly reflector: Reflector) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    if (
+      this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    ) {
+      return true;
+    }
+    const req = context.switchToHttp().getRequest<{
+      headers: Record<string, string | undefined>;
+      user?: { id: string; role: string };
+    }>();
+    const id = req.headers['x-test-user-id'];
+    if (!id) throw new UnauthorizedException('Not logged in');
+    req.user = { id, role: req.headers['x-test-user-role'] ?? 'user' };
+    return true;
+  }
+}

@@ -13,14 +13,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import {
   ApiCookieAuth,
-  ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from './auth/auth-user';
-import { CurrentUser } from './auth/current-user.decorator';
-import { DEV_USER_HEADER, PaymentsAuthGuard } from './auth/payments-auth.guard';
 import { IdParamDto } from './dto/create-payment.dto';
 import { DevConfirmDto } from './dto/dev-confirm.dto';
 import { DevConfirmResponseDto } from './dto/responses.dto';
@@ -50,14 +48,8 @@ export class DevPaymentsEnabledGuard implements CanActivate {
  * production (see DevPaymentsModule).
  */
 @ApiTags('Dev (test mode only)')
-@ApiCookieAuth()
-@ApiHeader({
-  name: DEV_USER_HEADER,
-  required: false,
-  description:
-    'DEV ONLY (until auth is merged): user ObjectId to act as. Ignored in production.',
-})
-@UseGuards(DevPaymentsEnabledGuard, PaymentsAuthGuard) // TODO(part2): use real auth guard
+@ApiCookieAuth('access_token')
+@UseGuards(DevPaymentsEnabledGuard)
 @Controller(`${API_PREFIX}/dev/payments`)
 export class DevPaymentsController {
   constructor(private readonly payments: PaymentsService) {}

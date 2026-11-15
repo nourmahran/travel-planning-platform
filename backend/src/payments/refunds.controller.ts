@@ -1,14 +1,12 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import {
   ApiCookieAuth,
-  ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from './auth/auth-user';
-import { CurrentUser } from './auth/current-user.decorator';
-import { DEV_USER_HEADER, PaymentsAuthGuard } from './auth/payments-auth.guard';
 import { IdParamDto } from './dto/create-payment.dto';
 import { RefundResponseDto } from './dto/responses.dto';
 import { API_PREFIX } from './payments.config';
@@ -16,14 +14,7 @@ import { RefundsService } from './refunds.service';
 import { ApiErrors, BAD_PARAMS, UNAUTHORIZED } from './swagger';
 
 @ApiTags('Refunds')
-@ApiCookieAuth()
-@ApiHeader({
-  name: DEV_USER_HEADER,
-  required: false,
-  description:
-    'DEV ONLY (until auth is merged): user ObjectId to act as. Ignored in production.',
-})
-@UseGuards(PaymentsAuthGuard) // TODO(part2): use real auth guard
+@ApiCookieAuth('access_token')
 @Controller(`${API_PREFIX}/refunds`)
 export class RefundsController {
   constructor(private readonly refunds: RefundsService) {}

@@ -188,7 +188,7 @@ A live key (`sk_live_...`) is refused on purpose.
 
 ## 9. Requests to the setup/auth owners
 
-- **Auth:** my controllers use a temporary `PaymentsAuthGuard` / `@CurrentUser()` (in `backend/src/payments/auth/`, marked `TODO(part2)`). It reads `req.user`, so it works with a JWT guard that sets `req.user = { id | _id | sub, role }`. When the real global guard exists, the webhook route must stay public: it is marked with `SetMetadata('isPublic', true)`. Please use the key `isPublic` for `@Public()`, or tell me your key.
+- **Auth:** done. Payments uses the auth module's global `JwtAuthGuard` (`req.user`), its `@CurrentUser()` and `@Public()` (Stripe webhook). Admin checks use `UserRole.ADMIN`.
 - **`main.ts`:** I only added `rawBody: true` (needed for webhook signatures). The Swagger builder has no `.addCookieAuth()` yet, so `@ApiCookieAuth()` shows no lock icon. Please add `.addCookieAuth('access_token')`.
 - **Global prefix:** there is no `app.setGlobalPrefix('api')`. My routes put `api/` in front through one constant (`API_PREFIX` in `payments.config.ts`). If a global prefix is added, tell me and I'll set it to `''`.
 - **Lint:** `npm run lint` currently fails on `main.ts:45` (`bootstrap();` should be `void bootstrap();`). That line existed before my changes.

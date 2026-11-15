@@ -37,13 +37,15 @@ Booking history, ticket download and airline moderator routes require authentica
 1. Install the Stripe CLI and run `stripe login`.
 2. In a second terminal: `stripe listen --forward-to localhost:3000/api/payments/webhook`
    and put the printed `whsec_...` value in `.env` as `STRIPE_WEBHOOK_SECRET`.
-3. Create a flight booking hold, then call
+3. Log in with `POST /api/auth/login`. For every POST/PATCH/DELETE, also send the header
+   `x-csrf-token` with the value of the `csrf_token` cookie.
+4. Create a flight booking hold, then call
    `GET /api/bookings/flight/:id/policies` and `POST /api/bookings/flight/:id/accept-policies`.
-4. `POST /api/payments` with the booking type and id.
-5. Confirm the payment with a Stripe test card, either with the dev endpoint
+5. `POST /api/payments` with the booking type and id.
+6. Confirm the payment with a Stripe test card, either with the dev endpoint
    `POST /api/dev/payments/:id/confirm` or with the CLI:
    `stripe payment_intents confirm <pi_id> --payment-method pm_card_visa`
    (use `pm_card_chargeDeclined` to test a failed payment).
-6. The webhook confirms the booking; `GET /api/payments/:id` shows the status.
+7. The webhook confirms the booking; `GET /api/payments/:id` shows the status.
 
 More detail: `docs/api/payments-explained.md` and `docs/api/payments-integration.md`.
