@@ -103,16 +103,36 @@ export class ReferenceDataService {
       .toArray();
   }
 
+  /**
+   * ITN-14: every currency an entry may be written in. The country rows carry
+   * the per-country defaults; SUPPORTED_CURRENCIES adds codes the dataset has
+   * no country for (a currency a user may pick to display or enter). Unset,
+   * the list is exactly what the countries collection carries.
+   */
   async displayCurrencies(): Promise<string[]> {
-    const currencies = await this.countries.distinct('currency');
+    const stored = await this.countries.distinct('currency');
+    const currencies = new Set<string>();
 
-    return currencies
-      .filter((currency: unknown): currency is string => typeof currency === 'string')
-      .sort();
+    for (const currency of stored) {
+      if (typeof currency === 'string' && currency.trim()) {
+        currencies.add(currency.trim().toUpperCase());
+      }
+    }
+
+    for (const code of (process.env.SUPPORTED_CURRENCIES ?? '').split(',')) {
+      const value = code.trim().toUpperCase();
+
+      if (/^[A-Z]{3}$/.test(value)) {
+        currencies.add(value);
+      }
+    }
+
+    return [...currencies].sort();
   }
 
   /** The display currency the user chose, when the users collection has one. */
-  async preferredCurrencyOf(userId: string): Promise<string | null> {    if (!Types.ObjectId.isValid(userId)) {
+  async preferredCurrencyOf(userId: string): Promise<string | null> {
+    if (!Types.ObjectId.isValid(userId)) {
       return null;
     }
 

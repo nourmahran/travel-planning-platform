@@ -20,7 +20,7 @@ type FakeItinerary = {
     date: string;
     cityId: string;
     activities: { cost?: number }[];
-    budgets: { category: string; amount: number; currency?: string }[];
+    budgets: { _id?: string; category: string; amount: number; currency?: string }[];
   }[];
   transportCosts: {
     _id: string;
@@ -359,5 +359,65 @@ describe('BudgetSummaryService', () => {
     expect(summary.currency).toBe('EGP');
     expect(summary.rateSource).toBe('same');
     expect(exchangeRates.rateBetween).not.toHaveBeenCalled();
+  });
+
+  it('serves a supported currency the country list does not carry', async () => {
+    // CAD is not in any country.currency row; SUPPORTED_CURRENCIES supplies it.
+    load();
+    referenceData.displayCurrencies.mockResolvedValue([
+      'AED',
+      'CAD',
+      'EGP',
+      'EUR',
+      'GBP',
+      'USD',
+    ]);
+    exchangeRates.rateBetween.mockResolvedValue(2.5);
+
+    const summary = await service.summary(OWNER, ITINERARY_ID, 'cad');
+
+    expect(summary.currency).toBe('CAD');
+    expect(summary.sourceCurrency).toBe('EGP');
+    expect(summary.totals.grandTotal).toBe(1775);
+    expect(exchangeRates.rateBetween).toHaveBeenCalledWith(
+      'EGP',
+      'CAD',
+      dailyRates,
+    );
+  });
+
+  it('names the code and the entry ids when the rate table has no rate for it', async () => {
+    const budgetId = '4'.repeat(24);
+
+    load(
+      makeItinerary({
+        days: [
+          {
+            _id: DAY_ID[0],
+            dayNumber: 1,
+            date: '2026-11-20',
+            cityId: 'cairo',
+            activities: [],
+            budgets: [
+              { _id: budgetId, category: 'food', amount: 10, currency: 'CAD' },
+            ],
+          },
+        ],
+        transportCosts: [],
+      }),
+    );
+    referenceData.displayCurrencies.mockResolvedValue([
+      'AED',
+      'CAD',
+      'EGP',
+      'USD',
+    ]);
+
+    await expect(
+      service.summary(OWNER, ITINERARY_ID, 'EGP'),
+    ).rejects.toThrow(/rate missing for CAD \(budget [0-9a-f]{24}\)/);
+    await expect(service.summary(OWNER, ITINERARY_ID, 'EGP')).rejects.toThrow(
+      budgetId,
+    );
   });
 });

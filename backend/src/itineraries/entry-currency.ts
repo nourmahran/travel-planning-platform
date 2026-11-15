@@ -1,4 +1,5 @@
 import { BadRequestException, ServiceUnavailableException } from '@nestjs/common';
+import type { Types } from 'mongoose';
 
 import type {
   DailyRates,
@@ -17,9 +18,13 @@ export type EntryFactors = (currency?: string) => number;
 
 type EntrySource = {
   currency: string;
-  days?: { budgets?: { currency?: string }[] }[];
-  transportCosts?: { currency?: string }[];
+  days?: {
+    budgets?: { _id?: Types.ObjectId | string; currency?: string }[];
+  }[];
+  transportCosts?: { _id?: Types.ObjectId | string; currency?: string }[];
 };
+
+type EntryRef = { kind: 'budget' | 'transport'; id: string; code: string };
 
 export function identityFactors(): EntryFactors {
   return () => 1;
@@ -56,52 +61,74 @@ export async function resolveEntryCurrency(
   return code;
 }
 
-/** The distinct currencies the entries use, ignoring the itinerary's own. */
-export function foreignEntryCurrencies(itinerary: EntrySource): string[] {
+/** Every entry whose currency is not the itinerary's, with its own id. */
+function foreignEntries(itinerary: EntrySource): EntryRef[] {
   const home = itinerary.currency.trim().toUpperCase();
-  const codes = new Set<string>();
+  const refs: EntryRef[] = [];
 
-  const consider = (currency?: string) => {
-    const code = currency?.trim().toUpperCase();
+  const consider = (
+    kind: EntryRef['kind'],
+    entry: { _id?: Types.ObjectId | string; currency?: string },
+  ) => {
+    const code = entry.currency?.trim().toUpperCase();
 
     if (code && code !== home) {
-      codes.add(code);
+      refs.push({ kind, id: String(entry._id ?? 'unknown'), code });
     }
   };
 
   for (const day of itinerary.days ?? []) {
     for (const budget of day.budgets ?? []) {
-      consider(budget.currency);
+      consider('budget', budget);
     }
   }
 
   for (const cost of itinerary.transportCosts ?? []) {
-    consider(cost.currency);
+    consider('transport', cost);
   }
 
-  return [...codes].sort();
+  return refs;
+}
+
+/** The distinct currencies the entries use, ignoring the itinerary's own. */
+export function foreignEntryCurrencies(itinerary: EntrySource): string[] {
+  return [...new Set(foreignEntries(itinerary).map((entry) => entry.code))].sort();
 }
 
 /**
  * Resolves one rate per foreign currency, reusing the daily table the caller
  * already needs. With no foreign entry nothing is fetched: the itinerary
  * currency factors to 1 and `rates` comes back null.
+ *
+ * A code the table cannot convert fails loudly and names the entries that
+ * carry it: a total that quietly leaves an amount out is worse than a refusal
+ * that says which entry needs a rate.
  */
 export async function entryCurrencyFactors(
   itinerary: EntrySource,
   exchangeRates: ExchangeRatesService,
 ): Promise<{ factors: EntryFactors; rates: DailyRates | null }> {
   const home = itinerary.currency.trim().toUpperCase();
-  const codes = foreignEntryCurrencies(itinerary);
+  const entries = foreignEntries(itinerary);
 
-  if (codes.length === 0) {
+  if (entries.length === 0) {
     return { factors: identityFactors(), rates: null };
   }
 
   const rates = await exchangeRates.getDailyRates();
   const table = new Map<string, number>([[home, 1]]);
+  const absent = (code: string) => code !== 'USD' && !rates.rates[code];
 
-  for (const code of codes) {
+  for (const code of [...new Set(entries.map((entry) => entry.code))].sort()) {
+    if (absent(code)) {
+      const named = entries
+        .filter((entry) => entry.code === code)
+        .map((entry) => `${entry.kind} ${entry.id}`)
+        .join(', ');
+
+      throw new BadRequestException(`rate missing for ${code} (${named})`);
+    }
+
     table.set(code, await exchangeRates.rateBetween(code, home, rates));
   }
 

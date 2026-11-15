@@ -56,6 +56,7 @@ describe('BudgetsService', () => {
   let service: BudgetsService;
   let itinerary: FakeItinerary;
   let itineraries: { findOne: jest.Mock; findOneByBudget: jest.Mock };
+  let referenceData: { displayCurrencies: jest.Mock };
 
   const load = (days: FakeDay[]) => {
     let nextId = 20;
@@ -75,19 +76,15 @@ describe('BudgetsService', () => {
 
   beforeEach(async () => {
     itineraries = { findOne: jest.fn(), findOneByBudget: jest.fn() };
+    referenceData = {
+      displayCurrencies: jest.fn().mockResolvedValue(['AED', 'EGP', 'USD']),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BudgetsService,
         { provide: ItinerariesService, useValue: itineraries },
-        {
-          provide: ReferenceDataService,
-          useValue: {
-            displayCurrencies: jest
-              .fn()
-              .mockResolvedValue(['AED', 'EGP', 'USD']),
-          },
-        },
+        { provide: ReferenceDataService, useValue: referenceData },
       ],
     }).compile();
 
@@ -146,6 +143,25 @@ describe('BudgetsService', () => {
         }),
       ).rejects.toBeInstanceOf(BadRequestException);
       expect(itinerary.save).not.toHaveBeenCalled();
+    });
+
+    it('accepts a supported currency the country list does not carry', async () => {
+      referenceData.displayCurrencies.mockResolvedValue([
+        'AED',
+        'CAD',
+        'EGP',
+        'USD',
+      ]);
+      load([makeDay(0)]);
+
+      const result = await service.create(OWNER, ITINERARY_ID, DAY_ID[0], {
+        category: 'food',
+        amount: 40,
+        currency: 'cad',
+      });
+
+      expect(result).toMatchObject({ amount: 40, currency: 'CAD' });
+      expect(itinerary.days[0].budgets[0]).toMatchObject({ currency: 'CAD' });
     });
 
     it('rejects a negative amount', async () => {
