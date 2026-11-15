@@ -16,6 +16,7 @@ import {
 } from './schemas/itinerary.schema';
 import { ReferenceDataService } from '../reference-data/reference-data.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
+import { CloneItineraryDto } from './dto/clone-itinerary.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { toItinerarySummary } from './itinerary-summary';
 import { DEFAULT_VISIBILITY, ITINERARY_LIMITS } from './itinerary.constants';
@@ -211,6 +212,97 @@ export class ItinerariesService {
     const itinerary = await this.findOne(ownerId, id);
 
     await itinerary.deleteOne();
+  }
+
+  /**
+   * ITN-21, ITN-22. Copies a public itinerary, or one the caller owns, into a
+   * new private itinerary. Every subdocument is rebuilt so the copy shares no
+   * ids with the source, and the source keeps the author attribution.
+   */
+  async clone(
+    ownerId: string,
+    sourceId: string,
+    dto: CloneItineraryDto,
+  ): Promise<ItineraryDocument> {
+    const source = await this.itineraryModel.findById(sourceId).exec();
+
+    if (!source) {
+      throw new NotFoundException('Itinerary not found');
+    }
+
+    const owned = source.ownerId.toString() === ownerId;
+    const shareable = source.visibility === 'public' && !source.isHidden;
+
+    if (!owned && !shareable) {
+      // A private itinerary must not reveal that it exists.
+      throw new NotFoundException('Itinerary not found');
+    }
+
+    const authorName =
+      (await this.referenceData.userName(source.ownerId.toString())) ??
+      'Unknown traveller';
+    const startDate = dto.startDate
+      ? this.parseStartDate(dto.startDate).toFormat('yyyy-MM-dd')
+      : source.startDate;
+
+    const days = source.days.map((day) => ({
+      dayNumber: day.dayNumber,
+      date: day.date,
+      cityId: day.cityId,
+      activities: (day.activities ?? []).map((activity) => ({
+        title: activity.title,
+        attractionId: activity.attractionId,
+        startTime: activity.startTime,
+        durationMinutes: activity.durationMinutes,
+        notes: activity.notes,
+        cost: activity.cost,
+        images: (activity.images ?? []).map((image) => ({
+          url: image.url,
+          mimeType: image.mimeType,
+          sizeBytes: image.sizeBytes,
+        })),
+      })),
+      budgets: (day.budgets ?? []).map((budget) => ({
+        category: budget.category,
+        amount: budget.amount,
+        note: budget.note,
+      })),
+    }));
+
+    if (dto.startDate) {
+      renumberDays(startDate, days);
+    }
+
+    const created = await this.itineraryModel.create({
+      ownerId: new Types.ObjectId(ownerId),
+      title: dto.title?.trim() || `Copy of ${source.title}`,
+      countries: [...source.countries],
+      startDate,
+      currency: source.currency,
+      visibility: DEFAULT_VISIBILITY,
+      isHidden: false,
+      days,
+      transportCosts: (source.transportCosts ?? []).map((cost) => ({
+        fromCityId: cost.fromCityId,
+        toCityId: cost.toCityId,
+        amount: cost.amount,
+        date: cost.date,
+        note: cost.note,
+      })),
+      clonedFrom: {
+        itineraryId: source._id,
+        authorId: source.ownerId,
+        authorName,
+        clonedAt: new Date(),
+      },
+      cloneCount: 0,
+    });
+
+    await this.itineraryModel
+      .updateOne({ _id: source._id }, { $inc: { cloneCount: 1 } })
+      .exec();
+
+    return created;
   }
 
   private async resolveCountries(countries: string[]): Promise<string[]> {

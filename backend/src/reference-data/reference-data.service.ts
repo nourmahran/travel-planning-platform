@@ -112,8 +112,7 @@ export class ReferenceDataService {
   }
 
   /** The display currency the user chose, when the users collection has one. */
-  async preferredCurrencyOf(userId: string): Promise<string | null> {
-    if (!Types.ObjectId.isValid(userId)) {
+  async preferredCurrencyOf(userId: string): Promise<string | null> {    if (!Types.ObjectId.isValid(userId)) {
       return null;
     }
 
@@ -127,6 +126,34 @@ export class ReferenceDataService {
     return typeof user?.preferredCurrency === 'string'
       ? user.preferredCurrency
       : null;
+  }
+
+  /** Public author names by id; email and other fields never leave this method. */
+  async userNames(ids: string[]): Promise<Map<string, string>> {
+    const unique = [...new Set(ids)].filter((id) => Types.ObjectId.isValid(id));
+
+    if (unique.length === 0) {
+      return new Map();
+    }
+
+    const users = await this.database
+      .collection<{ _id: Types.ObjectId; name?: string }>('users')
+      .find(
+        { _id: { $in: unique.map((id) => new Types.ObjectId(id)) } },
+        { projection: { name: 1 } },
+      )
+      .toArray();
+
+    return new Map(
+      users.map((user) => [user._id.toString(), user.name ?? '']),
+    );
+  }
+
+  async userName(userId: string): Promise<string | null> {
+    const names = await this.userNames([userId]);
+    const name = names.get(userId);
+
+    return name ? name : null;
   }
 
   async airportsInCity(cityId: string): Promise<AirportRecord[]> {

@@ -21,6 +21,7 @@ import { ItinerariesService } from './itineraries.service';
 import { BudgetSummaryService } from './budget-summary.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { BudgetSummaryQueryDto } from './dto/budget-summary-query.dto';
+import { CloneItineraryDto } from './dto/clone-itinerary.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { toItineraryDetail } from './itinerary-detail';
 import { toItinerarySummary } from './itinerary-summary';
@@ -106,6 +107,20 @@ export class ItinerariesController {
     @Body() dto: UpdateItineraryDto,
   ) {
     return toItinerarySummary(await this.itineraries.update(ownerId, id, dto));
+  }
+
+  @Post(':id/clone')
+  @ApiOperation({
+    summary: 'Clone an itinerary',
+    description:
+      'ITN-21, ITN-22. Copies a public itinerary, or one you own, into a new private itinerary with new subdocument ids. Keeps the source dates unless startDate is given, when every day date is recalculated. Records clonedFrom with the original author and increments the source cloneCount.',
+  })
+  async clone(
+    @CurrentUser() ownerId: string,
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: CloneItineraryDto,
+  ) {
+    return toItineraryDetail(await this.itineraries.clone(ownerId, id, dto));
   }
 
   @Delete(':id')

@@ -52,12 +52,14 @@ describe('ItinerariesService', () => {
     findOne: jest.Mock;
     find: jest.Mock;
     countDocuments: jest.Mock;
+    updateOne: jest.Mock;
   };
   let referenceData: {
     countryCodes: jest.Mock;
     currencyOfCountry: jest.Mock;
     displayCurrencies: jest.Mock;
     citiesInCountries: jest.Mock;
+    userName: jest.Mock;
   };
 
   const findByIdReturns = (value: FakeItinerary | null) => {
@@ -85,6 +87,7 @@ describe('ItinerariesService', () => {
       findOne: jest.fn(),
       find: jest.fn(),
       countDocuments: jest.fn(),
+      updateOne: jest.fn(),
     };
 
     referenceData = {
@@ -92,6 +95,7 @@ describe('ItinerariesService', () => {
       currencyOfCountry: jest.fn().mockResolvedValue('EGP'),
       displayCurrencies: jest.fn().mockResolvedValue(['EGP', 'EUR', 'USD']),
       citiesInCountries: jest.fn().mockResolvedValue([]),
+      userName: jest.fn().mockResolvedValue('Sara'),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -337,6 +341,119 @@ describe('ItinerariesService', () => {
         '2027-03-01',
         '2027-03-02',
       ]);
+    });
+  });
+
+  describe('clone', () => {
+    const source = () =>
+      makeItinerary({
+        visibility: 'public',
+        startDate: '2026-11-20',
+        days: [
+          { cityId: 'cairo', dayNumber: 1, date: '2026-11-20' },
+          { cityId: 'cairo', dayNumber: 2, date: '2026-11-21' },
+        ],
+      });
+
+    const cloneSource = (itinerary: FakeItinerary) => {
+      findByIdReturns(itinerary);
+      model.create.mockImplementation((payload: Record<string, unknown>) =>
+        Promise.resolve({
+          ...makeItinerary(),
+          ...payload,
+          _id: 'e'.repeat(24),
+        }),
+      );
+      model.updateOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue({ modifiedCount: 1 }),
+      });
+    };
+
+    it('copies a public itinerary into a private copy with attribution', async () => {
+      const itinerary = source();
+      cloneSource(itinerary);
+
+      await service.clone(OTHER, ITINERARY_ID, {});
+
+      expect(model.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Copy of Cairo and Luxor',
+          countries: ['EG'],
+          startDate: '2026-11-20',
+          visibility: 'private',
+          isHidden: false,
+          cloneCount: 0,
+        }),
+      );
+      const payload = model.create.mock.calls[0][0] as {
+        ownerId: unknown;
+        clonedFrom: { authorId: unknown; authorName: string };
+      };
+      expect(String(payload.ownerId)).toBe(OTHER);
+      expect(String(payload.clonedFrom.authorId)).toBe(OWNER);
+      expect(payload.clonedFrom.authorName).toBe('Sara');
+      expect(model.updateOne).toHaveBeenCalledWith(
+        { _id: itinerary._id },
+        { $inc: { cloneCount: 1 } },
+      );
+    });
+
+    it('copies days as new objects without reusing their ids', async () => {
+      const itinerary = source();
+      cloneSource(itinerary);
+
+      await service.clone(OTHER, ITINERARY_ID, {});
+
+      const payload = model.create.mock.calls[0][0] as {
+        days: Record<string, unknown>[];
+      };
+      expect(payload.days).toHaveLength(2);
+      expect(payload.days[0]).not.toBe(itinerary.days[0]);
+      expect(payload.days[0]).not.toHaveProperty('_id');
+      expect(payload.days[0]).toMatchObject({ cityId: 'cairo', dayNumber: 1 });
+    });
+
+    it('honours a title and a start date override, recalculating the day dates', async () => {
+      cloneSource(source());
+
+      await service.clone(OTHER, ITINERARY_ID, {
+        title: '  My Egypt trip  ',
+        startDate: '2027-03-01',
+      });
+
+      const payload = model.create.mock.calls[0][0] as {
+        title: string;
+        days: { date: string }[];
+      };
+      expect(payload.title).toBe('My Egypt trip');
+      expect(payload.days.map((day) => day.date)).toEqual([
+        '2027-03-01',
+        '2027-03-02',
+      ]);
+    });
+
+    it('refuses a private itinerary of another user', async () => {
+      cloneSource(makeItinerary({ visibility: 'private' }));
+
+      await expect(service.clone(OTHER, ITINERARY_ID, {})).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+      expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('allows cloning an owned private itinerary', async () => {
+      cloneSource(makeItinerary({ visibility: 'private' }));
+
+      await expect(service.clone(OWNER, ITINERARY_ID, {})).resolves.toBeDefined();
+      expect(model.create).toHaveBeenCalled();
+    });
+
+    it('refuses a hidden public itinerary', async () => {
+      cloneSource(makeItinerary({ visibility: 'public', isHidden: true }));
+
+      await expect(service.clone(OTHER, ITINERARY_ID, {})).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
     });
   });
 

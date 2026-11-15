@@ -14,6 +14,8 @@ import { BudgetsService } from './budgets.service';
 import { BudgetSummaryService } from './budget-summary.service';
 import { TransportCostsController } from './transport-costs.controller';
 import { TransportCostsService } from './transport-costs.service';
+import { ItinerariesPublicController } from './itineraries-public.controller';
+import { ItinerariesPublicService } from './itineraries-public.service';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 import { CurrencyModule } from '../currency/currency.module';
 
@@ -27,6 +29,7 @@ import { CurrencyModule } from '../currency/currency.module';
   ],
   controllers: [
     ItinerariesController,
+    ItinerariesPublicController,
     DaysController,
     ActivitiesController,
     BudgetsController,
@@ -34,6 +37,7 @@ import { CurrencyModule } from '../currency/currency.module';
   ],
   providers: [
     ItinerariesService,
+    ItinerariesPublicService,
     DaysService,
     ActivitiesService,
     BudgetsService,
