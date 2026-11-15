@@ -364,6 +364,22 @@ export class RefundsService {
     );
   }
 
+  /**
+   * PAY-03: "show its status on the booking details". Latest refund of a
+   * booking, for its owner (or an admin). 404 when there is none.
+   */
+  async getRefundForBooking(
+    user: AuthUser,
+    type: BookingType,
+    bookingId: string,
+  ): Promise<RefundResponseDto> {
+    const refund = await this.findLatestByBooking(type, bookingId);
+    if (!refund || (String(refund.userId) !== user.id && !isAdmin(user))) {
+      throw new NotFoundException('No refund for this booking');
+    }
+    return toRefundResponse(refund);
+  }
+
   async getRefund(
     user: AuthUser,
     refundId: string,

@@ -126,6 +126,8 @@ Inject `RefundsService` (exported by `PaymentsModule`).
 
 For booking details (PAY-03: show the refund status), use `refundsService.findLatestByBooking(type, bookingId)`.
 
+The frontend can also read it directly: `GET /api/bookings/:type/:id/refund` returns the latest refund of the booking (amount, percent, reason, status `Pending` / `Refunded` / `Failed`). Only the booking owner or an admin can read it; anyone else, or a booking without a refund, gets 404.
+
 Round trips (FLT-12a) are one booking: pass the **outbound** departure as the start time.
 
 ---
@@ -139,6 +141,8 @@ if (await gateway.expire(bookingId)) {
   await paymentsService.cancelForExpiredBooking(type, bookingId); // safe to call many times
 }
 ```
+
+If you don't call it, nothing breaks: `PaymentExpirySweeper` (in payments) runs every minute, finds open payments (`Pending` / `Failed`) whose booking is `Expired`, `Cancelled` or deleted, and cancels their PaymentIntents. Calling it yourself just cancels them right away instead of up to a minute later.
 
 ---
 

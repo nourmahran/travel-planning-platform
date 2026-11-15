@@ -21,6 +21,8 @@ import { stripeClientProvider } from './stripe/stripe.provider';
 import { StripeService } from './stripe/stripe.service';
 import { WebhookController } from './webhook.controller';
 import { WebhookService } from './webhook.service';
+import { BookingRefundsController } from './booking-refunds.controller';
+import { PaymentExpirySweeper } from './payment-expiry.sweeper';
 
 /**
  * PAY-01 / PAY-03 / PAY-04 / GEN-11 — payments, refunds and the Stripe webhook.
@@ -36,7 +38,12 @@ import { WebhookService } from './webhook.service';
     ]),
   ],
   // WebhookController first so POST /payments/webhook is matched before any :id route
-  controllers: [WebhookController, PaymentsController, RefundsController],
+  controllers: [
+    WebhookController,
+    PaymentsController,
+    RefundsController,
+    BookingRefundsController,
+  ],
   providers: [
     stripeClientProvider,
     StripeService,
@@ -44,6 +51,7 @@ import { WebhookService } from './webhook.service';
     PaymentsService,
     RefundsService,
     WebhookService,
+    PaymentExpirySweeper,
     { provide: NOTIFICATION_PORT, useClass: MongoNotificationAdapter },
   ],
   exports: [
