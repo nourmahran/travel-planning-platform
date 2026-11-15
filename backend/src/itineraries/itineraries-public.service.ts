@@ -8,6 +8,8 @@ import { ReferenceDataService } from '../reference-data/reference-data.service';
 import { PublicSearchDto } from './dto/public-search.dto';
 import { toItinerarySummary } from './itinerary-summary';
 import { toPublicDetail } from './public-itinerary';
+import { entryCurrencyFactors } from './entry-currency';
+import { ExchangeRatesService } from '../currency/exchange-rates.service';
 import { escapeRegex } from '../common/utils/escape-regex';
 import { ITINERARY_LIMITS } from './itinerary.constants';
 import type { CityReference } from './city-groups';
@@ -20,6 +22,7 @@ export class ItinerariesPublicService {
     @InjectModel(Itinerary.name)
     private readonly itineraryModel: Model<ItineraryDocument>,
     private readonly referenceData: ReferenceDataService,
+    private readonly exchangeRates: ExchangeRatesService,
   ) {}
 
   /** ITN-20, ITN-21: public itineraries only, never private or hidden ones. */
@@ -30,15 +33,16 @@ export class ItinerariesPublicService {
       query.sort === 'popular'
         ? { cloneCount: -1, updatedAt: -1 }
         : { updatedAt: -1 };
+    const filter = await this.buildFilter(query);
 
     const [documents, total] = await Promise.all([
       this.itineraryModel
-        .find(this.buildFilter(query))
+        .find(filter)
         .sort(sort)
         .skip((page - 1) * limit)
         .limit(limit)
         .exec(),
-      this.itineraryModel.countDocuments(this.buildFilter(query)).exec(),
+      this.itineraryModel.countDocuments(filter).exec(),
     ]);
 
     const names = await this.referenceData.userNames(
@@ -89,6 +93,12 @@ export class ItinerariesPublicService {
         ],
       ),
     );
+    // ITN-14/ITN-16: an entry written in another currency joins the public
+    // budget at its rate; without foreign entries no rate is fetched.
+    const { factors } = await entryCurrencyFactors(
+      itinerary,
+      this.exchangeRates,
+    );
 
     return toPublicDetail(
       itinerary,
@@ -97,17 +107,37 @@ export class ItinerariesPublicService {
         ? { id: originalId, name: names.get(originalId) ?? UNKNOWN_AUTHOR }
         : undefined,
       cities,
+      factors,
     );
   }
 
-  private buildFilter(query: PublicSearchDto): Record<string, unknown> {
+  private async buildFilter(
+    query: PublicSearchDto,
+  ): Promise<Record<string, unknown>> {
     const filter: Record<string, unknown> = {
       visibility: 'public',
       isHidden: { $ne: true },
     };
 
     if (query.q) {
-      filter.title = { $regex: escapeRegex(query.q), $options: 'i' };
+      // ITN-21: the keyword matches the title, a country or a city.
+      const [countryCodes, cityIds] = await Promise.all([
+        this.referenceData.countriesMatching(query.q),
+        this.referenceData.citiesMatching(query.q),
+      ]);
+      const matches: Record<string, unknown>[] = [
+        { title: { $regex: escapeRegex(query.q), $options: 'i' } },
+      ];
+
+      if (countryCodes.length > 0) {
+        matches.push({ countries: { $in: countryCodes } });
+      }
+
+      if (cityIds.length > 0) {
+        matches.push({ 'days.cityId': { $in: cityIds } });
+      }
+
+      filter.$or = matches;
     }
 
     if (query.country) {

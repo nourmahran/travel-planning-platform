@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 
 import { ItinerariesService } from './itineraries.service';
 import { ReferenceDataService } from '../reference-data/reference-data.service';
@@ -6,6 +6,9 @@ import { FlightsService } from '../flights/flights.service';
 import { cityGroupsOf } from './itinerary-groups';
 import type { CityGroup } from './city-groups';
 import { roundAmount } from '../common/utils/round-amount';
+import { isCalendarDate } from './days-and-dates';
+import type { TripType } from './itinerary.constants';
+import type { ItineraryDocument } from './schemas/itinerary.schema';
 
 /** Airports per city are capped so one leg cannot fan out without limit. */
 const MAX_AIRPORTS_PER_CITY = 3;
@@ -42,13 +45,48 @@ export type FlightLeg = {
   options: FlightOption[];
 };
 
-export type ItineraryFlights = {
+export type ItineraryFlights = LegsFlights | OriginFlights;
+
+export type LegsFlights = {
   itineraryId: string;
+  mode: 'legs';
   passengers: number;
   available: boolean;
   reason?: string;
   legs: FlightLeg[];
 };
+
+export type OriginFlights = {
+  itineraryId: string;
+  mode: 'origin';
+  passengers: number;
+  tripType: TripType;
+  originAirport: string;
+  destination: {
+    id: string;
+    name: string;
+    airports: string[];
+  } | null;
+  departureDate: string;
+  returnDate: string | null;
+  available: boolean;
+  reason?: string;
+  outbound: FlightOption[];
+  inbound: FlightOption[];
+};
+
+export type ItineraryFlightsOptions = {
+  passengers?: number;
+  limit?: number;
+  /** ITN-26: when present the search runs from this airport to the first day city. */
+  originAirport?: string;
+  tripType?: TripType;
+  returnDate?: string;
+};
+
+type FlightPage = { flights?: FlightLike[] };
+
+type RoundTripPage = { outbound?: FlightPage; inbound?: FlightPage };
 
 type CabinLike = {
   cabinClass: string;
@@ -81,23 +119,43 @@ export class ItineraryFlightsService {
   ) {}
 
   /**
-   * ITN-26: one leg per change of city, flown on the arrival day, with the
-   * cheapest cabins only. A city without an airport, or a leg with no match,
-   * is reported as unavailable with a reason instead of being guessed.
+   * ITN-26. With an origin airport: a search from it to any airport of the
+   * first day city, one-way or round-trip, outbound on the start date and the
+   * return on the last day unless given. Without one: the legs between the
+   * itinerary cities, each flown on its arrival day. Nothing is guessed: an
+   * empty result carries a reason.
    */
   async forItinerary(
     ownerId: string,
     itineraryId: string,
-    options: { passengers?: number; limit?: number } = {},
+    options: ItineraryFlightsOptions = {},
   ): Promise<ItineraryFlights> {
     const passengers = options.passengers ?? 1;
     const limit = options.limit ?? DEFAULT_OPTIONS;
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
+
+    if (options.originAirport) {
+      return this.fromOrigin(itinerary, {
+        ...options,
+        passengers,
+        limit,
+      });
+    }
+
+    return this.betweenCities(itinerary, passengers, limit);
+  }
+
+  private async betweenCities(
+    itinerary: ItineraryDocument,
+    passengers: number,
+    limit: number,
+  ): Promise<LegsFlights> {
     const groups = await cityGroupsOf(itinerary, this.referenceData);
 
     if (groups.length < 2) {
       return {
         itineraryId: String(itinerary._id),
+        mode: 'legs',
         passengers,
         available: false,
         reason:
@@ -123,11 +181,178 @@ export class ItineraryFlightsService {
 
     return {
       itineraryId: String(itinerary._id),
+      mode: 'legs',
       passengers,
       available,
       reason: available ? undefined : legs.find((leg) => !leg.available)?.reason,
       legs,
     };
+  }
+
+  /** ITN-26 as written: a chosen origin airport, one-way or round-trip. */
+  private async fromOrigin(
+    itinerary: ItineraryDocument,
+    options: Required<Pick<ItineraryFlightsOptions, 'passengers' | 'limit'>> &
+      ItineraryFlightsOptions,
+  ): Promise<OriginFlights> {
+    const originAirport = options.originAirport!.trim().toUpperCase();
+    const tripType = options.tripType ?? 'round-trip';
+    const days = [...(itinerary.days ?? [])].sort(
+      (left, right) => left.dayNumber - right.dayNumber,
+    );
+    const departureDate = itinerary.startDate;
+    const lastDate = days.length > 0 ? days[days.length - 1].date : departureDate;
+    const returnDate = tripType === 'round-trip' ? options.returnDate ?? lastDate : null;
+
+    const known = await this.referenceData.airport(originAirport);
+
+    if (!known) {
+      throw new BadRequestException(`Unknown airport: ${originAirport}`);
+    }
+
+    if (returnDate !== null) {
+      if (!isCalendarDate(returnDate)) {
+        throw new BadRequestException(
+          'returnDate must be a valid calendar date (YYYY-MM-DD)',
+        );
+      }
+
+      if (returnDate < departureDate) {
+        throw new BadRequestException(
+          'returnDate cannot be before the itinerary start date',
+        );
+      }
+    }
+
+    const base = {
+      itineraryId: String(itinerary._id),
+      mode: 'origin' as const,
+      passengers: options.passengers,
+      tripType,
+      originAirport,
+      departureDate,
+      returnDate,
+    };
+
+    if (days.length === 0) {
+      return {
+        ...base,
+        destination: null,
+        available: false,
+        reason: 'The itinerary has no days to fly to',
+        outbound: [],
+        inbound: [],
+      };
+    }
+
+    const cityId = days[0].cityId;
+    const city = await this.referenceData.city(cityId);
+    const cityName = city?.name ?? cityId;
+    const cityAirports = (await this.referenceData.airportsInCity(cityId)).map(
+      (airport) => airport.iata_code,
+    );
+    const airports = cityAirports
+      .filter((code) => code !== originAirport)
+      .slice(0, MAX_AIRPORTS_PER_CITY);
+
+    if (airports.length === 0) {
+      return {
+        ...base,
+        destination: { id: cityId, name: cityName, airports: [] },
+        available: false,
+        reason:
+          cityAirports.length === 0
+            ? `No airport is recorded for ${cityName}`
+            : `${cityName} has no airport other than ${originAirport}`,
+        outbound: [],
+        inbound: [],
+      };
+    }
+
+    const outboundFound = new Map<string, FlightOption>();
+    const inboundFound = new Map<string, FlightOption>();
+    let failed = 0;
+
+    for (const arrivalAirport of airports) {
+      try {
+        const response =
+          returnDate === null
+            ? await this.flights.searchFlights({
+                departureAirport: originAirport,
+                arrivalAirport,
+                departureDate,
+                passengers: options.passengers,
+                limit: SEARCH_PAGE_SIZE,
+              })
+            : await this.flights.searchFlights({
+                departureAirport: originAirport,
+                arrivalAirport,
+                departureDate,
+                returnDate,
+                passengers: options.passengers,
+                limit: SEARCH_PAGE_SIZE,
+              });
+        const outbound = returnDate === null
+          ? (response as FlightPage)
+          : (response as RoundTripPage).outbound;
+        const inbound = returnDate === null
+          ? undefined
+          : (response as RoundTripPage).inbound;
+
+        this.collect(outbound, outboundFound, options.passengers);
+        this.collect(inbound, inboundFound, options.passengers);
+      } catch (error) {
+        failed += 1;
+        this.logger.warn(
+          `Flight search failed for ${originAirport}->${arrivalAirport} on ${departureDate}: ${String(error)}`,
+        );
+      }
+    }
+
+    const cheapest = (found: Map<string, FlightOption>) =>
+      [...found.values()]
+        .sort((left, right) => left.price - right.price)
+        .slice(0, options.limit);
+    const outbound = cheapest(outboundFound);
+    const inbound = returnDate === null ? [] : cheapest(inboundFound);
+    const available =
+      outbound.length > 0 && (returnDate === null || inbound.length > 0);
+
+    return {
+      ...base,
+      destination: { id: cityId, name: cityName, airports },
+      available,
+      reason: available
+        ? undefined
+        : failed === airports.length
+          ? 'Flight search is unavailable right now'
+          : outbound.length === 0
+            ? 'No flight matches this trip'
+            : 'No return flight matches the return date',
+      outbound,
+      inbound,
+    };
+  }
+
+  /** Adds the cheapest cabin of each flight to the map, keeping the lowest price. */
+  private collect(
+    page: FlightPage | undefined,
+    found: Map<string, FlightOption>,
+    passengers: number,
+  ): void {
+    for (const flight of page?.flights ?? []) {
+      const option = toFlightOption(flight, passengers);
+
+      if (!option) {
+        continue;
+      }
+
+      const existing = found.get(option.flightId);
+
+      if (!existing || option.price < existing.price) {
+        found.set(option.flightId, option);
+      }
+    }
   }
 
   private async legBetween(

@@ -52,16 +52,20 @@ export class DaysController {
 
   @Patch(':dayId')
   @ApiOperation({
-    summary: 'Change the city of a day',
-    description: 'ITN-05, ITN-06.',
+    summary: 'Change the city or the note of a day',
+    description:
+      'ITN-05. Send cityId, notes or both: the city must belong to the itinerary countries, and the note is at most 200 characters (an empty string clears it).',
   })
-  changeCity(
+  update(
     @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Param('dayId', ParseObjectIdPipe) dayId: string,
     @Body() dto: UpdateDayDto,
   ) {
-    return this.days.changeCity(ownerId, itineraryId, dayId, dto.cityId);
+    return this.days.update(ownerId, itineraryId, dayId, {
+      cityId: dto.cityId,
+      notes: dto.notes,
+    });
   }
 
   @Delete(':dayId')

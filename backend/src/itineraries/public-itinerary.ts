@@ -1,6 +1,20 @@
-import { toActivityResponse, type ActivityResponse } from './itinerary-detail';
+import {
+  toActivityResponse,
+  toBudgetResponse,
+  type ActivityResponse,
+  type BudgetResponse,
+} from './itinerary-detail';
+import {
+  addCategories,
+  dayCategoryTotals,
+  emptyCategoryTotals,
+  sumCategories,
+  type CategoryTotals,
+} from './budget-totals';
+import { roundAmount } from '../common/utils/round-amount';
+import { identityFactors, type EntryFactors } from './entry-currency';
 import type { CityReference } from './city-groups';
-import type { Day } from './schemas/itinerary.schema';
+import type { BudgetEntry, Day, TransportCost } from './schemas/itinerary.schema';
 
 export type PublicAuthor = {
   id: string;
@@ -12,6 +26,15 @@ export type PublicDay = {
   date: string;
   city: { id: string; name: string; countryCode: string } | null;
   activities: ActivityResponse[];
+  budgets: BudgetResponse[];
+};
+
+/** ITN-21: the budget is shown in the itinerary currency, without any conversion. */
+export type PublicBudget = {
+  currency: string;
+  categories: CategoryTotals;
+  transport: number;
+  grandTotal: number;
 };
 
 export type PublicItineraryDetail = {
@@ -23,6 +46,7 @@ export type PublicItineraryDetail = {
   cloneCount: number;
   updatedAt: Date | null;
   days: PublicDay[];
+  budget: PublicBudget;
   author: PublicAuthor;
   originalAuthor?: PublicAuthor;
 };
@@ -39,11 +63,32 @@ export function toPublicDetail(
     cloneCount: number;
     updatedAt?: Date;
     days: Day[];
+    transportCosts?: TransportCost[];
   },
   author: PublicAuthor,
   originalAuthor: PublicAuthor | undefined,
   cities: Map<string, CityReference>,
+  factors: EntryFactors = identityFactors(),
 ): PublicItineraryDetail {
+  const days = itinerary.days ?? [];
+  const totals = days.reduce(
+    (categories, day) =>
+      addCategories(categories, dayCategoryTotals(day, factors)),
+    emptyCategoryTotals(),
+  );
+  const categories: CategoryTotals = {
+    food: roundAmount(totals.food),
+    accommodation: roundAmount(totals.accommodation),
+    local_transport: roundAmount(totals.local_transport),
+    activities: roundAmount(totals.activities),
+  };
+  const transport = roundAmount(
+    (itinerary.transportCosts ?? []).reduce(
+      (sum, cost) => sum + cost.amount * factors(cost.currency),
+      0,
+    ),
+  );
+
   return {
     id: String(itinerary._id),
     title: itinerary.title,
@@ -52,7 +97,7 @@ export function toPublicDetail(
     currency: itinerary.currency,
     cloneCount: itinerary.cloneCount,
     updatedAt: itinerary.updatedAt ?? null,
-    days: (itinerary.days ?? []).map((day) => {
+    days: days.map((day) => {
       const city = cities.get(day.cityId);
 
       return {
@@ -64,8 +109,20 @@ export function toPublicDetail(
         activities: (day.activities ?? []).map((activity) =>
           toActivityResponse(activity as typeof activity & Identified),
         ),
+        budgets: (day.budgets ?? []).map((budget) =>
+          toBudgetResponse(
+            budget as BudgetEntry & Identified,
+            itinerary.currency,
+          ),
+        ),
       };
     }),
+    budget: {
+      currency: itinerary.currency,
+      categories,
+      transport,
+      grandTotal: roundAmount(sumCategories(categories) + transport),
+    },
     author,
     originalAuthor,
   };

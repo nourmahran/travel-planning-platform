@@ -59,6 +59,13 @@ export class BudgetEntry {
   @Prop({ required: true, min: 0 })
   amount: number;
 
+  /**
+   * ITN-14: the currency the amount was entered in. Absent on entries written
+   * before the field existed, which are read as the itinerary currency.
+   */
+  @Prop({ trim: true, uppercase: true, maxlength: 3 })
+  currency?: string;
+
   @Prop({ trim: true, maxlength: ITINERARY_LIMITS.noteMaxLength })
   note?: string;
 }
@@ -76,6 +83,9 @@ export class Day {
   @Prop({ required: true })
   cityId: string;
 
+  @Prop({ trim: true, maxlength: ITINERARY_LIMITS.noteMaxLength })
+  notes?: string;
+
   @Prop({ type: [ActivitySchema], default: [] })
   activities: Activity[];
 
@@ -87,6 +97,9 @@ export const DaySchema = SchemaFactory.createForClass(Day);
 
 @Schema({ _id: true })
 export class TransportCost {
+  @Prop({ required: true, trim: true, maxlength: 40 })
+  mode: string;
+
   @Prop({ required: true })
   fromCityId: string;
 
@@ -95,6 +108,10 @@ export class TransportCost {
 
   @Prop({ required: true, min: 0 })
   amount: number;
+
+  /** ITN-16: the currency the amount was entered in. Absent means the itinerary currency. */
+  @Prop({ trim: true, uppercase: true, maxlength: 3 })
+  currency?: string;
 
   @Prop()
   date?: string;

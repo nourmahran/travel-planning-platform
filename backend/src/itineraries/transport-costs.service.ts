@@ -8,11 +8,14 @@ import {
   transportCostList,
 } from './subdocuments';
 import { toTransportCostResponse } from './itinerary-detail';
+import { resolveEntryCurrency } from './entry-currency';
 import type { TransportCost } from './schemas/itinerary.schema';
 import { isCalendarDate } from './days-and-dates';
 import { isMoney } from './validation';
+import { ReferenceDataService } from '../reference-data/reference-data.service';
 
 type LegFields = {
+  mode?: string;
   fromCityId: string;
   toCityId: string;
   amount?: number;
@@ -21,7 +24,10 @@ type LegFields = {
 
 @Injectable()
 export class TransportCostsService {
-  constructor(private readonly itineraries: ItinerariesService) {}
+  constructor(
+    private readonly itineraries: ItinerariesService,
+    private readonly referenceData: ReferenceDataService,
+  ) {}
 
   async create(
     ownerId: string,
@@ -32,10 +38,18 @@ export class TransportCostsService {
 
     this.assertFields(itinerary, dto);
 
+    const currency = await resolveEntryCurrency(
+      dto.currency,
+      itinerary.currency,
+      this.referenceData,
+    );
+
     itinerary.transportCosts.push({
+      mode: dto.mode.trim(),
       fromCityId: dto.fromCityId,
       toCityId: dto.toCityId,
       amount: dto.amount,
+      currency,
       date: dto.date,
       note: dto.note?.trim(),
     } as TransportCost);
@@ -44,7 +58,10 @@ export class TransportCostsService {
 
     const costs = transportCostList(itinerary);
 
-    return toTransportCostResponse(costs[costs.length - 1]);
+    return toTransportCostResponse(
+      costs[costs.length - 1],
+      itinerary.currency,
+    );
   }
 
   async update(
@@ -59,11 +76,16 @@ export class TransportCostsService {
     const cost = requireTransportCost(itinerary, costId);
 
     this.assertFields(itinerary, {
+      mode: dto.mode ?? cost.mode,
       fromCityId: dto.fromCityId ?? cost.fromCityId,
       toCityId: dto.toCityId ?? cost.toCityId,
       amount: dto.amount,
       date: dto.date,
     });
+
+    if (dto.mode !== undefined) {
+      cost.mode = dto.mode.trim();
+    }
 
     if (dto.fromCityId !== undefined) {
       cost.fromCityId = dto.fromCityId;
@@ -77,6 +99,14 @@ export class TransportCostsService {
       cost.amount = dto.amount;
     }
 
+    if (dto.currency !== undefined) {
+      cost.currency = await resolveEntryCurrency(
+        dto.currency,
+        itinerary.currency,
+        this.referenceData,
+      );
+    }
+
     if (dto.date !== undefined) {
       cost.date = dto.date || undefined;
     }
@@ -87,7 +117,7 @@ export class TransportCostsService {
 
     await itinerary.save();
 
-    return toTransportCostResponse(cost);
+    return toTransportCostResponse(cost, itinerary.currency);
   }
 
   async remove(ownerId: string, costId: string) {
@@ -111,6 +141,10 @@ export class TransportCostsService {
     itinerary: { days: { cityId: string }[] },
     fields: LegFields,
   ): void {
+    if (fields.mode === undefined || fields.mode.trim() === '') {
+      throw new BadRequestException('A transport cost needs a mode');
+    }
+
     if (fields.fromCityId === fields.toCityId) {
       throw new BadRequestException(
         'A transport cost needs two different cities',

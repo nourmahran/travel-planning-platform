@@ -3,6 +3,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 
 import { BudgetsService } from './budgets.service';
 import { ItinerariesService } from './itineraries.service';
+import { ReferenceDataService } from '../reference-data/reference-data.service';
 
 const OWNER = 'a'.repeat(24);
 const ITINERARY_ID = 'c'.repeat(24);
@@ -13,6 +14,7 @@ type FakeBudget = {
   _id?: string;
   category: string;
   amount: number;
+  currency?: string;
   note?: string;
 };
 
@@ -28,6 +30,7 @@ type FakeDay = {
 type FakeItinerary = {
   _id: string;
   ownerId: string;
+  currency: string;
   days: FakeDay[];
   save: jest.Mock;
 };
@@ -44,6 +47,7 @@ const makeDay = (index: number, budgets: FakeBudget[] = []): FakeDay => ({
 const makeItinerary = (days: FakeDay[] = []): FakeItinerary => ({
   _id: ITINERARY_ID,
   ownerId: OWNER,
+  currency: 'EGP',
   days,
   save: jest.fn().mockResolvedValue(undefined),
 });
@@ -76,6 +80,14 @@ describe('BudgetsService', () => {
       providers: [
         BudgetsService,
         { provide: ItinerariesService, useValue: itineraries },
+        {
+          provide: ReferenceDataService,
+          useValue: {
+            displayCurrencies: jest
+              .fn()
+              .mockResolvedValue(['AED', 'EGP', 'USD']),
+          },
+        },
       ],
     }).compile();
 
@@ -96,10 +108,44 @@ describe('BudgetsService', () => {
       expect(itinerary.days[0].budgets[0]).toMatchObject({
         category: 'food',
         amount: 200.5,
+        currency: 'EGP',
         note: 'Lunch',
       });
-      expect(result).toMatchObject({ category: 'food', amount: 200.5 });
+      expect(result).toMatchObject({
+        category: 'food',
+        amount: 200.5,
+        currency: 'EGP',
+      });
       expect(itinerary.save).toHaveBeenCalled();
+    });
+
+    it('keeps the currency the client sent, uppercased (ITN-14)', async () => {
+      load([makeDay(0)]);
+
+      const result = await service.create(OWNER, ITINERARY_ID, DAY_ID[0], {
+        category: 'accommodation',
+        amount: 40,
+        currency: 'usd',
+      });
+
+      expect(itinerary.days[0].budgets[0]).toMatchObject({
+        amount: 40,
+        currency: 'USD',
+      });
+      expect(result).toMatchObject({ amount: 40, currency: 'USD' });
+    });
+
+    it('rejects a currency the reference dataset cannot serve', async () => {
+      load([makeDay(0)]);
+
+      await expect(
+        service.create(OWNER, ITINERARY_ID, DAY_ID[0], {
+          category: 'food',
+          amount: 10,
+          currency: 'CHF',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(itinerary.save).not.toHaveBeenCalled();
     });
 
     it('rejects a negative amount', async () => {
@@ -175,6 +221,26 @@ describe('BudgetsService', () => {
       await expect(
         service.update(OWNER, BUDGET_ID[0], { category: 'souvenirs' as never }),
       ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('changes the currency of an existing entry (ITN-14)', async () => {
+      load([
+        makeDay(0, [
+          {
+            _id: BUDGET_ID[0],
+            category: 'food',
+            amount: 200,
+            currency: 'EGP',
+          },
+        ]),
+      ]);
+
+      const result = await service.update(OWNER, BUDGET_ID[0], {
+        currency: 'usd',
+      });
+
+      expect(itinerary.days[0].budgets[0]).toMatchObject({ currency: 'USD' });
+      expect(result).toMatchObject({ currency: 'USD' });
     });
 
     it('rejects a three-decimal amount', async () => {

@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsString,
   Length,
+  Matches,
   Min,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -14,6 +15,9 @@ import { ITINERARY_LIMITS } from '../itinerary.constants';
 
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
+
+const uppercase = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim().toUpperCase() : value;
 
 export class CreateBudgetDto {
   @ApiProperty({
@@ -33,6 +37,17 @@ export class CreateBudgetDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   amount: number;
+
+  @ApiPropertyOptional({
+    example: 'EGP',
+    description:
+      'Currency the amount is in; defaults to the itinerary currency (ITN-14).',
+  })
+  @IsOptional()
+  @Transform(uppercase)
+  @IsString()
+  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  currency?: string;
 
   @ApiPropertyOptional({ example: 'Lunch', maxLength: 200 })
   @IsOptional()

@@ -249,6 +249,7 @@ export class ItinerariesService {
       dayNumber: day.dayNumber,
       date: day.date,
       cityId: day.cityId,
+      notes: day.notes,
       activities: (day.activities ?? []).map((activity) => ({
         title: activity.title,
         attractionId: activity.attractionId,
@@ -265,6 +266,7 @@ export class ItinerariesService {
       budgets: (day.budgets ?? []).map((budget) => ({
         category: budget.category,
         amount: budget.amount,
+        currency: budget.currency,
         note: budget.note,
       })),
     }));
@@ -283,9 +285,11 @@ export class ItinerariesService {
       isHidden: false,
       days,
       transportCosts: (source.transportCosts ?? []).map((cost) => ({
+        mode: cost.mode,
         fromCityId: cost.fromCityId,
         toCityId: cost.toCityId,
         amount: cost.amount,
+        currency: cost.currency,
         date: cost.date,
         note: cost.note,
       })),

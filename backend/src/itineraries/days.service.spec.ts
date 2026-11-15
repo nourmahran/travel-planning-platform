@@ -14,6 +14,7 @@ type FakeDay = {
   dayNumber: number;
   date: string;
   cityId: string;
+  notes?: string;
   activities: unknown[];
   budgets: unknown[];
 };
@@ -205,11 +206,13 @@ describe('DaysService', () => {
     });
   });
 
-  describe('changeCity', () => {
+  describe('update', () => {
     it('changes the city of one day', async () => {
       load([makeDay(0)]);
 
-      await service.changeCity(OWNER, ITINERARY_ID, DAY_ID[0], 'cairo');
+      await service.update(OWNER, ITINERARY_ID, DAY_ID[0], {
+        cityId: 'cairo',
+      });
 
       expect(itinerary.days[0].cityId).toBe('cairo');
       expect(itinerary.save).toHaveBeenCalled();
@@ -224,7 +227,36 @@ describe('DaysService', () => {
       });
 
       await expect(
-        service.changeCity(OWNER, ITINERARY_ID, DAY_ID[0], 'paris'),
+        service.update(OWNER, ITINERARY_ID, DAY_ID[0], { cityId: 'paris' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('stores a trimmed note on the day', async () => {
+      load([makeDay(0)]);
+
+      const result = await service.update(OWNER, ITINERARY_ID, DAY_ID[0], {
+        notes: '  Museum in the morning.  ',
+      });
+
+      expect(itinerary.days[0].notes).toBe('Museum in the morning.');
+      expect(result.notes).toBe('Museum in the morning.');
+      expect(itinerary.save).toHaveBeenCalled();
+    });
+
+    it('clears the note with an empty string', async () => {
+      load([makeDay(0)]);
+      itinerary.days[0].notes = 'Old note';
+
+      await service.update(OWNER, ITINERARY_ID, DAY_ID[0], { notes: '' });
+
+      expect(itinerary.days[0].notes).toBeUndefined();
+    });
+
+    it('rejects a request that changes nothing', async () => {
+      load([makeDay(0)]);
+
+      await expect(
+        service.update(OWNER, ITINERARY_ID, DAY_ID[0], {}),
       ).rejects.toBeInstanceOf(BadRequestException);
     });
   });

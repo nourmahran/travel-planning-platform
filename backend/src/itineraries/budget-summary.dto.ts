@@ -18,6 +18,8 @@ export type BudgetCityGroupSummary = {
   countryCode: string;
   fromDay: number;
   toDay: number;
+  /** ITN-09: how many consecutive days this city group covers. */
+  dayCount: number;
   dateFrom: string;
   dateTo: string;
   categories: CategoryTotals;
@@ -26,9 +28,12 @@ export type BudgetCityGroupSummary = {
 
 export type BudgetTransportSummary = {
   id: string;
+  mode: string;
   fromCityId: string;
   toCityId: string;
   date?: string;
+  /** The currency the amount was entered in (ITN-16). */
+  currency: string;
   amount: number;
   convertedAmount: number;
 };

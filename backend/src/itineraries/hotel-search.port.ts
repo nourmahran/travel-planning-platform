@@ -13,6 +13,7 @@ export type HotelSearchQuery = {
   /** Calendar date, YYYY-MM-DD: the morning after the last stayed day. */
   checkOut: string;
   guests: number;
+  rooms: number;
 };
 
 /** A hotel record as Member 3 defines it; only id and name are relied on. */

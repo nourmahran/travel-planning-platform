@@ -264,7 +264,11 @@ describe('ActivitiesService', () => {
   });
 
   describe('images', () => {
-    const dto = { url: 'https://cdn.example.com/pyramids.png' };
+    const dto = {
+      url: 'https://cdn.example.com/pyramids.png',
+      mimeType: 'image/png' as const,
+      sizeBytes: 1024,
+    };
 
     it('appends an image and returns it', async () => {
       load([makeDay(0, [makeActivity(ACTIVITY_ID[0])])]);
@@ -274,6 +278,41 @@ describe('ActivitiesService', () => {
       expect(itinerary.days[0].activities[0].images).toHaveLength(1);
       expect(result).toMatchObject({ url: dto.url, id: expect.any(String) });
       expect(itinerary.save).toHaveBeenCalled();
+    });
+
+    it('rejects a file that is not JPG or PNG', async () => {
+      load([makeDay(0, [makeActivity(ACTIVITY_ID[0])])]);
+
+      await expect(
+        service.addImage(OWNER, ACTIVITY_ID[0], {
+          ...dto,
+          mimeType: 'image/gif' as never,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(itinerary.days[0].activities[0].images).toHaveLength(0);
+    });
+
+    it('rejects an image over 5 MB', async () => {
+      load([makeDay(0, [makeActivity(ACTIVITY_ID[0])])]);
+
+      await expect(
+        service.addImage(OWNER, ACTIVITY_ID[0], {
+          ...dto,
+          sizeBytes: 5 * 1024 * 1024 + 1,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(itinerary.days[0].activities[0].images).toHaveLength(0);
+    });
+
+    it('rejects an image with no recorded size', async () => {
+      load([makeDay(0, [makeActivity(ACTIVITY_ID[0])])]);
+
+      await expect(
+        service.addImage(OWNER, ACTIVITY_ID[0], {
+          ...dto,
+          sizeBytes: undefined as unknown as number,
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
     });
 
     it('rejects the 6th image of an activity', async () => {

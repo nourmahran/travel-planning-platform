@@ -3,6 +3,7 @@ import { Test, type TestingModule } from '@nestjs/testing';
 
 import { TransportCostsService } from './transport-costs.service';
 import { ItinerariesService } from './itineraries.service';
+import { ReferenceDataService } from '../reference-data/reference-data.service';
 
 const OWNER = 'a'.repeat(24);
 const ITINERARY_ID = 'c'.repeat(24);
@@ -10,9 +11,11 @@ const COST_ID = [3, 4].map((n) => String(n).repeat(24));
 
 type FakeCost = {
   _id?: string;
+  mode?: string;
   fromCityId: string;
   toCityId: string;
   amount: number;
+  currency?: string;
   date?: string;
   note?: string;
 };
@@ -20,6 +23,7 @@ type FakeCost = {
 type FakeItinerary = {
   _id: string;
   ownerId: string;
+  currency: string;
   days: { _id: string; cityId: string }[];
   transportCosts: FakeCost[];
   save: jest.Mock;
@@ -28,6 +32,7 @@ type FakeItinerary = {
 const makeItinerary = (costs: FakeCost[] = []): FakeItinerary => ({
   _id: ITINERARY_ID,
   ownerId: OWNER,
+  currency: 'EGP',
   days: [
     { _id: '1'.repeat(24), cityId: 'cairo' },
     { _id: '2'.repeat(24), cityId: 'luxor' },
@@ -65,6 +70,14 @@ describe('TransportCostsService', () => {
       providers: [
         TransportCostsService,
         { provide: ItinerariesService, useValue: itineraries },
+        {
+          provide: ReferenceDataService,
+          useValue: {
+            displayCurrencies: jest
+              .fn()
+              .mockResolvedValue(['AED', 'EGP', 'USD']),
+          },
+        },
       ],
     }).compile();
 
@@ -72,6 +85,7 @@ describe('TransportCostsService', () => {
   });
 
   const dto = {
+    mode: 'train',
     fromCityId: 'cairo',
     toCityId: 'luxor',
     amount: 300,
@@ -90,8 +104,42 @@ describe('TransportCostsService', () => {
         fromCityId: 'cairo',
         toCityId: 'luxor',
         amount: 300,
+        currency: 'EGP',
       });
       expect(itinerary.save).toHaveBeenCalled();
+    });
+
+    it('stores the currency the client sent, uppercased (ITN-16)', async () => {
+      load();
+
+      const result = await service.create(OWNER, ITINERARY_ID, {
+        ...dto,
+        currency: 'usd',
+      });
+
+      expect(itinerary.transportCosts[0]).toMatchObject({ currency: 'USD' });
+      expect(result).toMatchObject({ amount: 300, currency: 'USD' });
+    });
+
+    it('rejects a currency the reference dataset cannot serve', async () => {
+      load();
+
+      await expect(
+        service.create(OWNER, ITINERARY_ID, { ...dto, currency: 'CHF' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(itinerary.save).not.toHaveBeenCalled();
+    });
+
+    it('rejects a cost without a mode', async () => {
+      load();
+
+      await expect(
+        service.create(OWNER, ITINERARY_ID, {
+          ...dto,
+          mode: '   ',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(itinerary.save).not.toHaveBeenCalled();
     });
 
     it('rejects the same city twice', async () => {

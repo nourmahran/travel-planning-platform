@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 
-import { ITINERARY_LIMITS } from './itinerary.constants';
+import { ITINERARY_LIMITS, IMAGE_MIME_TYPES } from './itinerary.constants';
 import { ItinerariesService } from './itineraries.service';
 import { AddImageDto } from './dto/add-image.dto';
 import { CreateActivityDto } from './dto/create-activity.dto';
@@ -117,6 +117,8 @@ export class ActivitiesService {
     );
     const { activity } = requireActivity(itinerary, activityId);
 
+    this.assertImage(dto);
+
     if (imageList(activity).length >= ITINERARY_LIMITS.maxImagesPerActivity) {
       throw new BadRequestException(
         `An activity can hold at most ${ITINERARY_LIMITS.maxImagesPerActivity} images`,
@@ -163,6 +165,29 @@ export class ActivitiesService {
     if (dto.cost !== undefined && !isMoney(dto.cost)) {
       throw new BadRequestException(
         'cost must be a non-negative amount with at most 2 decimals',
+      );
+    }
+  }
+
+  /** GEN-08: JPG or PNG, at most 5 MB. */
+  private assertImage(dto: { mimeType?: string; sizeBytes?: number }): void {
+    if (
+      !dto.mimeType ||
+      !(IMAGE_MIME_TYPES as readonly string[]).includes(dto.mimeType)
+    ) {
+      throw new BadRequestException(
+        `mimeType must be one of ${IMAGE_MIME_TYPES.join(', ')}`,
+      );
+    }
+
+    if (
+      dto.sizeBytes === undefined ||
+      !Number.isInteger(dto.sizeBytes) ||
+      dto.sizeBytes < 1 ||
+      dto.sizeBytes > ITINERARY_LIMITS.maxImageBytes
+    ) {
+      throw new BadRequestException(
+        `sizeBytes must be between 1 and ${ITINERARY_LIMITS.maxImageBytes}`,
       );
     }
   }

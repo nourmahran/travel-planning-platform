@@ -18,7 +18,7 @@ export class ItinerariesPublicController {
   @ApiOperation({
     summary: 'Search public itineraries',
     description:
-      'ITN-20, ITN-21. Guest access. Only visibility=public and not hidden. Filters: q (title), country, city (a day city), authorId, minDays, maxDays; sort newest or popular; page size 10.',
+      'ITN-20, ITN-21. Guest access. Only visibility=public and not hidden. Filters: q (matched against the title, a country or a city), country, city (a day city), authorId, minDays, maxDays; sort newest or popular; page size 10.',
   })
   search(@Query() query: PublicSearchDto) {
     return this.publicItineraries.search(query);
@@ -28,7 +28,7 @@ export class ItinerariesPublicController {
   @ApiOperation({
     summary: 'Read a public itinerary',
     description:
-      'ITN-21. Guest access. Private or hidden itineraries return 404. Shows days with their city and activities, the author name, and the original author when the itinerary is a clone. Budget totals are not included here.',
+      'ITN-21. Guest access. Private or hidden itineraries return 404. Shows the days with their city, activities and budget entries, the budget in the itinerary currency (categories, transport and grand total), the author name, and the original author when the itinerary is a clone.',
   })
   detail(@Param('id', ParseObjectIdPipe) id: string) {
     return this.publicItineraries.detail(id);

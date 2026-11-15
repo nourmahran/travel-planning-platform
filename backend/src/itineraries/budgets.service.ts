@@ -14,12 +14,17 @@ import {
   type BudgetSubdocument,
 } from './subdocuments';
 import { toBudgetResponse } from './itinerary-detail';
+import { resolveEntryCurrency } from './entry-currency';
 import type { BudgetEntry } from './schemas/itinerary.schema';
 import { isMoney } from './validation';
+import { ReferenceDataService } from '../reference-data/reference-data.service';
 
 @Injectable()
 export class BudgetsService {
-  constructor(private readonly itineraries: ItinerariesService) {}
+  constructor(
+    private readonly itineraries: ItinerariesService,
+    private readonly referenceData: ReferenceDataService,
+  ) {}
 
   async create(
     ownerId: string,
@@ -32,9 +37,16 @@ export class BudgetsService {
 
     this.assertFields(dto);
 
+    const currency = await resolveEntryCurrency(
+      dto.currency,
+      itinerary.currency,
+      this.referenceData,
+    );
+
     day.budgets.push({
       category: dto.category,
       amount: dto.amount,
+      currency,
       note: dto.note?.trim(),
     } as BudgetEntry);
 
@@ -42,7 +54,7 @@ export class BudgetsService {
 
     const budgets = budgetList(day) as unknown as BudgetSubdocument[];
 
-    return toBudgetResponse(budgets[budgets.length - 1]);
+    return toBudgetResponse(budgets[budgets.length - 1], itinerary.currency);
   }
 
   async update(ownerId: string, budgetId: string, dto: UpdateBudgetDto) {
@@ -59,13 +71,21 @@ export class BudgetsService {
       budget.amount = dto.amount;
     }
 
+    if (dto.currency !== undefined) {
+      budget.currency = await resolveEntryCurrency(
+        dto.currency,
+        itinerary.currency,
+        this.referenceData,
+      );
+    }
+
     if (dto.note !== undefined) {
       budget.note = dto.note.trim();
     }
 
     await itinerary.save();
 
-    return toBudgetResponse(budget);
+    return toBudgetResponse(budget, itinerary.currency);
   }
 
   async remove(ownerId: string, budgetId: string) {

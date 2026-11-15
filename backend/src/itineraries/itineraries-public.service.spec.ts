@@ -5,6 +5,7 @@ import { getModelToken } from '@nestjs/mongoose';
 import { ItinerariesPublicService } from './itineraries-public.service';
 import { Itinerary } from './schemas/itinerary.schema';
 import { ReferenceDataService } from '../reference-data/reference-data.service';
+import { ExchangeRatesService } from '../currency/exchange-rates.service';
 
 const OWNER = 'a'.repeat(24);
 const OTHER = 'b'.repeat(24);
@@ -31,9 +32,15 @@ type FakeItinerary = {
       title: string;
       images: { _id: string; url: string }[];
     }[];
-    budgets: { category: string; amount: number }[];
+    budgets: { _id: string; category: string; amount: number; currency?: string }[];
   }[];
-  transportCosts: { fromCityId: string; toCityId: string; amount: number }[];
+  transportCosts: {
+    fromCityId: string;
+    toCityId: string;
+    mode: string;
+    amount: number;
+    currency?: string;
+  }[];
   clonedFrom?: {
     itineraryId: string;
     authorId: string;
@@ -68,10 +75,12 @@ const makeItinerary = (
           images: [{ _id: '5'.repeat(24), url: 'https://cdn.example.com/p.png' }],
         },
       ],
-      budgets: [{ category: 'food', amount: 200 }],
+      budgets: [{ _id: '6'.repeat(24), category: 'food', amount: 200 }],
     },
   ],
-  transportCosts: [{ fromCityId: 'cairo', toCityId: 'luxor', amount: 300 }],
+  transportCosts: [
+    { fromCityId: 'cairo', toCityId: 'luxor', mode: 'train', amount: 300 },
+  ],
   ...overrides,
 });
 
@@ -85,6 +94,8 @@ describe('ItinerariesPublicService', () => {
   let referenceData: {
     citiesInCountries: jest.Mock;
     userNames: jest.Mock;
+    countriesMatching: jest.Mock;
+    citiesMatching: jest.Mock;
   };
 
   const searchReturns = (items: FakeItinerary[], total: number) => {
@@ -121,6 +132,8 @@ describe('ItinerariesPublicService', () => {
           [OTHER, 'Omar'],
         ]),
       ),
+      countriesMatching: jest.fn().mockResolvedValue([]),
+      citiesMatching: jest.fn().mockResolvedValue([]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -128,6 +141,28 @@ describe('ItinerariesPublicService', () => {
         ItinerariesPublicService,
         { provide: getModelToken(Itinerary.name), useValue: model },
         { provide: ReferenceDataService, useValue: referenceData },
+        {
+          provide: ExchangeRatesService,
+          useValue: {
+            getDailyRates: jest.fn().mockResolvedValue({
+              date: '2026-11-15',
+              base: 'USD',
+              rates: { USD: 1, EGP: 50, AED: 3.67 },
+              source: 'cached',
+            }),
+            rateBetween: jest
+              .fn()
+              .mockImplementation(async (from: string, to: string) => {
+                const rates: Record<string, number> = {
+                  USD: 1,
+                  EGP: 50,
+                  AED: 3.67,
+                };
+
+                return rates[to] / rates[from];
+              }),
+          },
+        },
       ],
     }).compile();
 
@@ -153,15 +188,28 @@ describe('ItinerariesPublicService', () => {
       });
     });
 
-    it('escapes the title search and keeps it case-insensitive', async () => {
+    it('matches the keyword against the title, a country or a city', async () => {
+      referenceData.countriesMatching.mockResolvedValue(['EG']);
+      referenceData.citiesMatching.mockResolvedValue(['cairo']);
       searchReturns([], 0);
 
       await service.search({ q: 'cairo (2+ nights)' });
 
-      expect(filterOf().title).toEqual({
-        $regex: 'cairo \\(2\\+ nights\\)',
-        $options: 'i',
-      });
+      expect(filterOf().$or).toEqual([
+        { title: { $regex: 'cairo \\(2\\+ nights\\)', $options: 'i' } },
+        { countries: { $in: ['EG'] } },
+        { 'days.cityId': { $in: ['cairo'] } },
+      ]);
+    });
+
+    it('keeps the keyword on the title when no country or city matches', async () => {
+      searchReturns([], 0);
+
+      await service.search({ q: 'nowhere' });
+
+      expect(filterOf().$or).toEqual([
+        { title: { $regex: 'nowhere', $options: 'i' } },
+      ]);
     });
 
     it('filters by country, city and author', async () => {
@@ -256,8 +304,26 @@ describe('ItinerariesPublicService', () => {
         city: { id: 'cairo', name: 'Cairo', countryCode: 'EG' },
         activities: [{ id: '4'.repeat(24), title: 'Pyramids' }],
       });
-      expect(detail.days[0]).not.toHaveProperty('budgets');
-      expect(detail).not.toHaveProperty('totals');
+      expect(detail.days[0].budgets).toEqual([
+        {
+          id: '6'.repeat(24),
+          category: 'food',
+          currency: 'EGP',
+          amount: 200,
+          note: undefined,
+        },
+      ]);
+      expect(detail.budget).toEqual({
+        currency: 'EGP',
+        categories: {
+          food: 200,
+          accommodation: 0,
+          local_transport: 0,
+          activities: 0,
+        },
+        transport: 300,
+        grandTotal: 500,
+      });
       expect(detail.originalAuthor).toBeUndefined();
     });
 
@@ -276,6 +342,50 @@ describe('ItinerariesPublicService', () => {
       const detail = await service.detail(ITINERARY_ID);
 
       expect(detail.originalAuthor).toEqual({ id: OTHER, name: 'Omar' });
+    });
+
+    it('converts a foreign-currency entry into the itinerary currency (ITN-14, ITN-16)', async () => {
+      detailReturns(
+        makeItinerary({
+          days: [
+            {
+              _id: '1'.repeat(24),
+              dayNumber: 1,
+              date: '2026-11-20',
+              cityId: 'cairo',
+              activities: [],
+              budgets: [
+                {
+                  _id: '6'.repeat(24),
+                  category: 'food',
+                  amount: 10,
+                  currency: 'USD',
+                },
+              ],
+            },
+          ],
+          transportCosts: [
+            {
+              fromCityId: 'cairo',
+              toCityId: 'luxor',
+              mode: 'train',
+              amount: 20,
+              currency: 'USD',
+            },
+          ],
+        }),
+      );
+
+      const detail = await service.detail(ITINERARY_ID);
+
+      // 10 USD and 20 USD at 50 EGP per USD.
+      expect(detail.budget.categories.food).toBe(500);
+      expect(detail.budget.transport).toBe(1000);
+      expect(detail.budget.grandTotal).toBe(1500);
+      expect(detail.days[0].budgets[0]).toMatchObject({
+        amount: 10,
+        currency: 'USD',
+      });
     });
   });
 });

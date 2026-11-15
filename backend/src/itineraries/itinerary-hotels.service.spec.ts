@@ -96,16 +96,32 @@ describe('ItineraryHotelsService', () => {
       checkIn: '2026-11-20',
       checkOut: '2026-11-22',
       guests: 1,
+      rooms: 1,
     });
   });
 
   it('passes the requested guest count to every stay', async () => {
-    const result = await service.forItinerary(OWNER, ITINERARY_ID, 3);
+    const result = await service.forItinerary(OWNER, ITINERARY_ID, {
+      guests: 3,
+    });
 
     expect(result.guests).toBe(3);
     expect(port.search).toHaveBeenCalledTimes(2);
     for (const call of port.search.mock.calls) {
       expect(call[0]).toMatchObject({ guests: 3 });
+    }
+  });
+
+  it('passes the requested room count to every stay', async () => {
+    const result = await service.forItinerary(OWNER, ITINERARY_ID, {
+      guests: 4,
+      rooms: 2,
+    });
+
+    expect(result.rooms).toBe(2);
+    expect(result.groups[0]).toMatchObject({ guests: 4, rooms: 2 });
+    for (const call of port.search.mock.calls) {
+      expect(call[0]).toMatchObject({ guests: 4, rooms: 2 });
     }
   });
 

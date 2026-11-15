@@ -160,6 +160,37 @@ export class ReferenceDataService {
     return this.airports.find({ city_id: cityId }).toArray();
   }
 
+  async airport(iataCode: string): Promise<AirportRecord | null> {
+    return this.airports.findOne({ iata_code: iataCode.toUpperCase() });
+  }
+
+  /** Country codes whose code or name matches the text, for the public keyword search. */
+  async countriesMatching(text: string): Promise<string[]> {
+    const pattern = { $regex: escapeRegex(text), $options: 'i' };
+    const documents = await this.countries
+      .find(
+        { $or: [{ code: pattern }, { name: pattern }] },
+        { projection: { code: 1, _id: 0 } },
+      )
+      .limit(50)
+      .toArray();
+
+    return documents.map((document: CountryRecord) => document.code);
+  }
+
+  /** City ids whose name matches the text, for the public keyword search. */
+  async citiesMatching(text: string): Promise<string[]> {
+    const documents = await this.cities
+      .find(
+        { name: { $regex: escapeRegex(text), $options: 'i' } },
+        { projection: { city_id: 1, _id: 0 } },
+      )
+      .limit(200)
+      .toArray();
+
+    return documents.map((document: CityRecord) => document.city_id);
+  }
+
   async listCities(query: ListCitiesQuery) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;

@@ -1,5 +1,6 @@
 import { BUDGET_CATEGORIES, type BudgetCategory } from './itinerary.constants';
 import type { Day } from './schemas/itinerary.schema';
+import type { EntryFactors } from './entry-currency';
 
 export type CategoryTotals = Record<BudgetCategory, number>;
 
@@ -26,16 +27,19 @@ export function sumCategories(totals: CategoryTotals): number {
 }
 
 /**
- * A day's totals per category. Activity costs are added to 'activities', so a
- * day can show a cost even when no budget entry was recorded (ITN-14).
+ * A day's totals per category, expressed in the itinerary currency. Activity
+ * costs are added to 'activities', so a day can show a cost even when no budget
+ * entry was recorded (ITN-14). `factors` converts an entry's own currency into
+ * the itinerary currency (ITN-16).
  */
 export function dayCategoryTotals(
   day: Pick<Day, 'budgets' | 'activities'>,
+  factors: EntryFactors = () => 1,
 ): CategoryTotals {
   const totals = emptyCategoryTotals();
 
   for (const budget of day.budgets ?? []) {
-    totals[budget.category] += budget.amount;
+    totals[budget.category] += budget.amount * factors(budget.currency);
   }
 
   for (const activity of day.activities ?? []) {

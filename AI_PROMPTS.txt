@@ -18,7 +18,7 @@ create the project folder structure, initialize
 Git, and prepare project documentation.
 ========================================
 Date: 2026-11-15
-Student: Member 5 (itinerary and budgeting module)
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
 Tool: OpenCode (DeepSeek V4.1)
 Related Requirement: ITN-01 to ITN-26 (itinerary planning and budgeting)
 
@@ -37,7 +37,7 @@ the exchange-rate cache with stale fallback. Each phase was
 tested before the next one started.
 ========================================
 Date: 2026-11-15
-Student: Member 5 (itinerary and budgeting module)
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
 Tool: OpenCode (DeepSeek V4.1)
 Related Requirement: ITN-14, ITN-18
 
@@ -54,7 +54,7 @@ total line. Activity costs are counted under the activities
 category so they are not invisible in the budget.
 ========================================
 Date: 2026-11-15
-Student: Member 5 (itinerary and budgeting module)
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
 Tool: OpenCode (DeepSeek V4.1)
 Related Requirement: ITN-20, ITN-21, ITN-22
 
@@ -66,12 +66,13 @@ cannot be discovered through any of them.
 How the output was used:
 Search matches only public, non-hidden itineraries, with the
 title regex escaped. Public detail returns 404 for private or
-hidden itineraries and never exposes budget totals. The clone
-rebuilds every subdocument with new ids, records the original
-author in clonedFrom and increments the source cloneCount.
+hidden itineraries and shows the itinerary budget in its own
+currency. The clone rebuilds every subdocument with new ids,
+records the original author in clonedFrom and increments the
+source cloneCount.
 ========================================
 Date: 2026-11-15
-Student: Member 5 (itinerary and budgeting module)
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
 Tool: OpenCode (DeepSeek V4.1)
 Related Requirement: ITN-25, ITN-26
 
@@ -109,4 +110,64 @@ npm test -- --testPathPatterns="auth|admin|ownership" -> 4 suites, 24 tests pass
 
 Corrections made:
 Fixed mongoose Prop types for enum/nullable User fields; added JWT_SECRET to local .env (not committed); FilterQuery replaced for mongoose 9; forced password-change gate; refresh token rotation; inactive airline filtering for ACC-15.
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-05, ITN-09, ITN-12, ITN-16, ITN-21, ITN-25, ITN-26, GEN-08
+
+Prompt:
+I asked OpenCode to recheck every itinerary requirement in the
+reviewed requirements workbook, row by row, against the code
+instead of the reworded API documentation, and to close the
+gaps without dropping a working feature.
+
+How the output was used:
+I used the output to add day notes with an edit route that takes
+city, notes or both; make transport mode mandatory; enforce
+JPG/PNG and a 5 MB image limit in both the DTO and the service;
+add rooms to the hotel stay query and port; expose the public
+budget and widen the keyword search to country and city; and add
+a chosen-origin one-way/round-trip flight search beside the
+existing inter-city legs. City groups now report their day
+count, not only from/to.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries -> 15 suites, 174 tests passed
+npm test -> 22 of 27 suites pass, 215 of 219 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs and the
+round-trip.spec.ts parse error, unchanged by this work
+npm run lint (exit 0, warnings only)
+========================================
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-14, ITN-16, ITN-18
+
+Prompt:
+Recheck ITN-14 and ITN-16 against the workbook text rather than the
+code. The transport entry is listed as (mode, from-city, to-city,
+amount, currency, day) and budget entries are "in a selected
+currency", but neither carries a currency. Add it and keep every
+total correct.
+
+How the output was used:
+Each budget entry and transport cost now stores the currency it was
+entered in - optional on write, defaulting to the itinerary currency,
+checked against the reference currencies - and both totals convert an
+entry into the itinerary currency before the display conversion, so a
+USD amount on an EGP itinerary adds up correctly. The budget summary
+and the public detail report the entry's own amount and currency
+beside the converted figure, and the clone keeps both.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries -> 16 suites, 181 tests passed
+npm test -> 23 of 28 suites pass, 223 of 227 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs, unchanged by
+this work
+npm run lint (exit 0, warnings only)
+node verify-swagger-pass.cjs (local MongoDB) -> 53/53 checks passed
 ========================================

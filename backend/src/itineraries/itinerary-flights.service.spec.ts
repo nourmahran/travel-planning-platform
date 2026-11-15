@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { Test, type TestingModule } from '@nestjs/testing';
 
 import { ItineraryFlightsService } from './itinerary-flights.service';
@@ -13,6 +13,7 @@ const makeItinerary = () => ({
   _id: ITINERARY_ID,
   ownerId: OWNER,
   countries: ['EG'],
+  startDate: '2026-11-20',
   days: [
     { _id: '1'.repeat(24), dayNumber: 1, date: '2026-11-20', cityId: 'cairo' },
     { _id: '2'.repeat(24), dayNumber: 2, date: '2026-11-21', cityId: 'cairo' },
@@ -69,6 +70,8 @@ describe('ItineraryFlightsService', () => {
   let referenceData: {
     citiesInCountries: jest.Mock;
     airportsInCity: jest.Mock;
+    airport: jest.Mock;
+    city: jest.Mock;
   };
   let flights: { searchFlights: jest.Mock };
 
@@ -101,6 +104,26 @@ describe('ItineraryFlightsService', () => {
                 },
               ],
         ),
+      ),
+      airport: jest.fn().mockImplementation((code: string) =>
+        Promise.resolve(
+          code === 'CAI' || code === 'LXR' || code === 'HRG'
+            ? {
+                iata_code: code,
+                name: code,
+                city_id: code === 'LXR' ? 'luxor' : 'cairo',
+                country_code: 'EG',
+                time_zone: 'Africa/Cairo',
+              }
+            : null,
+        ),
+      ),
+      city: jest.fn().mockImplementation((cityId: string) =>
+        Promise.resolve({
+          city_id: cityId,
+          name: cityId === 'cairo' ? 'Cairo' : 'Luxor',
+          country_code: 'EG',
+        }),
       ),
     };
     flights = {
@@ -288,5 +311,213 @@ describe('ItineraryFlightsService', () => {
     expect(result.available).toBe(false);
     expect(result.legs[0]).toMatchObject({ available: false, options: [] });
     expect(result.legs[0].reason).toMatch(/unavailable/i);
+  });
+
+  describe('from a chosen origin airport (ITN-26)', () => {
+    const originOf = (
+      result: Awaited<ReturnType<typeof service.forItinerary>>,
+    ) => {
+      if (result.mode !== 'origin') {
+        throw new Error('expected an origin search');
+      }
+
+      return result;
+    };
+
+    it('searches one-way from the origin to the first day city on the start date', async () => {
+      flights.searchFlights.mockResolvedValue(
+        page([flight('f1', 120, 'HRG', 'CAI')]),
+      );
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'hrg',
+          tripType: 'one-way',
+        }),
+      );
+
+      expect(result).toMatchObject({
+        mode: 'origin',
+        originAirport: 'HRG',
+        tripType: 'one-way',
+        departureDate: '2026-11-20',
+        returnDate: null,
+        destination: { id: 'cairo', name: 'Cairo', airports: ['CAI'] },
+        available: true,
+      });
+      expect(flights.searchFlights).toHaveBeenCalledWith({
+        departureAirport: 'HRG',
+        arrivalAirport: 'CAI',
+        departureDate: '2026-11-20',
+        passengers: 1,
+        limit: 10,
+      });
+      expect(result.outbound.map((option) => option.flightId)).toEqual(['f1']);
+      expect(result.inbound).toEqual([]);
+    });
+
+    it('round-trips by default with the return on the last day', async () => {
+      flights.searchFlights.mockResolvedValue({
+        outbound: page([flight('f1', 120, 'HRG', 'CAI')]),
+        inbound: page([flight('f2', 110, 'CAI', 'HRG')]),
+      });
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+        }),
+      );
+
+      expect(result).toMatchObject({
+        tripType: 'round-trip',
+        departureDate: '2026-11-20',
+        returnDate: '2026-11-22',
+        available: true,
+      });
+      expect(flights.searchFlights).toHaveBeenCalledWith({
+        departureAirport: 'HRG',
+        arrivalAirport: 'CAI',
+        departureDate: '2026-11-20',
+        returnDate: '2026-11-22',
+        passengers: 1,
+        limit: 10,
+      });
+      expect(result.outbound.map((option) => option.flightId)).toEqual(['f1']);
+      expect(result.inbound.map((option) => option.flightId)).toEqual(['f2']);
+    });
+
+    it('honours an explicit return date', async () => {
+      flights.searchFlights.mockResolvedValue({
+        outbound: page([flight('f1', 120, 'HRG', 'CAI')]),
+        inbound: page([flight('f2', 110, 'CAI', 'HRG')]),
+      });
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+          returnDate: '2026-11-25',
+        }),
+      );
+
+      expect(result.returnDate).toBe('2026-11-25');
+      expect(flights.searchFlights).toHaveBeenCalledWith(
+        expect.objectContaining({ returnDate: '2026-11-25' }),
+      );
+    });
+
+    it('searches every airport of the first day city and keeps the cheapest', async () => {
+      referenceData.airportsInCity.mockResolvedValue([
+        {
+          iata_code: 'CAI',
+          name: 'Cairo International',
+          city_id: 'cairo',
+          country_code: 'EG',
+          time_zone: 'Africa/Cairo',
+        },
+        {
+          iata_code: 'SPX',
+          name: 'Sphinx',
+          city_id: 'cairo',
+          country_code: 'EG',
+          time_zone: 'Africa/Cairo',
+        },
+      ]);
+
+      flights.searchFlights
+        .mockResolvedValueOnce({
+          outbound: page([flight('f1', 300, 'HRG', 'CAI')]),
+          inbound: page([flight('f2', 300, 'CAI', 'HRG')]),
+        })
+        .mockResolvedValueOnce({
+          outbound: page([flight('f3', 150, 'HRG', 'SPX')]),
+          inbound: page([flight('f4', 140, 'SPX', 'HRG')]),
+        });
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+        }),
+      );
+
+      expect(flights.searchFlights).toHaveBeenCalledTimes(2);
+      expect(result.outbound.map((option) => option.flightId)).toEqual([
+        'f3',
+        'f1',
+      ]);
+      expect(result.inbound.map((option) => option.flightId)).toEqual([
+        'f4',
+        'f2',
+      ]);
+    });
+
+    it('rejects an airport that is not in the reference list', async () => {
+      await expect(
+        service.forItinerary(OWNER, ITINERARY_ID, { originAirport: 'ZZZ' }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+      expect(flights.searchFlights).not.toHaveBeenCalled();
+    });
+
+    it('rejects a return date before the start date', async () => {
+      await expect(
+        service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+          returnDate: '2026-11-01',
+        }),
+      ).rejects.toBeInstanceOf(BadRequestException);
+    });
+
+    it('reports a first day city with no airport instead of guessing one', async () => {
+      referenceData.airportsInCity.mockResolvedValue([]);
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+        }),
+      );
+
+      expect(result).toMatchObject({
+        available: false,
+        destination: { id: 'cairo', name: 'Cairo', airports: [] },
+        outbound: [],
+        inbound: [],
+      });
+      expect(result.reason).toMatch(/No airport/);
+      expect(flights.searchFlights).not.toHaveBeenCalled();
+    });
+
+    it('says so when the only airport of the city is the origin', async () => {
+      referenceData.airportsInCity.mockResolvedValue([
+        {
+          iata_code: 'CAI',
+          name: 'Cairo International',
+          city_id: 'cairo',
+          country_code: 'EG',
+          time_zone: 'Africa/Cairo',
+        },
+      ]);
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'CAI',
+        }),
+      );
+
+      expect(result.available).toBe(false);
+      expect(result.reason).toMatch(/no airport other than CAI/i);
+      expect(flights.searchFlights).not.toHaveBeenCalled();
+    });
+
+    it('reports a search that fails for every airport', async () => {
+      flights.searchFlights.mockRejectedValue(new Error('boom'));
+
+      const result = originOf(
+        await service.forItinerary(OWNER, ITINERARY_ID, {
+          originAirport: 'HRG',
+        }),
+      );
+
+      expect(result.available).toBe(false);
+      expect(result.reason).toMatch(/unavailable/i);
+    });
   });
 });

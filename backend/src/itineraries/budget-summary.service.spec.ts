@@ -20,13 +20,14 @@ type FakeItinerary = {
     date: string;
     cityId: string;
     activities: { cost?: number }[];
-    budgets: { category: string; amount: number }[];
+    budgets: { category: string; amount: number; currency?: string }[];
   }[];
   transportCosts: {
     _id: string;
     fromCityId: string;
     toCityId: string;
     amount: number;
+    currency?: string;
     date?: string;
   }[];
 };
@@ -164,8 +165,53 @@ describe('BudgetSummaryService', () => {
     expect(exchangeRates.getDailyRates).not.toHaveBeenCalled();
   });
 
-  it('groups consecutive days by city and keeps runs apart', async () => {
-    load();
+  it('converts foreign-currency entries before totalling them (ITN-14, ITN-16)', async () => {
+    exchangeRates.rateBetween.mockImplementation(
+      async (from: string, to: string) => (from === 'USD' && to === 'EGP' ? 50 : 1),
+    );
+    load(
+      makeItinerary({
+        days: [
+          {
+            _id: DAY_ID[0],
+            dayNumber: 1,
+            date: '2026-11-20',
+            cityId: 'cairo',
+            activities: [{ cost: 40 }],
+            budgets: [
+              { category: 'food', amount: 100, currency: 'EGP' },
+              { category: 'food', amount: 10, currency: 'USD' },
+            ],
+          },
+        ],
+        transportCosts: [
+          {
+            _id: '3'.repeat(24),
+            fromCityId: 'cairo',
+            toCityId: 'cairo',
+            amount: 20,
+            currency: 'USD',
+            date: '2026-11-20',
+          },
+        ],
+      }),
+    );
+
+    const summary = await service.summary(OWNER, ITINERARY_ID, 'EGP');
+
+    // 10 USD at 50 EGP per USD joins the 100 EGP entry.
+    expect(summary.totals.categories.food).toBe(600);
+    expect(summary.totals.transport).toBe(1000);
+    expect(summary.totals.grandTotal).toBe(1640);
+    expect(summary.transportCosts[0]).toMatchObject({
+      currency: 'USD',
+      amount: 20,
+      convertedAmount: 1000,
+    });
+    expect(exchangeRates.getDailyRates).toHaveBeenCalledTimes(1);
+  });
+
+  it('groups consecutive days by city and keeps runs apart', async () => {    load();
 
     const { byCityGroup } = await service.summary(OWNER, ITINERARY_ID);
 
@@ -175,6 +221,7 @@ describe('BudgetSummaryService', () => {
       cityName: 'Cairo',
       fromDay: 1,
       toDay: 2,
+      dayCount: 2,
       dateFrom: '2026-11-20',
       dateTo: '2026-11-21',
       total: 440,
@@ -184,6 +231,7 @@ describe('BudgetSummaryService', () => {
       cityId: 'luxor',
       fromDay: 3,
       toDay: 3,
+      dayCount: 1,
       total: 70,
     });
   });

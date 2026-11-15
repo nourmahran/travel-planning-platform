@@ -13,6 +13,8 @@ import {
 import { buildCityGroups, type CityGroup, type CityReference } from './city-groups';
 import { dayList, transportCostList } from './subdocuments';
 import { roundAmount } from '../common/utils/round-amount';
+import { entryCurrencyFactors, type EntryFactors } from './entry-currency';
+import type { DailyRates } from '../currency/exchange-rates.service';
 import type {
   BudgetCityGroupSummary,
   BudgetDaySummary,
@@ -29,10 +31,14 @@ type Collected = {
   groups: { group: CityGroup; categories: CategoryTotals }[];
   transport: {
     id: string;
+    mode: string;
     fromCityId: string;
     toCityId: string;
     date?: string;
+    currency: string;
     amount: number;
+    /** The amount in the itinerary currency, before the display conversion. */
+    normalized: number;
   }[];
   sourceCategories: CategoryTotals;
   sourceTransport: number;
@@ -67,10 +73,15 @@ export class BudgetSummaryService {
       requestedCurrency,
       itinerary.currency,
     );
-    const collected = await this.collect(itinerary);
+    const { factors, rates } = await entryCurrencyFactors(
+      itinerary,
+      this.exchangeRates,
+    );
+    const collected = await this.collect(itinerary, factors);
     const conversion = await this.resolveConversion(
       itinerary.currency,
       currency,
+      rates,
     );
 
     const convert = (amount: number) => roundAmount(amount * conversion.factor);
@@ -110,6 +121,7 @@ export class BudgetSummaryService {
           countryCode: group.countryCode,
           fromDay: group.fromDay,
           toDay: group.toDay,
+          dayCount: group.toDay - group.fromDay + 1,
           dateFrom: group.dateFrom,
           dateTo: group.dateTo,
           categories: convertCategories(categories),
@@ -119,17 +131,22 @@ export class BudgetSummaryService {
       transportCosts: collected.transport.map(
         (cost): BudgetTransportSummary => ({
           id: cost.id,
+          mode: cost.mode,
           fromCityId: cost.fromCityId,
           toCityId: cost.toCityId,
           date: cost.date,
+          currency: cost.currency,
           amount: cost.amount,
-          convertedAmount: convert(cost.amount),
+          convertedAmount: convert(cost.normalized),
         }),
       ),
     };
   }
 
-  private async collect(itinerary: ItineraryDocument): Promise<Collected> {
+  private async collect(
+    itinerary: ItineraryDocument,
+    factors: EntryFactors,
+  ): Promise<Collected> {
     const cities = new Map<string, CityReference>(
       (await this.referenceData.citiesInCountries(itinerary.countries)).map(
         (city) => [
@@ -145,7 +162,7 @@ export class BudgetSummaryService {
       dayNumber: day.dayNumber,
       date: day.date,
       cityId: day.cityId,
-      categories: dayCategoryTotals(day),
+      categories: dayCategoryTotals(day, factors),
       total: 0,
     }));
 
@@ -161,10 +178,13 @@ export class BudgetSummaryService {
 
     const transport = transportCostList(itinerary).map((cost) => ({
       id: String(cost._id),
+      mode: cost.mode,
       fromCityId: cost.fromCityId,
       toCityId: cost.toCityId,
       date: cost.date,
+      currency: cost.currency?.trim().toUpperCase() ?? itinerary.currency,
       amount: cost.amount,
+      normalized: cost.amount * factors(cost.currency),
     }));
 
     return {
@@ -175,7 +195,7 @@ export class BudgetSummaryService {
         (totals, day) => addCategories(totals, day.categories),
         emptyCategoryTotals(),
       ),
-      sourceTransport: transport.reduce((sum, cost) => sum + cost.amount, 0),
+      sourceTransport: transport.reduce((sum, cost) => sum + cost.normalized, 0),
     };
   }
 
@@ -211,12 +231,13 @@ export class BudgetSummaryService {
   private async resolveConversion(
     sourceCurrency: string,
     targetCurrency: string,
+    rates: DailyRates | null,
   ): Promise<Conversion> {
     if (sourceCurrency === targetCurrency) {
       return { factor: 1, rateDate: null, rateSource: 'same' };
     }
 
-    const daily = await this.exchangeRates.getDailyRates();
+    const daily = rates ?? (await this.exchangeRates.getDailyRates());
     const factor = await this.exchangeRates.rateBetween(
       sourceCurrency,
       targetCurrency,

@@ -22,6 +22,7 @@ export type HotelStay = {
   checkOut: string;
   nights: number;
   guests: number;
+  rooms: number;
   available: boolean;
   reason?: string;
   hotels: HotelOption[];
@@ -30,6 +31,7 @@ export type HotelStay = {
 export type ItineraryHotels = {
   itineraryId: string;
   guests: number;
+  rooms: number;
   available: boolean;
   reason?: string;
   groups: HotelStay[];
@@ -54,8 +56,10 @@ export class ItineraryHotelsService {
   async forItinerary(
     ownerId: string,
     itineraryId: string,
-    guests = 1,
+    options: { guests?: number; rooms?: number } = {},
   ): Promise<ItineraryHotels> {
+    const guests = options.guests ?? 1;
+    const rooms = options.rooms ?? 1;
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
     const groups = await cityGroupsOf(itinerary, this.referenceData);
 
@@ -63,6 +67,7 @@ export class ItineraryHotelsService {
       return {
         itineraryId: String(itinerary._id),
         guests,
+        rooms,
         available: false,
         reason: 'The itinerary has no days to stay overnight',
         groups: [],
@@ -72,7 +77,7 @@ export class ItineraryHotelsService {
     const stays: HotelStay[] = [];
 
     for (const group of groups) {
-      stays.push(await this.stayFor(group, guests));
+      stays.push(await this.stayFor(group, guests, rooms));
     }
 
     const available = stays.some((stay) => stay.available);
@@ -80,13 +85,18 @@ export class ItineraryHotelsService {
     return {
       itineraryId: String(itinerary._id),
       guests,
+      rooms,
       available,
       reason: available ? undefined : stays[0].reason,
       groups: stays,
     };
   }
 
-  private async stayFor(group: CityGroup, guests: number): Promise<HotelStay> {
+  private async stayFor(
+    group: CityGroup,
+    guests: number,
+    rooms: number,
+  ): Promise<HotelStay> {
     const checkIn = group.dateFrom;
     const checkOut = addDays(group.dateTo, 1);
     const base = {
@@ -99,6 +109,7 @@ export class ItineraryHotelsService {
       checkOut,
       nights: nightsBetween(checkIn, checkOut),
       guests,
+      rooms,
     };
 
     try {
@@ -108,6 +119,7 @@ export class ItineraryHotelsService {
         checkIn,
         checkOut,
         guests,
+        rooms,
       });
       const hotels = result.hotels ?? [];
 

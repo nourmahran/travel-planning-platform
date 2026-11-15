@@ -1,37 +1,46 @@
 import { Type } from 'class-transformer';
 import {
+  IsIn,
   IsInt,
-  IsOptional,
   IsString,
   IsUrl,
   Length,
-  Matches,
+  Max,
   Min,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
+
+import { IMAGE_MIME_TYPES, ITINERARY_LIMITS } from '../itinerary.constants';
+import type { ImageMimeType } from '../itinerary.constants';
 
 export class AddImageDto {
   @ApiProperty({
     example: 'https://cdn.example.com/pyramids.png',
     description:
-      'Image URL until Member 6 media upload exists; the media service will own the final size and type limits.',
+      'Image URL until Member 6 media upload exists; the media service will own the final storage.',
   })
   @IsUrl()
   @Length(1, 2048)
   url: string;
 
-  @ApiPropertyOptional({ example: 'image/png' })
-  @IsOptional()
-  @IsString()
-  @Matches(/^[\w.+-]+\/[\w.+-]+$/, {
-    message: 'mimeType must look like image/png',
+  @ApiProperty({
+    enum: IMAGE_MIME_TYPES,
+    example: 'image/png',
+    description: 'GEN-08: JPG or PNG only.',
   })
-  mimeType?: string;
+  @IsString()
+  @IsIn(IMAGE_MIME_TYPES)
+  mimeType: ImageMimeType;
 
-  @ApiPropertyOptional({ example: 204800, minimum: 0 })
-  @IsOptional()
+  @ApiProperty({
+    example: 204800,
+    minimum: 1,
+    maximum: ITINERARY_LIMITS.maxImageBytes,
+    description: 'GEN-08: file size in bytes, at most 5 MB.',
+  })
   @Type(() => Number)
   @IsInt()
-  @Min(0)
-  sizeBytes?: number;
+  @Min(1)
+  @Max(ITINERARY_LIMITS.maxImageBytes)
+  sizeBytes: number;
 }

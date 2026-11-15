@@ -24,7 +24,7 @@ export class TransportCostsController {
   @ApiOperation({
     summary: 'Add a transport cost between two cities',
     description:
-      'ITN-16. Both cities must be used by the itinerary days and must differ; amount non-negative with at most 2 decimals.',
+      'ITN-16. Needs a mode, two cities the itinerary days use and that differ, and a non-negative amount with at most 2 decimals. The currency is the itinerary currency.',
   })
   create(
     @CurrentUserId() ownerId: string,

@@ -49,18 +49,30 @@ export class DaysService {
     };
   }
 
-  async changeCity(
+  async update(
     ownerId: string,
     itineraryId: string,
     dayId: string,
-    cityId: string,
+    changes: { cityId?: string; notes?: string },
   ) {
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
     const day = requireDay(itinerary, dayId);
 
-    await this.assertCityAllowed(cityId, itinerary.countries);
+    if (changes.cityId === undefined && changes.notes === undefined) {
+      throw new BadRequestException(
+        'Send cityId or notes to change a day',
+      );
+    }
 
-    day.cityId = cityId;
+    if (changes.cityId !== undefined) {
+      await this.assertCityAllowed(changes.cityId, itinerary.countries);
+
+      day.cityId = changes.cityId;
+    }
+
+    if (changes.notes !== undefined) {
+      day.notes = changes.notes.trim() || undefined;
+    }
 
     await itinerary.save();
 
@@ -69,6 +81,7 @@ export class DaysService {
       dayNumber: day.dayNumber,
       date: day.date,
       cityId: day.cityId,
+      notes: day.notes,
     };
   }
 

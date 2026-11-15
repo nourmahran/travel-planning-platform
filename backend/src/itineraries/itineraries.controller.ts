@@ -43,7 +43,7 @@ export class ItinerariesController {
     @CurrentUserId() ownerId: string,
     @Body() dto: CreateItineraryDto,
   ) {
-    return this.itineraries.create(ownerId, dto);
+    return toItineraryDetail(await this.itineraries.create(ownerId, dto));
   }
 
   @Get()

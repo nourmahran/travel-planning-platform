@@ -16,4 +16,18 @@ export class HotelStayQueryDto {
   @Min(1)
   @Max(20)
   guests?: number;
+
+  @ApiPropertyOptional({
+    example: 1,
+    minimum: 1,
+    maximum: 10,
+    default: 1,
+    description: 'Rooms requested for every city stay (ITN-25).',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  rooms?: number;
 }

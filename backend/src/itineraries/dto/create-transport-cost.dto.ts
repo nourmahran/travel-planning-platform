@@ -14,7 +14,22 @@ import { ITINERARY_LIMITS } from '../itinerary.constants';
 const trim = ({ value }: { value: unknown }) =>
   typeof value === 'string' ? value.trim() : value;
 
+const uppercase = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim().toUpperCase() : value;
+
 export class CreateTransportCostDto {
+  @ApiProperty({
+    example: 'train',
+    description:
+      'How the leg is travelled, for example flight, train, bus or car (ITN-16).',
+    minLength: 1,
+    maxLength: 40,
+  })
+  @Transform(trim)
+  @IsString()
+  @Length(1, 40)
+  mode: string;
+
   @ApiProperty({
     example: 'cairo',
     description: 'City id; must be one of the cities used by the itinerary days.',
@@ -37,6 +52,17 @@ export class CreateTransportCostDto {
   @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   amount: number;
+
+  @ApiPropertyOptional({
+    example: 'EGP',
+    description:
+      'Currency the amount is in; defaults to the itinerary currency (ITN-16).',
+  })
+  @IsOptional()
+  @Transform(uppercase)
+  @IsString()
+  @Matches(/^[A-Z]{3}$/, { message: 'currency must be a 3-letter ISO code' })
+  currency?: string;
 
   @ApiPropertyOptional({
     example: '2026-11-21',
