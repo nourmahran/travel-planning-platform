@@ -16,13 +16,19 @@ import { TransportCostsController } from './transport-costs.controller';
 import { TransportCostsService } from './transport-costs.service';
 import { ItinerariesPublicController } from './itineraries-public.controller';
 import { ItinerariesPublicService } from './itineraries-public.service';
+import { ItineraryTravelController } from './itinerary-travel.controller';
+import { ItineraryHotelsService } from './itinerary-hotels.service';
+import { ItineraryFlightsService } from './itinerary-flights.service';
+import { HOTEL_SEARCH_PORT, UnavailableHotelSearchPort } from './hotel-search.port';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 import { CurrencyModule } from '../currency/currency.module';
+import { FlightsModule } from '../flights/flights.module';
 
 @Module({
   imports: [
     ReferenceDataModule,
     CurrencyModule,
+    FlightsModule,
     MongooseModule.forFeature([
       { name: Itinerary.name, schema: ItinerarySchema },
     ]),
@@ -34,6 +40,7 @@ import { CurrencyModule } from '../currency/currency.module';
     ActivitiesController,
     BudgetsController,
     TransportCostsController,
+    ItineraryTravelController,
   ],
   providers: [
     ItinerariesService,
@@ -43,6 +50,9 @@ import { CurrencyModule } from '../currency/currency.module';
     BudgetsService,
     TransportCostsService,
     BudgetSummaryService,
+    ItineraryHotelsService,
+    ItineraryFlightsService,
+    { provide: HOTEL_SEARCH_PORT, useClass: UnavailableHotelSearchPort },
   ],
   exports: [ItinerariesService],
 })
