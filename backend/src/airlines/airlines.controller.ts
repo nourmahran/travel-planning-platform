@@ -5,15 +5,15 @@ import {
   Param,
   Post,
   Patch,
+  ForbiddenException,
 } from '@nestjs/common';
-import {
-  ApiOperation,
-  ApiTags,
-} from '@nestjs/swagger';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { AirlinesService } from './airlines.service';
 import { CreateAirlineDto } from './dto/create-airline.dto';
 import { UpdateAirlineDto } from './dto/update-airline.dto';
@@ -21,9 +21,7 @@ import { UpdateAirlineDto } from './dto/update-airline.dto';
 @ApiTags('Airlines')
 @Controller('airlines')
 export class AirlinesController {
-  constructor(
-    private readonly airlinesService: AirlinesService,
-  ) {}
+  constructor(private readonly airlinesService: AirlinesService) {}
 
   @Post()
   @Roles(UserRole.ADMIN)
@@ -52,7 +50,10 @@ export class AirlinesController {
   update(
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateAirlineDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    if (user.role === UserRole.AIRLINE_MODERATOR && id !== user.providerId)
+      throw new ForbiddenException('Airline belongs to another provider');
     return this.airlinesService.update(id, dto);
   }
 

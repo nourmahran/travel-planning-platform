@@ -1,5 +1,6 @@
-
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { FlightPoliciesDto } from './flight-policies.dto';
 import {
   IsBoolean,
   IsOptional,
@@ -7,9 +8,15 @@ import {
   Length,
   Matches,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
 
 export class CreateAirlineDto {
+  @ApiPropertyOptional({ type: FlightPoliciesDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => FlightPoliciesDto)
+  flightPolicies?: FlightPoliciesDto;
   @ApiProperty({ example: 'MS', description: 'Unique airline code' })
   @IsString()
   @Matches(/^[A-Z0-9]{2,3}$/, {

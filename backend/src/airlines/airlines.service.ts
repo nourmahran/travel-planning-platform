@@ -1,5 +1,5 @@
-
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -17,7 +17,18 @@ export class AirlinesService {
     private readonly airlineModel: Model<Airline>,
   ) {}
 
+  private validatePolicies(policies?: CreateAirlineDto['flightPolicies']) {
+    if (!policies) return;
+    const days = policies.cancellationTiers.map((tier) => tier.daysBefore);
+    if (new Set(days).size !== days.length) {
+      throw new BadRequestException(
+        'Cancellation tiers need unique day thresholds',
+      );
+    }
+  }
+
   async create(dto: CreateAirlineDto) {
+    this.validatePolicies(dto.flightPolicies);
     const existing = await this.airlineModel.findOne({
       code: dto.code,
     });
@@ -55,6 +66,7 @@ export class AirlinesService {
   }
 
   async update(id: string, dto: UpdateAirlineDto) {
+    this.validatePolicies(dto.flightPolicies);
     try {
       const airline = await this.airlineModel
         .findByIdAndUpdate(id, dto, {
@@ -78,11 +90,7 @@ export class AirlinesService {
 
   async remove(id: string) {
     const airline = await this.airlineModel
-      .findByIdAndUpdate(
-        id,
-        { isActive: false },
-        { new: true },
-      )
+      .findByIdAndUpdate(id, { isActive: false }, { new: true })
       .exec();
 
     if (!airline) {

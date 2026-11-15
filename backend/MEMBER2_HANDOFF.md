@@ -1,0 +1,51 @@
+# Member 2 implementation and integration boundary
+
+## Current status after Member 1 merge
+
+Member 1's authenticated session and role guards are now merged into this branch. Flight search/details and airport lookup are public. Booking creation derives the owner from the session; owner history, details, ticket PDF, cancellation preview and cancellation are protected routes. Airline moderators can create, edit and cancel flights only for their linked airline, edit only their linked airline profile, and list/export passengers only for that airline. Provider cancellation uses the paid refund flow. Admins may operate across airlines. The Stripe webhook remains public and validates its signature. Member 4's admin payment role check accepts Member 1's lowercase `admin` role.
+
+The reviewed requirements workbook has no FLT-27 row; the listed flight requirements go from FLT-26 to FLT-29. Member 6's notification read API remains on its separate branch. The older sections below describe the implementation history and mention routes that were internal at the time; the current route status is described here. Mocked backend tests pass, but a shared MongoDB/Stripe end-to-end run has not been performed.
+
+## Implemented in this continuation
+
+- ScheduleModule enabled. Every 15 seconds, unpaid holds whose ten-minute deadline has passed transition to Expired and return inventory in one MongoDB transaction. Conditional state updates prevent duplicate restoration across workers/cancellation. Failed releases stay retryable; failures are logged. No TTL deletion removes booking history.
+- Confirmation checks the hold deadline both before and during its conditional update. The public confirmation endpoint remains disabled.
+- Scheduled flights become Departed when their UTC departure time passes; cancelled flights are excluded.
+- Price bounds apply to the same cabin as seat availability and cabin class. price_asc/price_desc sort by the cheapest eligible per-seat cabin fare, before pagination, on both round-trip legs. The default remains departure ordering.
+- New bookings receive immutable UUID references with a sparse unique index. Existing bookings are not modified; internal exports fall back to the booking ID.
+- Internal generateTicket(id, userId) returns a PDF Buffer only for confirmed/completed bookings belonging to the supplied user. Uses the current flight details. Standard PDF font currently covers Latin text; a licensed Unicode font is needed for full multilingual passenger names. No public download route yet.
+- Internal listForAirline and streaming exportPassengers restrict queries to the specified airline's flight. CSV includes confirmed/completed passengers, quotes fields and neutralizes spreadsheet formulas. No public moderator routes yet.
+- Read-only airport APIs provide paginated search by name/IATA code/country and GET /airports/:code with its IANA time zone. Airport search validates pagination and escapes regular-expression input.
+- Airlines can define cancellation tiers and baggage rules matching Member 4's published policy shape. Internal booking acceptance stores an immutable snapshot during an active hold. FlightBookingGateway maps flight bookings, confirmation and expiry for Member 4's interface, and is exported from BookingsModule.
+
+## Member 1 boundary
+
+Member 1 registration from feature/ACC-01-user-registration is now present in this working tree: bcrypt password hashing, normalized unique emails, required terms/privacy consent and a safe response. Its imported tests were adjusted for this repository's Jest ESM setup. This is registration only; there is no login/session or verified identity/role guard yet. Never trust user or airline IDs from request bodies/query strings. Booking creation/cancellation, history, tickets and moderator routes must derive scope from authenticated claims before they are exposed.
+
+## Member 4 payment integration
+
+This branch starts from Member 4's current payment branch. Its payment module verifies provider signatures and successful PaymentIntents, and the flight gateway registers with the payment registry. Confirmation remains internal to the verified payment path. Currency follows PLATFORM_CURRENCY (default usd).
+
+Payment completion and departure/cancellation must be coordinated transactionally. A paid callback arriving after the hold deadline must not resurrect expired inventory: route it to Member 4 reconciliation/refund handling. Existing confirm is only an integration primitive, not a complete payment workflow.
+
+The existing public booking cancellation route still handles unpaid holds only. Paid owner and provider cancellations are internal until Member 1's authenticated guards can supply user identity and airline ownership. Refund dispatch markers support idempotent retry after a process interruption. No live payment/refund events have been sent or shared Atlas data changed.
+
+## Reviewed requirements and current progress
+
+The reviewed requirements spreadsheet is `Final_ SP1_Reviewed_Requirements.xlsx` in the team Google Drive. Booking creation now validates age at departure: adults are 12+, children are 2–11 and pay full fare with a seat, and infants are under 2, pay 10% and occupy no seat. Each booking needs an adult and cannot have more infants than adults. Per-passenger extra bags and weights are validated against the selected cabin policy and included in the total. A single round-trip booking holds both flights transactionally with one reference; expiry and unpaid cancellation release both legs. Tickets include the return leg. Cancellation tiers need unique nonnegative thresholds; if no threshold applies the refund percentage is zero.
+
+Added since the previous push: seat-count edits use a conditional atomic update and reject reductions below allocated seats. Schedule changes on flights with held/booked seats write confirmed-passenger in-app notification records in the same MongoDB transaction as the time change. Owner history grouping and a read-only cancellation refund preview are available internally. The preview chooses the highest eligible days-before tier, or zero if none applies. These owner-facing methods await authenticated routes.
+
+On `feature/member2-cancellation-integration`, built from Member 4's payment branch, internal owner cancellation now checks payment, releases both flight legs transactionally, records an in-app notification and issues the tier-based refund. Internal airline cancellation cancels affected bookings, releases pending holds and other scheduled legs, records notifications and issues full refunds for confirmed bookings. Refund dispatches are durable and retried if interrupted. Member 4's refund notifications now write to the same in-app notifications collection. These flows are internal until Member 1 provides verified identity, airline ownership and role guards. Authenticated notification-list and mark-read routes also remain open. Real MongoDB/Stripe end-to-end verification has not been run.
+
+Member 6's published `feature/member6-eyad` branch provides the notification list, unread-count and mark-read APIs, plus a session helper that still depends on Member 1's verified login. Flight and refund notification records on this integration branch now use Member 6's recipientId/eventId/type/title/message fields and leave readAt unset. The branches have not been merged. Member 6's NotificationType enum should include `payment.failed` before the shared notification model is used to create or validate payment-failure records.
+
+## Setup and API documentation
+
+The backend README and backend/.env.example now describe local setup. `npm run seed` imports the CSV reference data and configured supported ISO currencies, always including PLATFORM_CURRENCY. No live seeding was run because it writes to the configured MongoDB database.
+
+## Operational notes
+
+MongoDB must support transactions (Atlas/replica set). Cleanup catches up on the next scheduled tick after restart; normal inventory-release delay is up to 15 seconds plus job processing. Legacy Pending rows without holdExpiresAt are not automatically expired; review/backfill them deliberately. Unique references on old rows likewise need an explicit migration if required. No shared Atlas data was modified by this work.
+
+Validation uses mocked database unit/regression tests and actual PDF generation; a real replica-set concurrency test and authenticated HTTP/payment end-to-end tests remain outstanding. Member 1’s registration files were integrated in the earlier pushed commit. Member 4’s branch was reviewed only. Unrelated untracked root files were untouched.
