@@ -1067,7 +1067,7 @@ async function main() {
 
     if (candidates.length === 0) {
       skip(
-        'the seven flight checks anchored on a real departure date',
+        'the five flight checks anchored on a real departure date',
         'no Scheduled flight on or after today from the itinerary cities to the first-day city',
       );
     } else {
