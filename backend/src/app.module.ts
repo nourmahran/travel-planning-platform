@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AirlinesModule } from './airlines/airlines.module';
 import { FlightsModule } from './flights/flights.module';
+import { CurrencyModule } from './currency/currency.module';
 import { ItinerariesModule } from './itineraries/itineraries.module';
 import { ReferenceDataModule } from './reference-data/reference-data.module';
 
@@ -31,6 +32,7 @@ import { ReferenceDataModule } from './reference-data/reference-data.module';
     AirlinesModule,
     FlightsModule,
     ReferenceDataModule,
+    CurrencyModule,
     ItinerariesModule,
   ],
   controllers: [AppController],
