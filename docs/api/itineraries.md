@@ -415,6 +415,11 @@ Shared requirements:
 
 - Member 1's login does not exist yet: every protected route is demonstrable
   only through `x-dev-user-id`.
+- The live Swagger pass needs the shared `MONGODB_URI`, which this branch does
+  not have. Route registration, the Swagger document itself and the security of
+  every route are covered by `itineraries/itineraries.module.spec.ts`, which
+  boots the module graph with a stubbed connection; the request/response pass
+  over each route still has to be run against the shared database.
 - Images are URLs; the upload and size rules belong to Member 6.
 - `isHidden` is written by nobody yet; Member 6's moderation sets it.
 - Hotels return an honest empty answer until Member 3's module lands.
