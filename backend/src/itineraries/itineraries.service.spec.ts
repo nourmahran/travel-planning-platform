@@ -233,6 +233,44 @@ describe('ItinerariesService', () => {
     });
   });
 
+  describe('findOneByBudget and findOneByTransportCost', () => {
+    const findByNested = (value: FakeItinerary | null) => {
+      model.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(value),
+      });
+    };
+
+    it('queries the nested budget path and enforces ownership', async () => {
+      findByNested(makeItinerary({ ownerId: OTHER }));
+
+      await expect(
+        service.findOneByBudget(OWNER, 'd'.repeat(24)),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(model.findOne).toHaveBeenCalledWith({
+        'days.budgets._id': expect.anything(),
+      });
+    });
+
+    it('queries the transport cost path and enforces ownership', async () => {
+      findByNested(makeItinerary({ ownerId: OTHER }));
+
+      await expect(
+        service.findOneByTransportCost(OWNER, 'd'.repeat(24)),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+      expect(model.findOne).toHaveBeenCalledWith({
+        'transportCosts._id': expect.anything(),
+      });
+    });
+
+    it('throws NotFound when the nested id matches nothing', async () => {
+      findByNested(null);
+
+      await expect(
+        service.findOneByBudget(OWNER, 'd'.repeat(24)),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+  });
+
   describe('list', () => {
     it('scopes the query to the owner and paginates', async () => {
       const chain = findReturns([makeItinerary()], 1);

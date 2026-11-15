@@ -9,6 +9,10 @@ import { DaysController } from './days.controller';
 import { DaysService } from './days.service';
 import { ActivitiesController } from './activities.controller';
 import { ActivitiesService } from './activities.service';
+import { BudgetsController } from './budgets.controller';
+import { BudgetsService } from './budgets.service';
+import { TransportCostsController } from './transport-costs.controller';
+import { TransportCostsService } from './transport-costs.service';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 
 @Module({
@@ -18,8 +22,20 @@ import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
       { name: Itinerary.name, schema: ItinerarySchema },
     ]),
   ],
-  controllers: [ItinerariesController, DaysController, ActivitiesController],
-  providers: [ItinerariesService, DaysService, ActivitiesService],
+  controllers: [
+    ItinerariesController,
+    DaysController,
+    ActivitiesController,
+    BudgetsController,
+    TransportCostsController,
+  ],
+  providers: [
+    ItinerariesService,
+    DaysService,
+    ActivitiesService,
+    BudgetsService,
+    TransportCostsService,
+  ],
   exports: [ItinerariesService],
 })
 export class ItinerariesModule {}

@@ -4,12 +4,16 @@ import { Types } from 'mongoose';
 import type {
   Activity,
   ActivityImage,
+  BudgetEntry,
   Day,
+  TransportCost,
 } from './schemas/itinerary.schema';
 
 export type DaySubdocument = Day & { _id: Types.ObjectId };
 export type ActivitySubdocument = Activity & { _id: Types.ObjectId };
 export type ImageSubdocument = ActivityImage & { _id: Types.ObjectId };
+export type BudgetSubdocument = BudgetEntry & { _id: Types.ObjectId };
+export type TransportCostSubdocument = TransportCost & { _id: Types.ObjectId };
 
 /**
  * Embedded subdocuments are plain arrays in the schema; Mongoose assigns an
@@ -73,4 +77,55 @@ export function requireImage(
 
 export function imageList(activity: ActivitySubdocument): ImageSubdocument[] {
   return (activity.images ?? []) as unknown as ImageSubdocument[];
+}
+
+export type BudgetLocation = {
+  day: DaySubdocument;
+  budget: BudgetSubdocument;
+  index: number;
+};
+
+/** Finds the day that holds a budget entry, for the /budgets/:id routes. */
+export function requireBudget(
+  itinerary: { days: Day[] },
+  budgetId: string,
+): BudgetLocation {
+  for (const day of dayList(itinerary)) {
+    const budgets = (day.budgets ?? []) as unknown as BudgetSubdocument[];
+    const index = budgets.findIndex(
+      (candidate) => String(candidate._id) === budgetId,
+    );
+
+    if (index !== -1) {
+      return { day, budget: budgets[index], index };
+    }
+  }
+
+  throw new NotFoundException('Budget entry not found');
+}
+
+export function budgetList(day: Day): BudgetSubdocument[] {
+  return (day.budgets ?? []) as unknown as BudgetSubdocument[];
+}
+
+export function transportCostList(itinerary: {
+  transportCosts: TransportCost[];
+}): TransportCostSubdocument[] {
+  return (itinerary.transportCosts ??
+    []) as unknown as TransportCostSubdocument[];
+}
+
+export function requireTransportCost(
+  itinerary: { transportCosts: TransportCost[] },
+  costId: string,
+): TransportCostSubdocument {
+  const cost = transportCostList(itinerary).find(
+    (candidate) => String(candidate._id) === costId,
+  );
+
+  if (!cost) {
+    throw new NotFoundException('Transport cost not found');
+  }
+
+  return cost;
 }

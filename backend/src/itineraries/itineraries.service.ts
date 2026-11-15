@@ -104,12 +104,52 @@ export class ItinerariesService {
     ownerId: string,
     activityId: string,
   ): Promise<ItineraryDocument> {
+    return this.findOneByNestedId(
+      'days.activities._id',
+      activityId,
+      'Activity',
+      ownerId,
+    );
+  }
+
+  /** Finds the itinerary that holds a budget entry, for the /budgets/:id routes. */
+  async findOneByBudget(
+    ownerId: string,
+    budgetId: string,
+  ): Promise<ItineraryDocument> {
+    return this.findOneByNestedId(
+      'days.budgets._id',
+      budgetId,
+      'Budget entry',
+      ownerId,
+    );
+  }
+
+  /** Finds the itinerary that holds a transport cost. */
+  async findOneByTransportCost(
+    ownerId: string,
+    costId: string,
+  ): Promise<ItineraryDocument> {
+    return this.findOneByNestedId(
+      'transportCosts._id',
+      costId,
+      'Transport cost',
+      ownerId,
+    );
+  }
+
+  private async findOneByNestedId(
+    path: string,
+    id: string,
+    label: string,
+    ownerId: string,
+  ): Promise<ItineraryDocument> {
     const itinerary = await this.itineraryModel
-      .findOne({ 'days.activities._id': new Types.ObjectId(activityId) })
+      .findOne({ [path]: new Types.ObjectId(id) })
       .exec();
 
     if (!itinerary) {
-      throw new NotFoundException('Activity not found');
+      throw new NotFoundException(`${label} not found`);
     }
 
     this.assertOwner(itinerary, ownerId);
