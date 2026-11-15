@@ -472,13 +472,18 @@ Shared requirements:
 
 ## 15. Known gaps
 
-- The live Swagger pass has been run against a local MongoDB (48 checks, then 53
-  with the per-entry currency checks, all passing). It has not been run against
-  the shared Atlas cluster: that cluster refuses this machine's IP
-  (`MongooseServerSelectionError`, IP not whitelisted). Route registration, the
-  Swagger document, the cookie security of every route and the guest/owner split
-  are also covered by `itineraries/itineraries.module.spec.ts`, which boots the
-  module graph with a stubbed connection and the real `AuthModule`.
+- The live Swagger pass ran on 2026-11-15 against a scratch database
+  (`travel_planning_verify`) built two ways: the repo seed (`--seed=repo`) gave
+  **62 passed, 0 failed, 1 skipped** (the five flight checks skip because that
+  seed writes no flights), and a mirror of the shared database
+  (`--seed=existing --mirror`) gave **67 passed, 0 failed, 0 skipped**. The
+  scratch database was dropped and confirmed gone after each run. The
+  `--seed=existing` path leaves out the `currencies` collection and the admin
+  account, which is expected; the harness registered its own users. Route
+  registration, the Swagger document, the cookie security of every route and the
+  guest/owner split are also covered by
+  `itineraries/itineraries.module.spec.ts`, which boots the module graph with a
+  stubbed connection and the real `AuthModule`.
 - `GET /itineraries/:id/flights` reuses Member 2's flight search, so its results
   depend on that module's data.
 - Images are URLs; the field and size rules are enforced here, but the upload
