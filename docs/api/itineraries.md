@@ -240,8 +240,10 @@ Rules:
 2. Transport costs are a separate list plus one `totals.transport` line; they are
    **not** part of any day or city group, only of `grandTotal`.
 3. City-group totals use the consecutive-day grouping of ITN-09.
-4. Display currency: `?currency`, else the caller's `users.preferredCurrency`,
-   else the itinerary currency. It must be a display currency.
+4. Display currency: `?currency`, else the caller's `users.preferredCurrency`
+   (Member 1's schema defaults it to `USD`), else the itinerary currency. An
+   explicit `?currency` must be a display currency (`400` otherwise); a profile
+   preference that is not one is ignored in favour of the itinerary currency.
 5. Every figure is converted **once** from its source total, then rounded to 2
    decimals — never per entry, so no rounding drift.
 6. `rateSource` is `same` (same currency, no FX call), `live`, `cached` or

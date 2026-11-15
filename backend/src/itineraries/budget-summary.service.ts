@@ -190,7 +190,22 @@ export class BudgetSummaryService {
 
     const preferred = await this.referenceData.preferredCurrencyOf(ownerId);
 
-    return preferred ? preferred.trim().toUpperCase() : itineraryCurrency;
+    if (!preferred) {
+      return itineraryCurrency;
+    }
+
+    const code = preferred.trim().toUpperCase();
+
+    if (code === itineraryCurrency) {
+      return code;
+    }
+
+    // The profile accepts any 3-letter code (Member 1's profile DTO), so a
+    // preference the FX table cannot serve falls back instead of failing the
+    // whole summary.
+    const supported = await this.referenceData.displayCurrencies();
+
+    return supported.includes(code) ? code : itineraryCurrency;
   }
 
   private async resolveConversion(

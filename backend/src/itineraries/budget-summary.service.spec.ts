@@ -82,6 +82,7 @@ describe('BudgetSummaryService', () => {
   let referenceData: {
     citiesInCountries: jest.Mock;
     preferredCurrencyOf: jest.Mock;
+    displayCurrencies: jest.Mock;
   };
   let exchangeRates: {
     getDailyRates: jest.Mock;
@@ -109,6 +110,9 @@ describe('BudgetSummaryService', () => {
         { city_id: 'luxor', name: 'Luxor', country_code: 'EG' },
       ]),
       preferredCurrencyOf: jest.fn().mockResolvedValue(null),
+      displayCurrencies: jest
+        .fn()
+        .mockResolvedValue(['EGP', 'USD', 'EUR', 'GBP']),
     };
     exchangeRates = {
       getDailyRates: jest.fn().mockResolvedValue(dailyRates),
@@ -296,5 +300,16 @@ describe('BudgetSummaryService', () => {
 
     expect(summary.currency).toBe('EUR');
     expect(referenceData.preferredCurrencyOf).not.toHaveBeenCalled();
+  });
+
+  it('ignores a profile currency the FX table cannot serve', async () => {
+    load();
+    referenceData.preferredCurrencyOf.mockResolvedValue('CHF');
+
+    const summary = await service.summary(OWNER, ITINERARY_ID);
+
+    expect(summary.currency).toBe('EGP');
+    expect(summary.rateSource).toBe('same');
+    expect(exchangeRates.rateBetween).not.toHaveBeenCalled();
   });
 });
