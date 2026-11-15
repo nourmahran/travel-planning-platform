@@ -17,3 +17,74 @@ Used the guidance to install development tools,
 create the project folder structure, initialize
 Git, and prepare project documentation.
 ========================================
+Date: 2026-11-15
+Student: Member 5 (itinerary and budgeting module)
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-01 to ITN-26 (itinerary planning and budgeting)
+
+Prompt:
+Turn the member-5 implementation plan into working code,
+phase by phase (P0 to P10), following the repository
+conventions and using the installed skills
+(executing-plans, systematic-debugging, contract-first).
+
+How the output was used:
+Built the itineraries module skeleton, the temporary dev
+auth guard, the cities reference route, itinerary CRUD with
+ownership, days with renumbering and reorder, city grouping,
+activities and images, budget entries, transport costs and
+the exchange-rate cache with stale fallback. Each phase was
+tested before the next one started.
+========================================
+Date: 2026-11-15
+Student: Member 5 (itinerary and budgeting module)
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-14, ITN-18
+
+Prompt:
+Design the budget summary response: totals per category, per
+day, per city group and for the whole itinerary, converted
+into a display currency, and explain where rounding belongs.
+
+How the output was used:
+Each source total is converted once and rounded to 2 decimals
+instead of converting entry by entry, so no rounding drift
+appears. Transport costs stay a separate list plus a grand
+total line. Activity costs are counted under the activities
+category so they are not invisible in the budget.
+========================================
+Date: 2026-11-15
+Student: Member 5 (itinerary and budgeting module)
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-20, ITN-21, ITN-22
+
+Prompt:
+Implement the public itinerary search, the public detail and
+the clone, and make sure a private itinerary of another user
+cannot be discovered through any of them.
+
+How the output was used:
+Search matches only public, non-hidden itineraries, with the
+title regex escaped. Public detail returns 404 for private or
+hidden itineraries and never exposes budget totals. The clone
+rebuilds every subdocument with new ids, records the original
+author in clonedFrom and increments the source cloneCount.
+========================================
+Date: 2026-11-15
+Student: Member 5 (itinerary and budgeting module)
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-25, ITN-26
+
+Prompt:
+Integrate hotel search and flight search into the itinerary
+without owning either module, and define what happens before
+those modules exist.
+
+How the output was used:
+Defined a HotelSearchPort contract with a placeholder
+provider, so the hotels route answers available=false with a
+reason instead of inventing hotels. The flights route builds
+one leg per change of city, resolves airports per city, and
+reports a missing airport or an empty leg honestly. Both
+routes enforce itinerary ownership.
+========================================
