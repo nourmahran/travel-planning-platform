@@ -479,7 +479,9 @@ Shared requirements:
   need a real departure date skip because that seed writes no flights — and a
   mirror of the shared database (`--seed=existing --mirror`) gave **67 passed,
   0 failed, 0 skipped**. The
-  scratch database was dropped and confirmed gone after each run. The
+  scratch database was dropped and confirmed gone after each run. The seed
+  configuration was run once more after the skip counter was corrected
+  (`55679f1`), with the same 62/0/5 result. The
   `--seed=existing` path leaves out the `currencies` collection and the admin
   account, which is expected; the harness registered its own users. Route
   registration, the Swagger document, the cookie security of every route and the
