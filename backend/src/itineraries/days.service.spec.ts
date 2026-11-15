@@ -98,10 +98,12 @@ describe('DaysService', () => {
     });
 
     it('rejects a 61st day', async () => {
-      load(Array.from({ length: 60 }, (_, index) => makeDay(0)).map((_day, index) => ({
-        ...day,
-        _id: String(index).padStart(24, '0'),
-      })));
+      load(
+        Array.from({ length: 60 }, (_value, index) => ({
+          ...makeDay(0),
+          _id: String(index).padStart(24, '0'),
+        })),
+      );
 
       await expect(
         service.add(OWNER, ITINERARY_ID, { cityId: 'cairo' }),
