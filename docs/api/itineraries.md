@@ -475,9 +475,10 @@ Shared requirements:
 
 - The live Swagger pass ran on 2026-11-15 against a scratch database
   (`travel_planning_verify`) built two ways: the repo seed (`--seed=repo`) gave
-  **62 passed, 0 failed, 1 skipped** (the five flight checks skip because that
-  seed writes no flights), and a mirror of the shared database
-  (`--seed=existing --mirror`) gave **67 passed, 0 failed, 0 skipped**. The
+  **62 passed, 0 failed, 5 skipped (67 checks)** — the five flight checks that
+  need a real departure date skip because that seed writes no flights — and a
+  mirror of the shared database (`--seed=existing --mirror`) gave **67 passed,
+  0 failed, 0 skipped**. The
   scratch database was dropped and confirmed gone after each run. The
   `--seed=existing` path leaves out the `currencies` collection and the admin
   account, which is expected; the harness registered its own users. Route
