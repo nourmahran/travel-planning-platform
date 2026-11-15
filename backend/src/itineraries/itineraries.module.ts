@@ -7,6 +7,8 @@ import { ItinerariesController } from './itineraries.controller';
 import { ItinerariesService } from './itineraries.service';
 import { DaysController } from './days.controller';
 import { DaysService } from './days.service';
+import { ActivitiesController } from './activities.controller';
+import { ActivitiesService } from './activities.service';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 
 @Module({
@@ -16,8 +18,8 @@ import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
       { name: Itinerary.name, schema: ItinerarySchema },
     ]),
   ],
-  controllers: [ItinerariesController, DaysController],
-  providers: [ItinerariesService, DaysService],
+  controllers: [ItinerariesController, DaysController, ActivitiesController],
+  providers: [ItinerariesService, DaysService, ActivitiesService],
   exports: [ItinerariesService],
 })
 export class ItinerariesModule {}

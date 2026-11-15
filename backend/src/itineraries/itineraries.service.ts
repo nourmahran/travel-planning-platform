@@ -94,11 +94,36 @@ export class ItinerariesService {
       throw new NotFoundException('Itinerary not found');
     }
 
+    this.assertOwner(itinerary, ownerId);
+
+    return itinerary;
+  }
+
+  /** Finds the itinerary that holds an activity, for the /activities/:id routes. */
+  async findOneByActivity(
+    ownerId: string,
+    activityId: string,
+  ): Promise<ItineraryDocument> {
+    const itinerary = await this.itineraryModel
+      .findOne({ 'days.activities._id': new Types.ObjectId(activityId) })
+      .exec();
+
+    if (!itinerary) {
+      throw new NotFoundException('Activity not found');
+    }
+
+    this.assertOwner(itinerary, ownerId);
+
+    return itinerary;
+  }
+
+  private assertOwner(
+    itinerary: ItineraryDocument,
+    ownerId: string,
+  ): void {
     if (itinerary.ownerId.toString() !== ownerId) {
       throw new ForbiddenException('You do not own this itinerary');
     }
-
-    return itinerary;
   }
 
   async update(

@@ -1,18 +1,12 @@
 
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Types } from 'mongoose';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { ITINERARY_LIMITS } from './itinerary.constants';
 import { ItinerariesService } from './itineraries.service';
 import { ReferenceDataService } from '../reference-data/reference-data.service';
 import { nextDate, renumberDays } from './days-and-dates';
+import { dayList, requireDay } from './subdocuments';
 import type { Day } from './schemas/itinerary.schema';
-
-type DaySubdocument = Day & { _id: Types.ObjectId };
 
 @Injectable()
 export class DaysService {
@@ -42,11 +36,11 @@ export class DaysService {
       budgets: [],
     } as Day);
 
-    renumberDays(itinerary.startDate, this.dayList(itinerary));
+    renumberDays(itinerary.startDate, dayList(itinerary));
 
     await itinerary.save();
 
-    const days = this.dayList(itinerary);
+    const days = dayList(itinerary);
     const day = days[days.length - 1];
 
     return {
@@ -62,7 +56,7 @@ export class DaysService {
     cityId: string,
   ) {
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
-    const day = this.findDay(itinerary, dayId);
+    const day = requireDay(itinerary, dayId);
 
     await this.assertCityAllowed(cityId, itinerary.countries);
 
@@ -80,12 +74,8 @@ export class DaysService {
 
   async remove(ownerId: string, itineraryId: string, dayId: string) {
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
-    const days = this.dayList(itinerary);
-    const index = days.findIndex((day) => day._id.toString() === dayId);
-
-    if (index === -1) {
-      throw new NotFoundException('Day not found');
-    }
+    const days = dayList(itinerary);
+    const index = days.indexOf(requireDay(itinerary, dayId));
 
     days.splice(index, 1);
     renumberDays(itinerary.startDate, days);
@@ -97,7 +87,7 @@ export class DaysService {
 
   async reorder(ownerId: string, itineraryId: string, dayIds: string[]) {
     const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
-    const days = this.dayList(itinerary);
+    const days = dayList(itinerary);
 
     if (dayIds.length !== days.length) {
       throw new BadRequestException(
@@ -119,35 +109,16 @@ export class DaysService {
 
     itinerary.days = dayIds.map((id) => byId.get(id)!) as Day[];
 
-    renumberDays(itinerary.startDate, this.dayList(itinerary));
+    renumberDays(itinerary.startDate, dayList(itinerary));
 
     await itinerary.save();
 
-    return this.dayList(itinerary).map((day) => ({
+    return dayList(itinerary).map((day) => ({
       id: day._id.toString(),
       dayNumber: day.dayNumber,
       date: day.date,
       cityId: day.cityId,
     }));
-  }
-
-  private dayList(itinerary: { days: Day[] }): DaySubdocument[] {
-    return itinerary.days as unknown as DaySubdocument[];
-  }
-
-  private findDay(
-    itinerary: { days: Day[] },
-    dayId: string,
-  ): DaySubdocument {
-    const day = this.dayList(itinerary).find(
-      (candidate) => candidate._id.toString() === dayId,
-    );
-
-    if (!day) {
-      throw new NotFoundException('Day not found');
-    }
-
-    return day;
   }
 
   private async assertCityAllowed(

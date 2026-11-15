@@ -20,6 +20,7 @@ import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { ItinerariesService } from './itineraries.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
+import { toItineraryDetail } from './itinerary-detail';
 import { toItinerarySummary } from './itinerary-summary';
 
 @ApiTags('Itineraries')
@@ -64,13 +65,14 @@ export class ItinerariesController {
   @Get(':id')
   @ApiOperation({
     summary: 'Read one itinerary',
-    description: 'ITN-03. 404 when unknown, 403 when another user owns it.',
+    description:
+      'ITN-03. Full detail: days with their activities and budget entries, transport costs and clone attribution. 404 when unknown, 403 when another user owns it.',
   })
   async findOne(
     @CurrentUser() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
   ) {
-    return toItinerarySummary(await this.itineraries.findOne(ownerId, id));
+    return toItineraryDetail(await this.itineraries.findOne(ownerId, id));
   }
 
   @Patch(':id')

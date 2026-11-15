@@ -49,6 +49,7 @@ describe('ItinerariesService', () => {
   let model: {
     create: jest.Mock;
     findById: jest.Mock;
+    findOne: jest.Mock;
     find: jest.Mock;
     countDocuments: jest.Mock;
   };
@@ -81,6 +82,7 @@ describe('ItinerariesService', () => {
     model = {
       create: jest.fn(),
       findById: jest.fn(),
+      findOne: jest.fn(),
       find: jest.fn(),
       countDocuments: jest.fn(),
     };
@@ -192,6 +194,41 @@ describe('ItinerariesService', () => {
 
       await expect(service.findOne(OWNER, ITINERARY_ID)).resolves.toMatchObject({
         _id: ITINERARY_ID,
+      });
+    });
+  });
+
+  describe('findOneByActivity', () => {
+    const findByActivity = (value: FakeItinerary | null) => {
+      model.findOne.mockReturnValue({
+        exec: jest.fn().mockResolvedValue(value),
+      });
+    };
+
+    it('throws NotFound for an unknown activity', async () => {
+      findByActivity(null);
+
+      await expect(
+        service.findOneByActivity(OWNER, 'd'.repeat(24)),
+      ).rejects.toBeInstanceOf(NotFoundException);
+    });
+
+    it('throws Forbidden when the activity belongs to another owner', async () => {
+      findByActivity(makeItinerary({ ownerId: OTHER }));
+
+      await expect(
+        service.findOneByActivity(OWNER, 'd'.repeat(24)),
+      ).rejects.toBeInstanceOf(ForbiddenException);
+    });
+
+    it('returns the parent itinerary and queries the nested activity id', async () => {
+      findByActivity(makeItinerary());
+
+      await expect(
+        service.findOneByActivity(OWNER, 'd'.repeat(24)),
+      ).resolves.toMatchObject({ _id: ITINERARY_ID });
+      expect(model.findOne).toHaveBeenCalledWith({
+        'days.activities._id': expect.anything(),
       });
     });
   });
