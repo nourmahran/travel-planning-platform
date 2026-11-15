@@ -1,4 +1,3 @@
-import { AuthModule } from './auth/auth.module';
 import { AirportsController } from './airports/airports.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 
@@ -14,6 +13,9 @@ import { PoliciesModule } from './policies/policies.module';
 import { AirlinesModule } from './airlines/airlines.module';
 import { FlightsModule } from './flights/flights.module';
 import { BookingsModule } from './bookings/bookings.module';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { BookingsModule } from './bookings/bookings.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -31,7 +34,43 @@ import { BookingsModule } from './bookings/bookings.module';
           throw new Error('MONGODB_URI is missing from backend/.env');
         }
 
-        return { uri };
+        return {
+          uri,
+          serverSelectionTimeoutMS: 15000,
+          onConnectionCreate: (connection) => {
+            connection.on('error', (error: Error) => {
+              console.error(
+                'MongoDB connection error:',
+                error.name,
+                error.message,
+              );
+
+              const reason = (
+                error as Error & {
+                  reason?: {
+                    servers?: Map<
+                      string,
+                      { error?: Error }
+                    >;
+                  };
+                }
+              ).reason;
+
+              if (reason?.servers) {
+                for (const [host, server] of reason.servers) {
+                  console.error(
+                    'MongoDB server:',
+                    host,
+                    server.error?.name,
+                    server.error?.message,
+                  );
+                }
+              }
+            });
+
+            return connection;
+          },
+        };
       },
     }),
     // Domain events (payment.succeeded, refund.created, ...) — PAY-01, PAY-03
@@ -44,6 +83,8 @@ import { BookingsModule } from './bookings/bookings.module';
     FlightsModule,
     BookingsModule,
     AuthModule,
+    UsersModule,
+    AdminModule,
   ],
   controllers: [AppController, AirportsController],
   providers: [AppService],
