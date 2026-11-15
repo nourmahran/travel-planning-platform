@@ -6,6 +6,7 @@ import {
   Patch,
   Post,
   Query,
+  ForbiddenException,
 } from '@nestjs/common';
 
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -18,18 +19,29 @@ import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { Public } from '../auth/decorators/public.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user';
+import { ProviderFlightCancellationService } from './provider-flight-cancellation.service';
 
 @ApiTags('Flights')
 @Controller('flights')
 export class FlightsController {
-  constructor(private readonly flightsService: FlightsService) {}
+  constructor(
+    private readonly flightsService: FlightsService,
+    private readonly providerCancellation: ProviderFlightCancellationService,
+  ) {}
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
   @ApiOperation({
     summary: 'Create a new flight',
   })
-  create(@Body() dto: CreateFlightDto) {
+  create(@Body() dto: CreateFlightDto, @CurrentUser() user: AuthenticatedUser) {
+    if (
+      user.role === UserRole.AIRLINE_MODERATOR &&
+      dto.airlineId !== user.providerId
+    )
+      throw new ForbiddenException('Flight belongs to another airline');
     return this.flightsService.create(dto);
   }
 
@@ -54,21 +66,39 @@ export class FlightsController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
   @ApiOperation({
     summary: 'Update flight details and cabin pricing',
   })
-  update(
+  async update(
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateFlightDto,
+    @CurrentUser() user: AuthenticatedUser,
   ) {
+    if (user.role === UserRole.AIRLINE_MODERATOR) {
+      const { flight } = await this.flightsService.details(id);
+      if (flight.airlineId.toString() !== user.providerId)
+        throw new ForbiddenException('Flight belongs to another airline');
+    }
     return this.flightsService.update(id, dto);
   }
 
   @Patch(':id/cancel')
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
   @ApiOperation({
     summary: 'Cancel a scheduled flight without allocated seats',
   })
-  cancel(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.flightsService.cancel(id);
+  async cancel(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    const { flight } = await this.flightsService.details(id);
+    const airlineId = flight.airlineId.toString();
+    if (
+      user.role === UserRole.AIRLINE_MODERATOR &&
+      airlineId !== user.providerId
+    )
+      throw new ForbiddenException('Flight belongs to another airline');
+    return this.providerCancellation.cancelForAirline(id, airlineId);
   }
 }

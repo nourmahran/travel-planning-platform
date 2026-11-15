@@ -1,5 +1,11 @@
 # Member 2 implementation and integration boundary
 
+## Current status after Member 1 merge
+
+Member 1's authenticated session and role guards are now merged into this branch. Flight search/details and airport lookup are public. Booking creation derives the owner from the session; owner history, details, ticket PDF, cancellation preview and cancellation are protected routes. Airline moderators can create, edit and cancel flights only for their linked airline, edit only their linked airline profile, and list/export passengers only for that airline. Provider cancellation uses the paid refund flow. Admins may operate across airlines. The Stripe webhook remains public and validates its signature. Member 4's admin payment role check accepts Member 1's lowercase `admin` role.
+
+The reviewed requirements workbook has no FLT-27 row; the listed flight requirements go from FLT-26 to FLT-29. Member 6's notification read API remains on its separate branch. The older sections below describe the implementation history and mention routes that were internal at the time; the current route status is described here. Mocked backend tests pass, but a shared MongoDB/Stripe end-to-end run has not been performed.
+
 ## Implemented in this continuation
 
 - ScheduleModule enabled. Every 15 seconds, unpaid holds whose ten-minute deadline has passed transition to Expired and return inventory in one MongoDB transaction. Conditional state updates prevent duplicate restoration across workers/cancellation. Failed releases stay retryable; failures are logged. No TTL deletion removes booking history.
