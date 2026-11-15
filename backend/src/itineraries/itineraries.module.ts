@@ -11,13 +11,16 @@ import { ActivitiesController } from './activities.controller';
 import { ActivitiesService } from './activities.service';
 import { BudgetsController } from './budgets.controller';
 import { BudgetsService } from './budgets.service';
+import { BudgetSummaryService } from './budget-summary.service';
 import { TransportCostsController } from './transport-costs.controller';
 import { TransportCostsService } from './transport-costs.service';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
+import { CurrencyModule } from '../currency/currency.module';
 
 @Module({
   imports: [
     ReferenceDataModule,
+    CurrencyModule,
     MongooseModule.forFeature([
       { name: Itinerary.name, schema: ItinerarySchema },
     ]),
@@ -35,6 +38,7 @@ import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
     ActivitiesService,
     BudgetsService,
     TransportCostsService,
+    BudgetSummaryService,
   ],
   exports: [ItinerariesService],
 })

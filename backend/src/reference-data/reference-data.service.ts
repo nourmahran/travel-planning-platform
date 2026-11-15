@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import type { Connection } from 'mongoose';
+import { Types } from 'mongoose';
 
 import { escapeRegex } from '../common/utils/escape-regex';
 
@@ -108,6 +109,24 @@ export class ReferenceDataService {
     return currencies
       .filter((currency: unknown): currency is string => typeof currency === 'string')
       .sort();
+  }
+
+  /** The display currency the user chose, when the users collection has one. */
+  async preferredCurrencyOf(userId: string): Promise<string | null> {
+    if (!Types.ObjectId.isValid(userId)) {
+      return null;
+    }
+
+    const user = await this.database
+      .collection<{ preferredCurrency?: string }>('users')
+      .findOne(
+        { _id: new Types.ObjectId(userId) },
+        { projection: { preferredCurrency: 1 } },
+      );
+
+    return typeof user?.preferredCurrency === 'string'
+      ? user.preferredCurrency
+      : null;
   }
 
   async airportsInCity(cityId: string): Promise<AirportRecord[]> {

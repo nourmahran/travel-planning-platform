@@ -18,7 +18,9 @@ import { CurrentUser } from '../common/auth/current-user.decorator';
 import { DevUserGuard } from '../common/auth/dev-user.guard';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { ItinerariesService } from './itineraries.service';
+import { BudgetSummaryService } from './budget-summary.service';
 import { CreateItineraryDto } from './dto/create-itinerary.dto';
+import { BudgetSummaryQueryDto } from './dto/budget-summary-query.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { toItineraryDetail } from './itinerary-detail';
 import { toItinerarySummary } from './itinerary-summary';
@@ -34,7 +36,10 @@ import { toItinerarySummary } from './itinerary-summary';
 @UseGuards(DevUserGuard)
 @Controller('itineraries')
 export class ItinerariesController {
-  constructor(private readonly itineraries: ItinerariesService) {}
+  constructor(
+    private readonly itineraries: ItinerariesService,
+    private readonly budgetSummary: BudgetSummaryService,
+  ) {}
 
   @Post()
   @ApiOperation({
@@ -60,6 +65,20 @@ export class ItinerariesController {
     @Query() query: ListItinerariesDto,
   ) {
     return this.itineraries.list(ownerId, query);
+  }
+
+  @Get(':id/budget-summary')
+  @ApiOperation({
+    summary: 'Budget summary of one itinerary',
+    description:
+      'ITN-14, ITN-18. Totals per category, per day, per city group and for the whole itinerary, in the display currency: ?currency, else the user preferredCurrency, else the itinerary currency. Day categories include activity costs under activities; transport costs are a separate list and an extra grand-total line. Every figure is converted once from its source total and rounded to 2 decimals; rateSource is live, cached, stale or same.',
+  })
+  async budgetSummaryOf(
+    @CurrentUser() ownerId: string,
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Query() query: BudgetSummaryQueryDto,
+  ) {
+    return this.budgetSummary.summary(ownerId, id, query.currency);
   }
 
   @Get(':id')

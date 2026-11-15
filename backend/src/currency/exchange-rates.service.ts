@@ -123,8 +123,7 @@ export class ExchangeRatesService {
     daily: DailyRates,
   ): Promise<ConversionResult> {
     const supported = await this.referenceData.displayCurrencies();
-    const fromCode = this.normalizeCode(from, supported);
-    const toCode = this.normalizeCode(to, supported);
+    const { fromCode, toCode } = this.normalizePair(from, to, supported);
     const rate =
       fromCode === toCode
         ? 1
@@ -138,6 +137,31 @@ export class ExchangeRatesService {
       convertedAmount: roundAmount(amount * rate),
       rateDate: daily.date,
       rateSource: daily.source,
+    };
+  }
+
+  /** The rate alone, for callers that convert many totals themselves. */
+  async rateBetween(
+    from: string,
+    to: string,
+    daily: DailyRates,
+  ): Promise<number> {
+    const supported = await this.referenceData.displayCurrencies();
+    const { fromCode, toCode } = this.normalizePair(from, to, supported);
+
+    return fromCode === toCode
+      ? 1
+      : this.crossRate(fromCode, toCode, daily.rates);
+  }
+
+  private normalizePair(
+    from: string,
+    to: string,
+    supported: string[],
+  ): { fromCode: string; toCode: string } {
+    return {
+      fromCode: this.normalizeCode(from, supported),
+      toCode: this.normalizeCode(to, supported),
     };
   }
 
