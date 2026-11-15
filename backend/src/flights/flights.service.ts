@@ -40,6 +40,8 @@ type FlightSearchFilter = {
   };
   departureAirport?: string;
   arrivalAirport?: string;
+  /** ACC-15: only flights from active airlines appear in search. */
+  airlineId?: { $in: Types.ObjectId[] };
   cabins?: {
     $elemMatch: {
       cabinClass?: string;
@@ -346,6 +348,13 @@ export class FlightsService {
         },
       },
     };
+
+    // ACC-15: deactivated airlines are hidden from flight search.
+    const activeAirlineIds = await this.airlineModel
+      .find({ isActive: true })
+      .distinct('_id')
+      .exec();
+    filter.airlineId = { $in: activeAirlineIds };
 
     const skip = (page - 1) * limit;
     if (!Number.isSafeInteger(skip)) {

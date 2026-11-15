@@ -4,14 +4,53 @@ import { Global, Module } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Test, type TestingModule } from '@nestjs/testing';
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 
+import { AuthModule } from '../auth/auth.module';
 import { ItinerariesModule } from './itineraries.module';
+
+process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret';
+
+/**
+ * Every Mongo call resolves to an empty result, so the module graph boots
+ * without a database.
+ *
+ * Two proxies, because Nest awaits whatever a provider factory returns: the
+ * model itself must not look like a promise or the injector would unwrap it,
+ * while the queries it hands out must resolve when awaited.
+ */
+const emptyResult: any = new Proxy(function query() {} as any, {
+  get: (_target, property) => {
+    if (property === 'then') {
+      return (resolve: (value: unknown[]) => void) =>
+        Promise.resolve([]).then(resolve);
+    }
+
+    return () => emptyResult;
+  },
+  apply: () => emptyResult,
+});
+
+const stubModel: any = new Proxy(function model() {} as any, {
+  get: (_target, property) => {
+    if (property === 'then') {
+      return undefined;
+    }
+
+    if (property === 'modelName') {
+      return 'StubModel';
+    }
+
+    return () => emptyResult;
+  },
+  apply: () => emptyResult,
+});
 
 const connection = {
   models: {},
-  model: () => ({}),
-  collection: () => ({ findOne: () => null, find: () => ({ toArray: () => [] }) }),
-  db: {},
+  model: () => stubModel,
+  collection: () => emptyResult,
+  db: { collection: () => emptyResult },
 };
 
 /** Stands in for MongooseModule.forRoot without opening a connection. */
@@ -22,11 +61,6 @@ const connection = {
 })
 class StubDatabaseModule {}
 
-/**
- * Boots the real module graph with a stubbed Mongoose connection, so a missing
- * provider, an unregistered controller or a broken route is caught without a
- * database. The Swagger document is exactly what /api will serve.
- */
 const ROUTES: [method: string, path: string][] = [
   ['post', '/itineraries'],
   ['get', '/itineraries'],
@@ -58,14 +92,22 @@ const ROUTES: [method: string, path: string][] = [
   ['get', '/currency/convert'],
 ];
 
+const GUEST_ROUTES = new Set([
+  '/itineraries/public/search',
+  '/itineraries/public/{id}',
+  '/cities',
+  '/currency/convert',
+]);
+
 describe('ItinerariesModule wiring', () => {
-  let app: INestApplication | undefined;
+  let app: INestApplication;
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
         StubDatabaseModule,
+        AuthModule,
         ItinerariesModule,
       ],
     }).compile();
@@ -75,15 +117,15 @@ describe('ItinerariesModule wiring', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
+    await app.close();
   });
 
-  it('resolves every provider without a database', () => {
+  it('resolves every provider with Member 1 auth and no database', () => {
     expect(app).toBeDefined();
   });
 
   it('publishes every documented route in the Swagger document', () => {
-    const document = SwaggerModule.createDocument(
+    const document: any = SwaggerModule.createDocument(
       app,
       new DocumentBuilder().setTitle('test').build(),
     );
@@ -93,8 +135,8 @@ describe('ItinerariesModule wiring', () => {
     }
   });
 
-  it('keeps the public routes unauthenticated and the owner routes protected', () => {
-    const document = SwaggerModule.createDocument(
+  it('advertises the access_token cookie only on the owner routes', () => {
+    const document: any = SwaggerModule.createDocument(
       app,
       new DocumentBuilder().setTitle('test').build(),
     );
@@ -102,11 +144,31 @@ describe('ItinerariesModule wiring', () => {
     for (const [method, path] of ROUTES) {
       const operation = document.paths[path]?.[method];
 
-      if (path.startsWith('/itineraries/public') || path === '/cities' || path === '/currency/convert') {
-        expect(operation?.security ?? []).toHaveLength(0);
+      if (GUEST_ROUTES.has(path)) {
+        expect(operation?.security ?? []).toEqual([]);
       } else {
-        expect(operation?.security).toEqual([{ bearer: [] }]);
+        expect(operation?.security).toEqual([{ access_token: [] }]);
       }
     }
+  });
+
+
+  it('answers 401 on an owner route without a session', async () => {
+    await request(app.getHttpServer()).get('/itineraries').expect(401);
+    await request(app.getHttpServer()).post('/itineraries').expect(401);
+  });
+
+  it('no longer trusts the retired x-dev-user-id header', async () => {
+    await request(app.getHttpServer())
+      .get('/itineraries')
+      .set('x-dev-user-id', 'a'.repeat(24))
+      .expect(401);
+  });
+
+  it('leaves the guest routes open', async () => {
+    await request(app.getHttpServer()).get('/cities').expect(200);
+    await request(app.getHttpServer())
+      .get('/itineraries/public/search')
+      .expect(200);
   });
 });

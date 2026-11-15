@@ -9,19 +9,31 @@ without an `/api` prefix; Swagger UI is mounted at `/api`.
 
 ## 1. Authentication
 
-There is no login on this branch yet (Member 1 owns it). Protected routes use a
-temporary development guard:
+Member 1's authentication guards the whole API: `JwtAuthGuard` is registered as a
+global `APP_GUARD` in `AuthModule`, so every route needs a session unless it is
+marked `@Public()`.
 
 | Item | Value |
 |---|---|
-| Header | `x-dev-user-id: <24-hex ObjectId>` |
-| Enabled when | `ENABLE_DEV_AUTH=true` **and** `NODE_ENV` is not `production` |
-| Missing/invalid header | `401 Unauthorized` |
-| Delete on merge | the whole guard, replaced by Member 1's cookie guard |
+| Register | `POST /auth/register` `{ name, email, password, acceptedTerms, acceptedPrivacyPolicy }` |
+| Login | `POST /auth/login` `{ email, password }` — sets `access_token`, `refresh_token` and `csrf_token` cookies |
+| Read routes | send the cookies |
+| Write routes | also send `x-csrf-token: <csrf_token cookie value>` |
+| Session lifetime | 15-minute access token, 30-minute inactivity, 7-day refresh |
+| Missing or expired session | `401 Unauthorized` |
 
-Public routes (search, public detail, cities, currency conversion) need no
-header. The guard resolves the caller id only; every service re-checks ownership
-against the stored `ownerId`.
+Public routes need no cookies: public search, public detail, `GET /cities` and
+`GET /currency/convert`. The guard resolves the caller id only; every service
+re-checks ownership against the stored `ownerId`, so a valid session is not
+enough to touch somebody else's itinerary (`403`).
+
+In Swagger UI: log in through `POST /auth/login`, then use **Authorize** with the
+`access_token` cookie, and add the `x-csrf-token` header per request.
+
+The earlier `x-dev-user-id` header guard is gone. Integration with Member 1 was
+verified by `itineraries/itineraries.module.spec.ts`, which boots the module
+graph with the real `AuthModule` and asserts that the owner routes answer `401`,
+the guest routes answer `200`, and the retired header is ignored.
 
 ## 2. Endpoints
 
@@ -348,7 +360,7 @@ Frankfurt).
 | `201` | created (itinerary, day, activity, budget, transport cost, image) |
 | `204` | itinerary deleted |
 | `400` | body/query validation failed, unknown reference code or city, bad `startDate`, 60-day cap, 20-activity cap, 5-image cap, transport city not in the itinerary, unsupported currency, rate missing for a code |
-| `401` | `x-dev-user-id` missing, malformed, or the dev guard is disabled |
+| `401` | no session cookie, an expired session, or a write without the matching `x-csrf-token` |
 | `403` | the itinerary belongs to another user (owner routes only) |
 | `404` | itinerary/subdocument/public itinerary not found (also covers another user's private itinerary on clone and public detail) |
 | `503` | exchange rates unavailable: API failed and nothing is cached |
@@ -420,13 +432,14 @@ Shared requirements:
 
 ## 16. Known gaps
 
-- Member 1's login does not exist yet: every protected route is demonstrable
-  only through `x-dev-user-id`.
 - The live Swagger pass needs the shared `MONGODB_URI`, which this branch does
-  not have. Route registration, the Swagger document itself and the security of
-  every route are covered by `itineraries/itineraries.module.spec.ts`, which
-  boots the module graph with a stubbed connection; the request/response pass
-  over each route still has to be run against the shared database.
+  not have. Route registration, the Swagger document itself, the cookie security
+  of every route and the guest/owner split are covered by
+  `itineraries/itineraries.module.spec.ts`, which boots the module graph with a
+  stubbed connection and the real `AuthModule`; the request/response pass over
+  each route still has to be run against the shared database.
+- `GET /itineraries/:id/flights` reuses Member 2's flight search, so its results
+  depend on that module's data.
 - Images are URLs; the upload and size rules belong to Member 6.
 - `isHidden` is written by nobody yet; Member 6's moderation sets it.
 - Hotels return an honest empty answer until Member 3's module lands.

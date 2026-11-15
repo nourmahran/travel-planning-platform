@@ -1,10 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Public } from '../auth/decorators/public.decorator';
 import { ExchangeRatesService } from './exchange-rates.service';
 import { ConvertQueryDto } from './dto/convert-query.dto';
 
 @ApiTags('Currency')
+@Public()
 @Controller('currency')
 export class CurrencyController {
   constructor(private readonly exchangeRates: ExchangeRatesService) {}

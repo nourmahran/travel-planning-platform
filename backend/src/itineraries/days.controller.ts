@@ -6,12 +6,10 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../common/auth/current-user.decorator';
-import { DevUserGuard } from '../common/auth/dev-user.guard';
+import { CurrentUserId } from '../common/auth/current-user-id.decorator';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { DaysService } from './days.service';
 import { AddDayDto } from './dto/add-day.dto';
@@ -19,9 +17,7 @@ import { UpdateDayDto } from './dto/update-day.dto';
 import { ReorderDaysDto } from './dto/reorder-days.dto';
 
 @ApiTags('Itineraries')
-@ApiBearerAuth()
-@ApiHeader({ name: 'x-dev-user-id', required: true })
-@UseGuards(DevUserGuard)
+@ApiCookieAuth('access_token')
 @Controller('itineraries/:itineraryId/days')
 export class DaysController {
   constructor(private readonly days: DaysService) {}
@@ -33,7 +29,7 @@ export class DaysController {
       'ITN-05. Appends the day at the end, numbers it and derives its date from the start date. 400 past 60 days, unknown city, or a city outside the itinerary countries.',
   })
   add(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Body() dto: AddDayDto,
   ) {
@@ -47,7 +43,7 @@ export class DaysController {
       'ITN-08. Body lists every day id in the wanted order; numbers and dates are recalculated.',
   })
   reorder(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Body() dto: ReorderDaysDto,
   ) {
@@ -60,7 +56,7 @@ export class DaysController {
     description: 'ITN-05, ITN-06.',
   })
   changeCity(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Param('dayId', ParseObjectIdPipe) dayId: string,
     @Body() dto: UpdateDayDto,
@@ -75,7 +71,7 @@ export class DaysController {
       'ITN-07. The remaining days are renumbered and their dates recalculated.',
   })
   remove(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Param('dayId', ParseObjectIdPipe) dayId: string,
   ) {

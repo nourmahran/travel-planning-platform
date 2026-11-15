@@ -1,11 +1,13 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Public } from '../auth/decorators/public.decorator';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { ItinerariesPublicService } from './itineraries-public.service';
 import { PublicSearchDto } from './dto/public-search.dto';
 
 @ApiTags('Itineraries')
+@Public()
 @Controller('itineraries/public')
 export class ItinerariesPublicController {
   constructor(

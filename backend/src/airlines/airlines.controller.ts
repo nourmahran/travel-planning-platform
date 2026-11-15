@@ -1,4 +1,3 @@
-
 import {
   Body,
   Controller,
@@ -12,6 +11,9 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
+import { Public } from '../auth/decorators/public.decorator';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../auth/constants/roles';
 import { AirlinesService } from './airlines.service';
 import { CreateAirlineDto } from './dto/create-airline.dto';
 import { UpdateAirlineDto } from './dto/update-airline.dto';
@@ -24,17 +26,20 @@ export class AirlinesController {
   ) {}
 
   @Post()
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Create an airline' })
   create(@Body() dto: CreateAirlineDto) {
     return this.airlinesService.create(dto);
   }
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List airlines' })
   findAll() {
     return this.airlinesService.findAll();
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get airline details' })
   findOne(@Param('id', ParseObjectIdPipe) id: string) {
@@ -42,6 +47,7 @@ export class AirlinesController {
   }
 
   @Patch(':id')
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
   @ApiOperation({ summary: 'Update airline details' })
   update(
     @Param('id', ParseObjectIdPipe) id: string,
@@ -51,6 +57,7 @@ export class AirlinesController {
   }
 
   @Patch(':id/deactivate')
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: 'Deactivate an airline' })
   deactivate(@Param('id', ParseObjectIdPipe) id: string) {
     return this.airlinesService.remove(id);

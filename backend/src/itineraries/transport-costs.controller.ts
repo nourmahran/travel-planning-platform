@@ -5,26 +5,17 @@ import {
   Param,
   Patch,
   Post,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../common/auth/current-user.decorator';
-import { DevUserGuard } from '../common/auth/dev-user.guard';
+import { CurrentUserId } from '../common/auth/current-user-id.decorator';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { TransportCostsService } from './transport-costs.service';
 import { CreateTransportCostDto } from './dto/create-transport-cost.dto';
 import { UpdateTransportCostDto } from './dto/update-transport-cost.dto';
 
 @ApiTags('Itineraries')
-@ApiBearerAuth()
-@ApiHeader({
-  name: 'x-dev-user-id',
-  required: true,
-  description:
-    'Temporary development auth: any 24-hex ObjectId. Requires ENABLE_DEV_AUTH=true.',
-})
-@UseGuards(DevUserGuard)
+@ApiCookieAuth('access_token')
 @Controller()
 export class TransportCostsController {
   constructor(private readonly transportCosts: TransportCostsService) {}
@@ -36,7 +27,7 @@ export class TransportCostsController {
       'ITN-16. Both cities must be used by the itinerary days and must differ; amount non-negative with at most 2 decimals.',
   })
   create(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('itineraryId', ParseObjectIdPipe) itineraryId: string,
     @Body() dto: CreateTransportCostDto,
   ) {
@@ -49,7 +40,7 @@ export class TransportCostsController {
     description: 'ITN-16. Rechecked against the itinerary cities.',
   })
   update(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('costId', ParseObjectIdPipe) costId: string,
     @Body() dto: UpdateTransportCostDto,
   ) {
@@ -59,7 +50,7 @@ export class TransportCostsController {
   @Delete('transport-costs/:costId')
   @ApiOperation({ summary: 'Delete a transport cost', description: 'ITN-16.' })
   remove(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('costId', ParseObjectIdPipe) costId: string,
   ) {
     return this.transportCosts.remove(ownerId, costId);

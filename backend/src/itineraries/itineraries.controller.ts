@@ -10,12 +10,10 @@ import {
   Patch,
   Post,
   Query,
-  UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { CurrentUser } from '../common/auth/current-user.decorator';
-import { DevUserGuard } from '../common/auth/dev-user.guard';
+import { CurrentUserId } from '../common/auth/current-user-id.decorator';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { ItinerariesService } from './itineraries.service';
 import { BudgetSummaryService } from './budget-summary.service';
@@ -27,14 +25,7 @@ import { toItineraryDetail } from './itinerary-detail';
 import { toItinerarySummary } from './itinerary-summary';
 
 @ApiTags('Itineraries')
-@ApiBearerAuth()
-@ApiHeader({
-  name: 'x-dev-user-id',
-  required: true,
-  description:
-    'Temporary development auth: any 24-hex ObjectId. Requires ENABLE_DEV_AUTH=true.',
-})
-@UseGuards(DevUserGuard)
+@ApiCookieAuth('access_token')
 @Controller('itineraries')
 export class ItinerariesController {
   constructor(
@@ -49,7 +40,7 @@ export class ItinerariesController {
       'ITN-01. Validates the title, the countries against the reference collection, the start date (today or later, UTC) and the currency. New itineraries are private.',
   })
   async create(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Body() dto: CreateItineraryDto,
   ) {
     return this.itineraries.create(ownerId, dto);
@@ -62,7 +53,7 @@ export class ItinerariesController {
       'ITN-03. Only the caller itineraries, newest update first, page size 10.',
   })
   async list(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Query() query: ListItinerariesDto,
   ) {
     return this.itineraries.list(ownerId, query);
@@ -75,7 +66,7 @@ export class ItinerariesController {
       'ITN-14, ITN-18. Totals per category, per day, per city group and for the whole itinerary, in the display currency: ?currency, else the user preferredCurrency, else the itinerary currency. Day categories include activity costs under activities; transport costs are a separate list and an extra grand-total line. Every figure is converted once from its source total and rounded to 2 decimals; rateSource is live, cached, stale or same.',
   })
   async budgetSummaryOf(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
     @Query() query: BudgetSummaryQueryDto,
   ) {
@@ -89,7 +80,7 @@ export class ItinerariesController {
       'ITN-03. Full detail: days with their activities and budget entries, transport costs and clone attribution. 404 when unknown, 403 when another user owns it.',
   })
   async findOne(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
   ) {
     return toItineraryDetail(await this.itineraries.findOne(ownerId, id));
@@ -102,7 +93,7 @@ export class ItinerariesController {
       'ITN-01, ITN-20. Edits title, countries, startDate, currency and visibility. Changing countries is refused when an existing day city would fall outside them.',
   })
   async update(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: UpdateItineraryDto,
   ) {
@@ -116,7 +107,7 @@ export class ItinerariesController {
       'ITN-21, ITN-22. Copies a public itinerary, or one you own, into a new private itinerary with new subdocument ids. Keeps the source dates unless startDate is given, when every day date is recalculated. Records clonedFrom with the original author and increments the source cloneCount.',
   })
   async clone(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: CloneItineraryDto,
   ) {
@@ -127,7 +118,7 @@ export class ItinerariesController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({ summary: 'Delete an itinerary', description: 'ITN-01.' })
   async remove(
-    @CurrentUser() ownerId: string,
+    @CurrentUserId() ownerId: string,
     @Param('id', ParseObjectIdPipe) id: string,
   ): Promise<void> {
     await this.itineraries.remove(ownerId, id);

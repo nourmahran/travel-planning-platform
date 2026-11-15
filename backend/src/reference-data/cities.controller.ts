@@ -2,10 +2,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 
+import { Public } from '../auth/decorators/public.decorator';
 import { ReferenceDataService } from './reference-data.service';
 import { ListCitiesDto } from './dto/list-cities.dto';
 
 @ApiTags('Cities')
+@Public()
 @Controller('cities')
 export class CitiesController {
   constructor(private readonly referenceData: ReferenceDataService) {}
