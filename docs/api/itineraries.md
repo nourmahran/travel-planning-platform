@@ -344,9 +344,9 @@ Frankfurt).
 
 | Code | When |
 |---|---|
-| `200` | read or edit succeeded |
+| `200` | read, edit or subdocument delete succeeded (`DELETE /itineraries/:id` is the only `204`) |
 | `201` | created (itinerary, day, activity, budget, transport cost, image) |
-| `204` | deleted |
+| `204` | itinerary deleted |
 | `400` | body/query validation failed, unknown reference code or city, bad `startDate`, 60-day cap, 20-activity cap, 5-image cap, transport city not in the itinerary, unsupported currency, rate missing for a code |
 | `401` | `x-dev-user-id` missing, malformed, or the dev guard is disabled |
 | `403` | the itinerary belongs to another user (owner routes only) |
