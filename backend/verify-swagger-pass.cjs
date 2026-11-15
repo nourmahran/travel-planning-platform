@@ -192,9 +192,9 @@ function check(name, condition, detail) {
   console.log(`${mark}  ${name}${extra}`);
 }
 
-function skip(name, reason) {
-  skipped += 1;
-  skipLines.push(`${name} — ${reason}`);
+function skip(name, reason, count = 1) {
+  skipped += count;
+  skipLines.push(`${name} - ${reason}`);
   console.log(`SKIP  ${name}  ${reason}`);
 }
 
@@ -1069,6 +1069,7 @@ async function main() {
       skip(
         'the five flight checks anchored on a real departure date',
         'no Scheduled flight on or after today from the itinerary cities to the first-day city',
+        5,
       );
     } else {
       const chosen = candidates[0];
