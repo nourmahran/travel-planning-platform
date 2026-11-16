@@ -11,6 +11,7 @@ export enum RefundStatus {
 }
 
 export enum RefundReason {
+  FlightChange = 'FlightChange',
   /** User cancelled: refund % from the provider's tiers (FLT-26, HTL-21). */
   UserCancellation = 'UserCancellation',
   /** Airline/hotel cancelled: always 100% (FLT-06). */

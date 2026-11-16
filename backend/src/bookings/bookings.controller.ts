@@ -29,6 +29,9 @@ import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { FlightCancellationService } from './flight-cancellation.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { CabinClass } from '../flights/schemas/flight.schema';
+import { FlightChangeService, type ChangeLeg } from './flight-change.service';
+import { FlightChangeExecutionService } from './flight-change-execution.service';
+import { RequestFlightChangeDto } from './dto/request-flight-change.dto';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -36,6 +39,8 @@ export class BookingsController {
   constructor(
     private readonly bookingsService: BookingsService,
     private readonly cancellations: FlightCancellationService,
+    private readonly flightChanges: FlightChangeService,
+    private readonly changeExecution: FlightChangeExecutionService,
   ) {}
 
   @Post()
@@ -128,6 +133,25 @@ export class BookingsController {
   ) {
     return this.bookingsService.findOne(id, user.id);
   }
+
+  @Get(':id/change-preview')
+  @Roles(UserRole.USER)
+  @ApiOperation({ summary: 'FLT-27 Preview a same-route confirmed flight change and fare difference' })
+  changePreview(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('flightId', ParseObjectIdPipe) flightId: string,
+    @Query('leg') leg: ChangeLeg = 'outbound',
+  ) { return this.flightChanges.preview(id, user.id, flightId, leg); }
+
+  @Post(':id/change')
+  @Roles(UserRole.USER)
+  @ApiOperation({ summary: 'FLT-27 Hold a replacement flight and request any fare payment' })
+  changeFlight(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: RequestFlightChangeDto,
+  ) { return this.changeExecution.request(id, user.id, dto.flightId, dto.leg ?? 'outbound'); }
 
   @Get(':id/ticket')
   @Roles(UserRole.USER)

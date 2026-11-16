@@ -74,6 +74,10 @@ export class ProviderFlightCancellationService {
         booking._id.toString(),
         RefundReason.ProviderCancellation,
       );
+      await this.refunds.issueChangedFlightRefund(
+        booking._id.toString(),
+        RefundReason.ProviderCancellation,
+      );
       await this.bookings.updateOne(
         { _id: booking._id, refundDispatchPending: true },
         { $set: { refundDispatchPending: false } },

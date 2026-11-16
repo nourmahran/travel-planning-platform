@@ -10,6 +10,10 @@ import request from 'supertest';
 import { AppModule } from '../app.module';
 import { BookingGatewayRegistry } from '../payments/gateway/booking-gateway.registry';
 import { BookingType } from '../common/booking';
+import { WebhookService } from '../payments/webhook.service';
+import { StripeService } from '../payments/stripe/stripe.service';
+import { AdminService } from '../admin/admin.service';
+import { FlightChangeExecutionService } from '../bookings/flight-change-execution.service';
 
 describe('combined backend against an isolated MongoDB replica set', () => {
   let mongo: MongoMemoryReplSet;
@@ -348,5 +352,206 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       .get(`/bookings/flights/${flightId.toString()}/seats?cabin=Economy`).expect(200);
     expect(seats.body.numberedSeats).toEqual([1, 3]);
     expect(seats.body.availableSeats).toBe(2);
+  });
+
+  it('quotes a same-route flight change without changing the confirmed booking', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/auth/register').send({
+      name: 'Change User', email: 'change@example.test', password: 'Integration123',
+      acceptedTerms: true, acceptedPrivacyPolicy: true,
+    }).expect(201);
+    const login = await request(http).post('/auth/login').send({
+      email: 'change@example.test', password: 'Integration123',
+    }).expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const connection = app.get<Connection>(getConnectionToken());
+    const owner = await connection.db!.collection('users').findOne({ email: 'change@example.test' });
+    if (!owner) throw new Error('Change user missing');
+    const oldFlightId = new Types.ObjectId();
+    const newFlightId = new Types.ObjectId();
+    const bookingId = new Types.ObjectId();
+    const flightBase = {
+      airlineId: new Types.ObjectId(), status: 'Scheduled', departureAirport: 'CAI', arrivalAirport: 'DXB',
+      departureTimeUtc: new Date(Date.now() + 30 * 86400000),
+      arrivalTimeUtc: new Date(Date.now() + 30 * 86400000 + 4 * 3600000),
+      departureTimeZone: 'Africa/Cairo', cabins: [{ cabinClass: 'Economy', totalSeats: 10, availableSeats: 9, price: 100 }],
+    };
+    await connection.db!.collection('flights').insertMany([
+      { _id: oldFlightId, ...flightBase },
+      { _id: newFlightId, ...flightBase, cabins: [{ ...flightBase.cabins[0], price: 150 }] },
+    ]);
+    await connection.db!.collection('bookings').insertOne({
+      _id: bookingId, userId: owner._id.toString(), flightId: oldFlightId,
+      cabinClass: 'Economy', status: 'Confirmed', totalPrice: 100,
+      policySnapshot: { kind: 'flight', cancellationTiers: [{ daysBefore: 0, refundPercent: 100 }],
+        baggage: { freeBagsPerPassenger: 0, maxWeightKgPerBag: 20, extraBagPrice: 0, maxExtraBagsPerPassenger: 0 } },
+      passengers: [{ firstName: 'Change', lastName: 'User', passportNumber: 'ABC123',
+        dateOfBirth: '1990-01-01', passengerType: 'adult', fare: 100, baggageFee: 0 }],
+    });
+    const quote = await request(http)
+      .get(`/bookings/${bookingId.toString()}/change-preview?flightId=${newFlightId.toString()}`)
+      .set('Cookie', cookies).expect(200);
+    expect(quote.body.amountDue).toBe(50);
+    const unchanged = await connection.db!.collection('bookings').findOne({ _id: bookingId });
+    expect(String(unchanged?.flightId)).toBe(oldFlightId.toString());
+    await connection.db!.collection('payments').insertOne({
+      bookingType: 'flight', bookingId, userId: owner._id, status: 'Succeeded',
+      amount: 10000, currency: 'usd', stripePaymentIntentId: 'pi_original_change_test',
+    });
+    const csrfCookie = cookies.find((value) => value.startsWith('csrf_token='));
+    if (!csrfCookie) throw new Error('Missing CSRF cookie');
+    const csrf = decodeURIComponent(csrfCookie.split(';')[0].split('=')[1]);
+    const requested = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf)
+      .send({ flightId: newFlightId.toString() }).expect(201);
+    expect(requested.body.amountDue).toBe(50);
+    expect(requested.body.payment.bookingType).toBe('flight_change');
+    const beforeWebhook = await connection.db!.collection('bookings').findOne({ _id: bookingId });
+    expect(String(beforeWebhook?.flightId)).toBe(oldFlightId.toString());
+    const createIntent = jest.spyOn(app.get(StripeService), 'createPaymentIntent')
+      .mockResolvedValue({ id: 'pi_change_test', client_secret: 'pi_change_secret' } as never);
+    try {
+      const payment = await request(http).post('/api/payments')
+        .set('Cookie', cookies).set('x-csrf-token', csrf)
+        .send({ bookingType: 'flight_change', bookingId: requested.body.changeId }).expect(201);
+      expect(payment.body.amount).toBe(50);
+      expect(createIntent).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 5000 }));
+    } finally { createIntent.mockRestore(); }
+    await app.get(WebhookService).onPaymentSucceeded({ id: 'pi_change_test' } as never);
+    const afterWebhook = await connection.db!.collection('bookings').findOne({ _id: bookingId });
+    expect(String(afterWebhook?.flightId)).toBe(newFlightId.toString());
+    expect(afterWebhook?.totalPrice).toBe(150);
+    const date = new Date().toISOString().slice(0, 10);
+    const analytics = await app.get(AdminService).analytics(date, date);
+    expect(analytics.providers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'flight', providerId: flightBase.airlineId.toString(), grossRevenue: 50, bookings: 0 }),
+    ]));
+    const cancellationPreview = await request(http)
+      .get(`/bookings/${bookingId.toString()}/cancellation-preview`)
+      .set('Cookie', cookies).expect(200);
+    expect(cancellationPreview.body.amount).toBe(150);
+    let refundNumber = 0;
+    const refundCalls = jest.spyOn(app.get(StripeService), 'createRefund')
+      .mockImplementation(async () => ({ id: `re_change_cancel_${++refundNumber}`, status: 'succeeded' } as never));
+    try {
+      await request(http).patch(`/bookings/${bookingId.toString()}/cancel`)
+        .set('Cookie', cookies).set('x-csrf-token', csrf).expect(200);
+      expect(refundCalls).toHaveBeenCalledTimes(2);
+    } finally { refundCalls.mockRestore(); }
+  });
+
+  it('changes a lower-fare flight and records the Stripe difference refund', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/auth/register').send({
+      name: 'Refund Change', email: 'refund-change@example.test', password: 'Integration123',
+      acceptedTerms: true, acceptedPrivacyPolicy: true,
+    }).expect(201);
+    const login = await request(http).post('/auth/login').send({
+      email: 'refund-change@example.test', password: 'Integration123',
+    }).expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const csrfCookie = cookies.find((value) => value.startsWith('csrf_token='));
+    if (!csrfCookie) throw new Error('Missing CSRF cookie');
+    const csrf = decodeURIComponent(csrfCookie.split(';')[0].split('=')[1]);
+    const connection = app.get<Connection>(getConnectionToken());
+    const owner = await connection.db!.collection('users').findOne({ email: 'refund-change@example.test' });
+    if (!owner) throw new Error('Refund change user missing');
+    const oldFlightId = new Types.ObjectId();
+    const newFlightId = new Types.ObjectId();
+    const bookingId = new Types.ObjectId();
+    const base = { airlineId: new Types.ObjectId(), status: 'Scheduled', departureAirport: 'CAI', arrivalAirport: 'DXB',
+      departureTimeUtc: new Date(Date.now() + 40 * 86400000),
+      arrivalTimeUtc: new Date(Date.now() + 40 * 86400000 + 4 * 3600000),
+      departureTimeZone: 'Africa/Cairo', cabins: [{ cabinClass: 'Economy', totalSeats: 10, availableSeats: 9, price: 200 }] };
+    await connection.db!.collection('flights').insertMany([
+      { _id: oldFlightId, ...base },
+      { _id: newFlightId, ...base, cabins: [{ ...base.cabins[0], price: 150 }] },
+    ]);
+    await connection.db!.collection('bookings').insertOne({
+      _id: bookingId, userId: owner._id.toString(), flightId: oldFlightId,
+      cabinClass: 'Economy', status: 'Confirmed', totalPrice: 200,
+      passengers: [{ firstName: 'Refund', lastName: 'Change', passportNumber: 'ABC123',
+        dateOfBirth: '1990-01-01', passengerType: 'adult', fare: 200, baggageFee: 0 }],
+    });
+    await connection.db!.collection('payments').insertOne({
+      bookingType: 'flight', bookingId, userId: owner._id, status: 'Succeeded',
+      amount: 20000, currency: 'usd', stripePaymentIntentId: 'pi_original_refund_change',
+    });
+    const stripe = app.get(StripeService);
+    const refundCall = jest.spyOn(stripe, 'createRefund').mockResolvedValue({ id: 're_fare_change_test', status: 'succeeded' } as never);
+    try {
+      const changed = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+        .set('Cookie', cookies).set('x-csrf-token', csrf)
+        .send({ flightId: newFlightId.toString() }).expect(201);
+      expect(changed.body.amountDue).toBe(0);
+      expect(changed.body.refundAmount).toBe(50);
+      const booking = await connection.db!.collection('bookings').findOne({ _id: bookingId });
+      expect(String(booking?.flightId)).toBe(newFlightId.toString());
+      expect(booking?.totalPrice).toBe(150);
+      expect(refundCall).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 5000 }));
+      const refund = await connection.db!.collection('refunds').findOne({ bookingId: new Types.ObjectId(changed.body.changeId as string) });
+      expect(refund?.status).toBe('Refunded');
+    } finally { refundCall.mockRestore(); }
+  });
+
+  it('releases an expired replacement hold and refunds a late fare payment', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/auth/register').send({
+      name: 'Late Change', email: 'late-change@example.test', password: 'Integration123',
+      acceptedTerms: true, acceptedPrivacyPolicy: true,
+    }).expect(201);
+    const login = await request(http).post('/auth/login').send({
+      email: 'late-change@example.test', password: 'Integration123',
+    }).expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const csrfCookie = cookies.find((value) => value.startsWith('csrf_token='));
+    if (!csrfCookie) throw new Error('Missing CSRF cookie');
+    const csrf = decodeURIComponent(csrfCookie.split(';')[0].split('=')[1]);
+    const connection = app.get<Connection>(getConnectionToken());
+    const owner = await connection.db!.collection('users').findOne({ email: 'late-change@example.test' });
+    if (!owner) throw new Error('Late change user missing');
+    const oldFlightId = new Types.ObjectId();
+    const newFlightId = new Types.ObjectId();
+    const bookingId = new Types.ObjectId();
+    const base = { airlineId: new Types.ObjectId(), status: 'Scheduled',
+      departureAirport: 'CAI', arrivalAirport: 'DXB',
+      departureTimeUtc: new Date(Date.now() + 45 * 86400000),
+      arrivalTimeUtc: new Date(Date.now() + 45 * 86400000 + 4 * 3600000),
+      departureTimeZone: 'Africa/Cairo', cabins: [{ cabinClass: 'Economy', totalSeats: 10, availableSeats: 9, price: 100 }] };
+    await connection.db!.collection('flights').insertMany([
+      { _id: oldFlightId, ...base },
+      { _id: newFlightId, ...base, cabins: [{ ...base.cabins[0], price: 150 }] },
+    ]);
+    await connection.db!.collection('bookings').insertOne({
+      _id: bookingId, userId: owner._id.toString(), flightId: oldFlightId,
+      cabinClass: 'Economy', status: 'Confirmed', totalPrice: 100,
+      passengers: [{ firstName: 'Late', lastName: 'Change', passportNumber: 'ABC123',
+        dateOfBirth: '1990-01-01', passengerType: 'adult', fare: 100, baggageFee: 0 }],
+    });
+    await connection.db!.collection('payments').insertOne({
+      bookingType: 'flight', bookingId, userId: owner._id, status: 'Succeeded',
+      amount: 10000, currency: 'usd', stripePaymentIntentId: 'pi_original_late_change',
+    });
+    const requested = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf)
+      .send({ flightId: newFlightId.toString() }).expect(201);
+    const changeId = new Types.ObjectId(requested.body.changeId as string);
+    await connection.db!.collection('payments').insertOne({
+      bookingType: 'flight_change', bookingId: changeId, userId: owner._id,
+      status: 'Pending', amount: 5000, currency: 'usd', stripePaymentIntentId: 'pi_late_change',
+    });
+    await connection.db!.collection('flight_changes').updateOne({ _id: changeId },
+      { $set: { holdExpiresAt: new Date(Date.now() - 1000) } });
+    expect(await app.get(FlightChangeExecutionService).expire(changeId.toString())).toBe(true);
+    const replacement = await connection.db!.collection('flights').findOne({ _id: newFlightId });
+    expect(replacement?.cabins?.[0]?.availableSeats).toBe(9);
+    const refundCall = jest.spyOn(app.get(StripeService), 'createRefund')
+      .mockResolvedValue({ id: 're_late_change', status: 'succeeded' } as never);
+    try {
+      await app.get(WebhookService).onPaymentSucceeded({ id: 'pi_late_change' } as never);
+      expect(refundCall).toHaveBeenCalledWith(expect.objectContaining({ amountMinor: 5000 }));
+    } finally { refundCall.mockRestore(); }
+    const unchanged = await connection.db!.collection('bookings').findOne({ _id: bookingId });
+    expect(String(unchanged?.flightId)).toBe(oldFlightId.toString());
   });
 });

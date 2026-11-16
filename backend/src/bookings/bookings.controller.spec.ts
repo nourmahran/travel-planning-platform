@@ -5,6 +5,8 @@ import request from 'supertest';
 import { BookingsController } from './bookings.controller';
 import { BookingsService } from './bookings.service';
 import { FlightCancellationService } from './flight-cancellation.service';
+import { FlightChangeService } from './flight-change.service';
+import { FlightChangeExecutionService } from './flight-change-execution.service';
 
 describe('BookingsController', () => {
   let app: INestApplication;
@@ -31,6 +33,8 @@ describe('BookingsController', () => {
           useValue: mockBookingsService,
         },
         { provide: FlightCancellationService, useValue: mockCancellations },
+        { provide: FlightChangeService, useValue: { preview: jest.fn() } },
+        { provide: FlightChangeExecutionService, useValue: { request: jest.fn() } },
       ],
     }).compile();
 

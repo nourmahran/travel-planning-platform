@@ -8,7 +8,7 @@ import { BookingType } from '../../common/booking';
  */
 export class CreatePaymentDto {
   @ApiProperty({ enum: BookingType, example: BookingType.Flight })
-  @IsEnum(BookingType, { message: 'bookingType must be "flight" or "hotel"' })
+  @IsEnum(BookingType)
   bookingType: BookingType;
 
   @ApiProperty({ example: '6730f1c2a4b5c6d7e8f90123' })

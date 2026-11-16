@@ -102,6 +102,27 @@ export class RefundsService {
     }
   }
 
+  private async succeededFlightChangeId(bookingId: string): Promise<string | null> {
+    const change = await this.payments.db.collection('flight_changes').findOne({
+      bookingId: toObjectId(bookingId), status: 'Confirmed', amountDue: { $gt: 0 },
+    });
+    if (!change) return null;
+    const payment = await this.findSucceededPayment(BookingType.FlightChange, String(change._id));
+    return payment ? String(change._id) : null;
+  }
+
+  async previewChangedFlightRefund(bookingId: string, userId: string) {
+    const changeId = await this.succeededFlightChangeId(bookingId);
+    if (!changeId) return null;
+    return this.previewRefund(BookingType.FlightChange, changeId, userId);
+  }
+
+  async issueChangedFlightRefund(bookingId: string, reason: RefundReason) {
+    const changeId = await this.succeededFlightChangeId(bookingId);
+    if (!changeId) return null;
+    return this.issueRefund(BookingType.FlightChange, changeId, reason);
+  }
+
   async previewRefund(
     type: BookingType,
     bookingId: string,
@@ -142,7 +163,7 @@ export class RefundsService {
       tiers: await this.resolveTiers(gateway, booking),
       startsAt: booking.startsAt,
       now,
-      kind: type,
+      kind: type === BookingType.Hotel ? BookingType.Hotel : BookingType.Flight,
       reason,
     });
     return {
@@ -200,7 +221,7 @@ export class RefundsService {
           : [],
       startsAt: booking?.startsAt ?? now,
       now,
-      kind: type,
+      kind: type === BookingType.Hotel ? BookingType.Hotel : BookingType.Flight,
       reason,
     });
 

@@ -13,6 +13,8 @@ describe('confirmed flight cancellation', () => {
     previewRefund: jest.fn(),
     assertSuccessfulPayment: jest.fn(),
     issueRefund: jest.fn(),
+    previewChangedFlightRefund: jest.fn(),
+    issueChangedFlightRefund: jest.fn(),
   };
   const service = new FlightCancellationService(
     bookings as never,

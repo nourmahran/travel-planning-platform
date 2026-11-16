@@ -41,6 +41,9 @@ export class CancellationRefundRecoveryService {
           booking._id.toString(),
           booking.refundDispatchReason as RefundReason,
         );
+        await this.refunds.issueChangedFlightRefund(
+          booking._id.toString(), booking.refundDispatchReason as RefundReason,
+        );
         await this.bookings.updateOne(
           { _id: booking._id, refundDispatchPending: true },
           { $set: { refundDispatchPending: false } },

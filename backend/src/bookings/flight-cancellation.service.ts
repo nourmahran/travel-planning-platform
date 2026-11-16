@@ -11,8 +11,12 @@ export class FlightCancellationService {
     private readonly refunds: RefundsService,
   ) {}
 
-  previewForUser(bookingId: string, userId: string) {
-    return this.refunds.previewRefund(BookingType.Flight, bookingId, userId);
+  async previewForUser(bookingId: string, userId: string) {
+    const [original, adjustment] = await Promise.all([
+      this.refunds.previewRefund(BookingType.Flight, bookingId, userId),
+      this.refunds.previewChangedFlightRefund(bookingId, userId),
+    ]);
+    return adjustment ? { ...original, amount: Math.round((original.amount + adjustment.amount) * 100) / 100 } : original;
   }
 
   async cancelForUser(bookingId: string, userId: string) {
@@ -26,6 +30,7 @@ export class FlightCancellationService {
       bookingId,
       RefundReason.UserCancellation,
     );
+    await this.refunds.issueChangedFlightRefund(bookingId, RefundReason.UserCancellation);
     await this.bookings.markRefundDispatched(bookingId);
     return { booking, refund };
   }

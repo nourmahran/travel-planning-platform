@@ -2,4 +2,5 @@
 export enum BookingType {
   Flight = 'flight',
   Hotel = 'hotel',
+  FlightChange = 'flight_change',
 }

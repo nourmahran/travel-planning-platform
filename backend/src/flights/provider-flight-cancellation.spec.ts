@@ -70,6 +70,7 @@ describe('airline flight cancellation', () => {
     const refunds = {
       assertSuccessfulPayment: jest.fn(async () => {}),
       issueRefund: jest.fn(async () => ({})),
+      issueChangedFlightRefund: jest.fn(async () => null),
     };
     const service = new ProviderFlightCancellationService(
       flights as never,
@@ -93,6 +94,9 @@ describe('airline flight cancellation', () => {
       BookingType.Flight,
       bookingId.toString(),
       RefundReason.ProviderCancellation,
+    );
+    expect(refunds.issueChangedFlightRefund).toHaveBeenCalledWith(
+      bookingId.toString(), RefundReason.ProviderCancellation,
     );
     expect(bookingUpdate.mock.calls[0][1]).toMatchObject({
       $set: { status: BookingStatus.CANCELLED, providerCancelledFlightId: id },

@@ -23,7 +23,7 @@ describe('cancellation refund recovery', () => {
         }),
         updateOne,
       } as never,
-      { issueRefund } as never,
+      { issueRefund, issueChangedFlightRefund: jest.fn(async () => null) } as never,
     );
     await service.retryPendingRefunds();
     expect(issueRefund).toHaveBeenCalledWith(
