@@ -16,6 +16,9 @@ import { BookingsModule } from './bookings/bookings.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
+import { CurrencyModule } from './currency/currency.module';
+import { ItinerariesModule } from './itineraries/itineraries.module';
+import { ReferenceDataModule } from './reference-data/reference-data.module';
 
 @Module({
   imports: [
@@ -85,6 +88,9 @@ import { AdminModule } from './admin/admin.module';
     AuthModule,
     UsersModule,
     AdminModule,
+    ReferenceDataModule,
+    CurrencyModule,
+    ItinerariesModule,
   ],
   controllers: [AppController, AirportsController],
   providers: [AppService],

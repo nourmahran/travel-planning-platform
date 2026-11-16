@@ -46,6 +46,7 @@ async function bootstrap() {
     .addTag('Hotels')
     .addTag('Payments')
     .addTag('Itineraries')
+    .addTag('Currency')
     .addTag('Blog')
     .build();
 
