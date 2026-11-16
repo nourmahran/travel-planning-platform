@@ -35,8 +35,10 @@ export class BlogService {
   ) {}
 
   async create(actor: Actor, dto: CreatePostDto) {
+    if (dto.itineraryId) await this.bridge.attachableItinerary(dto.itineraryId, actor.id);
     return this.store.posts.create({
       authorId: objectId(actor.id),
+      itineraryId: dto.itineraryId ? objectId(dto.itineraryId) : undefined,
       title: dto.title,
       body: dto.body,
       tags: dto.tags ?? [],
@@ -51,7 +53,9 @@ export class BlogService {
     return this.store.transaction(async (session) => {
       const post = await this.content.lock(ContentType.Post, id, session);
       this.content.requireOwner(post, actor);
+      if (dto.itineraryId) await this.bridge.attachableItinerary(dto.itineraryId, actor.id, session);
       const changes = { ...dto } as UpdatePostDto & { publishedAt?: Date };
+      if (dto.itineraryId) changes.itineraryId = objectId(dto.itineraryId) as unknown as string;
       if (
         dto.status === PostStatus.Published &&
         post.status !== PostStatus.Published
@@ -237,8 +241,13 @@ export class BlogService {
       .find({ targetType: MediaTarget.Post, targetId: post._id })
       .sort({ createdAt: 1 })
       .lean();
+    const itinerary = post.itineraryId
+      ? await this.bridge.visibleAttachedItinerary(post.itineraryId.toString())
+      : null;
     return {
       ...post,
+      itineraryId: itinerary?._id ?? null,
+      itinerary,
       author: await this.bridge.authorLabel(post.authorId.toString()),
       likeCount,
       commentCount: comments.total,

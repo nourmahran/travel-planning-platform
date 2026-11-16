@@ -10,6 +10,7 @@ import {
 
 export interface PostRecord extends BaseRecord {
   authorId: Types.ObjectId;
+  itineraryId?: Types.ObjectId;
   title: string;
   body: string;
   tags: string[];
@@ -83,6 +84,7 @@ const timestamps = { timestamps: true, versionKey: false } as const;
 export const PostSchema = new Schema<PostRecord>(
   {
     authorId: { type: id, required: true, index: true },
+    itineraryId: { type: id },
     title: {
       type: String,
       required: true,

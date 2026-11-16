@@ -72,6 +72,30 @@ async function report(type: ContentType, id: string, user: User = 'sara') {
   return result.body._id as string;
 }
 
+test('BLG-13 attaches only an owned public itinerary and hides it after privacy changes', async () => {
+  const created = await as('eyad', api().post('/api/posts'))
+    .send({ title: 'Aswan plan', body: 'Our trip', status: 'Published', itineraryId: ids.publicItinerary })
+    .expect(201);
+  const postId = created.body._id as string;
+  const detail = await api().get('/api/posts/' + postId).expect(200);
+  assert.equal(detail.body.itinerary.title, 'Aswan weekend');
+
+  await as('sara', api().post('/api/posts'))
+    .send({ title: 'Someone else', body: 'Trip', itineraryId: ids.publicItinerary })
+    .expect(404);
+  await as('eyad', api().post('/api/posts'))
+    .send({ title: 'Private trip', body: 'Trip', itineraryId: ids.privateItinerary })
+    .expect(404);
+
+  await store.connection.collection('itineraries').updateOne(
+    { _id: objectId(ids.publicItinerary) },
+    { $set: { visibility: 'Private' } },
+  );
+  const hidden = await api().get('/api/posts/' + postId).expect(200);
+  assert.equal(hidden.body.itinerary, null);
+  assert.equal(hidden.body.itineraryId, null);
+});
+
 before(
   async () => {
     process.env.NODE_ENV = 'test';

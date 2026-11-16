@@ -24,6 +24,7 @@ import { HotelsModule } from './hotels/hotels.module';
 import { CommunityModule } from './community/community.module';
 import { CommunityIdentity } from './community/auth';
 import { TeamIdentity } from './community/team-identity';
+import { FavouritesModule } from './favourites/favourites.module';
 
 @Module({
   imports: [
@@ -98,6 +99,7 @@ import { TeamIdentity } from './community/team-identity';
     RouterModule.register([{ path: 'api', module: CommunityModule }]),
     CurrencyModule,
     ItinerariesModule,
+    FavouritesModule,
   ],
   controllers: [AppController, AirportsController],
   providers: [AppService],

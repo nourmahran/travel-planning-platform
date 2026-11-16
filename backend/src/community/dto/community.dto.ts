@@ -43,6 +43,11 @@ export class PageDto {
 }
 
 export class CreatePostDto {
+  @ApiPropertyOptional({ description: 'Your public itinerary to attach', format: 'mongo-id' })
+  @ValidateIf((_object, value) => value !== undefined && value !== null)
+  @IsMongoId()
+  itineraryId?: string | null;
+
   @ApiProperty({ example: 'A weekend in Aswan', maxLength: 300 })
   @Transform(trim)
   @IsString()

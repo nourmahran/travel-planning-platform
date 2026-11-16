@@ -108,6 +108,35 @@ export class TeamBridge {
     return pageResult(items, total, page);
   }
 
+  async attachableItinerary(id: string, authorId: string, session?: ClientSession) {
+    const itinerary = await this.store.connection.collection('itineraries').findOne(
+      {
+        _id: objectId(id),
+        $or: [
+          { ownerId: objectId(authorId), visibility: 'public', isHidden: { $ne: true } },
+          { authorId: objectId(authorId), visibility: 'Public', hidden: { $ne: true } },
+        ],
+      },
+      { session, projection: { title: 1, startDate: 1, endDate: 1 } },
+    );
+    if (!itinerary) throw new NotFoundException('Public itinerary not found');
+    return itinerary;
+  }
+
+  async visibleAttachedItinerary(id: string) {
+    const itinerary = await this.store.connection.collection('itineraries').findOne(
+      {
+        _id: objectId(id),
+        $or: [
+          { visibility: 'public', isHidden: { $ne: true } },
+          { visibility: 'Public', hidden: { $ne: true } },
+        ],
+      },
+      { projection: { title: 1, startDate: 1, endDate: 1 } },
+    );
+    return itinerary ?? null;
+  }
+
   collection(type: ContentType | MediaTarget) {
     const collections: Record<string, string> = {
       review: 'reviews',

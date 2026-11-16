@@ -116,6 +116,12 @@ export class AdminController {
     return this.adminService.listBookings(query);
   }
 
+  @Get('analytics')
+  @ApiOperation({ summary: 'BON-01 Bookings and net revenue per provider over a selected period' })
+  analytics(@Query('from') from: string, @Query('to') to: string) {
+    return this.adminService.analytics(from, to);
+  }
+
   private parseProviderType(type: string): 'airline' | 'hotel' {
     if (type !== 'airline' && type !== 'hotel') {
       throw new BadRequestException('Provider type must be airline or hotel');

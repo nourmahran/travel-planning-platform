@@ -447,6 +447,38 @@ export class AdminService {
     };
   }
 
+  async analytics(from: string, to: string) {
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!datePattern.test(from ?? '') || !datePattern.test(to ?? '')) {
+      throw new BadRequestException('from and to must be dates in YYYY-MM-DD format');
+    }
+    const start = new Date(`${from}T00:00:00.000Z`);
+    const end = new Date(`${to}T23:59:59.999Z`);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) ||
+        start.toISOString().slice(0, 10) !== from || end.toISOString().slice(0, 10) !== to ||
+        start > end) {
+      throw new BadRequestException('Invalid analytics date range');
+    }
+    const db = this.connection.db;
+    if (!db) return { from, to, providers: [] };
+    const providers = await db.collection('payments').aggregate([
+      { $match: { status: 'Succeeded', succeededAt: { $gte: start, $lte: end }, duplicateRefundId: { $exists: false } } },
+      { $lookup: { from: 'bookings', localField: 'bookingId', foreignField: '_id', as: 'flightBooking' } },
+      { $lookup: { from: 'hotel_bookings', localField: 'bookingId', foreignField: '_id', as: 'hotelBooking' } },
+      { $set: { flightBooking: { $first: '$flightBooking' }, hotelBooking: { $first: '$hotelBooking' } } },
+      { $lookup: { from: 'flights', localField: 'flightBooking.flightId', foreignField: '_id', as: 'flight' } },
+      { $set: { flight: { $first: '$flight' } } },
+      { $set: { providerId: { $cond: [{ $eq: ['$bookingType', 'hotel'] }, '$hotelBooking.hotelId', '$flight.airlineId'] } } },
+      { $match: { providerId: { $ne: null } } },
+      { $lookup: { from: 'refunds', localField: '_id', foreignField: 'paymentId', pipeline: [{ $match: { status: 'Refunded' } }, { $project: { amount: 1 } }], as: 'refunds' } },
+      { $set: { refundedMinor: { $sum: '$refunds.amount' } } },
+      { $group: { _id: { type: '$bookingType', providerId: '$providerId', currency: '$currency' }, bookings: { $sum: 1 }, grossMinor: { $sum: '$amount' }, refundedMinor: { $sum: '$refundedMinor' } } },
+      { $project: { _id: 0, type: '$_id.type', providerId: '$_id.providerId', currency: { $toUpper: '$_id.currency' }, bookings: 1, grossRevenue: { $divide: ['$grossMinor', 100] }, refunds: { $divide: ['$refundedMinor', 100] }, netRevenue: { $divide: [{ $subtract: ['$grossMinor', '$refundedMinor'] }, 100] } } },
+      { $sort: { type: 1, providerId: 1, currency: 1 } },
+    ]).toArray();
+    return { from, to, providers: providers.map((provider) => ({ ...provider, providerId: String(provider.providerId) })) };
+  }
+
   private mapBooking(row: Record<string, unknown>) {
     const id =
       row._id instanceof Types.ObjectId

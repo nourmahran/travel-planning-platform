@@ -4,6 +4,7 @@ import type { INestApplication } from '@nestjs/common';
 import { MongoMemoryReplSet } from 'mongodb-memory-server';
 import { getConnectionToken } from '@nestjs/mongoose';
 import type { Connection } from 'mongoose';
+import { Types } from 'mongoose';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from '../app.module';
@@ -217,5 +218,75 @@ describe('combined backend against an isolated MongoDB replica set', () => {
         expect.objectContaining({ type: 'booking.confirmed' }),
       ]),
     );
+  });
+
+  it('saves only active hotels and public itineraries for the signed-in user', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/auth/register').send({
+      name: 'Favourite User', email: 'favourite@example.test', password: 'Integration123',
+      acceptedTerms: true, acceptedPrivacyPolicy: true,
+    }).expect(201);
+    const login = await request(http).post('/auth/login').send({
+      email: 'favourite@example.test', password: 'Integration123',
+    }).expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const csrfCookie = cookies.find((value) => value.startsWith('csrf_token='));
+    if (!csrfCookie) throw new Error('Missing CSRF cookie');
+    const csrf = decodeURIComponent(csrfCookie.split(';')[0].split('=')[1]);
+    const connection = app.get<Connection>(getConnectionToken());
+    const hotelId = new Types.ObjectId();
+    const itineraryId = new Types.ObjectId();
+    const privateId = new Types.ObjectId();
+    await connection.db!.collection('hotels').insertOne({ _id: hotelId, name: 'Favourite Hotel', isActive: true });
+    await connection.db!.collection('itineraries').insertMany([
+      { _id: itineraryId, title: 'Public trip', visibility: 'public', isHidden: false },
+      { _id: privateId, title: 'Private trip', visibility: 'private', isHidden: false },
+    ]);
+    await request(http).post(`/favourites/hotel/${hotelId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf).expect(201);
+    await request(http).post(`/favourites/itinerary/${itineraryId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf).expect(201);
+    await request(http).post(`/favourites/itinerary/${privateId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf).expect(404);
+    const listed = await request(http).get('/favourites').set('Cookie', cookies).expect(200);
+    expect(listed.body.total).toBe(2);
+    await request(http).delete(`/favourites/hotel/${hotelId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf).expect(200);
+    const after = await request(http).get('/favourites').set('Cookie', cookies).expect(200);
+    expect(after.body.total).toBe(1);
+  });
+
+  it('reports provider bookings and net revenue from verified payments and refunds', async () => {
+    const http = app.getHttpServer();
+    await request(http).post('/auth/register').send({
+      name: 'Analytics Admin', email: 'analytics-admin@example.test', password: 'Integration123',
+      acceptedTerms: true, acceptedPrivacyPolicy: true,
+    }).expect(201);
+    const connection = app.get<Connection>(getConnectionToken());
+    await connection.db!.collection('users').updateOne(
+      { email: 'analytics-admin@example.test' }, { $set: { role: 'admin' } },
+    );
+    const login = await request(http).post('/auth/login').send({
+      email: 'analytics-admin@example.test', password: 'Integration123',
+    }).expect(200);
+    const cookies = login.headers['set-cookie'] as unknown as string[];
+    const hotelId = new Types.ObjectId();
+    const bookingId = new Types.ObjectId();
+    const paymentId = new Types.ObjectId();
+    await connection.db!.collection('hotel_bookings').insertOne({ _id: bookingId, hotelId });
+    await connection.db!.collection('payments').insertOne({
+      _id: paymentId, bookingType: 'hotel', bookingId,
+      amount: 12000, currency: 'usd', status: 'Succeeded', succeededAt: new Date(),
+    });
+    await connection.db!.collection('refunds').insertOne({
+      paymentId, status: 'Refunded', amount: 2000,
+    });
+    const date = new Date().toISOString().slice(0, 10);
+    const report = await request(http).get(`/admin/analytics?from=${date}&to=${date}`)
+      .set('Cookie', cookies).expect(200);
+    expect(report.body.providers).toEqual(expect.arrayContaining([
+      expect.objectContaining({ type: 'hotel', providerId: hotelId.toString(), bookings: 1, grossRevenue: 120, refunds: 20, netRevenue: 100 }),
+    ]));
+    await request(http).get(`/admin/analytics?from=${date}&to=${date}`).expect(401);
   });
 });

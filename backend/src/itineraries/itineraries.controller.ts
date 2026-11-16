@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  StreamableFile,
 } from '@nestjs/common';
 import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 
@@ -23,6 +24,7 @@ import { CloneItineraryDto } from './dto/clone-itinerary.dto';
 import { ListItinerariesDto, UpdateItineraryDto } from './dto/update-itinerary.dto';
 import { toItineraryDetail } from './itinerary-detail';
 import { toItinerarySummary } from './itinerary-summary';
+import { itineraryPdf } from './itinerary-pdf';
 
 @ApiTags('Itineraries')
 @ApiCookieAuth('access_token')
@@ -71,6 +73,19 @@ export class ItinerariesController {
     @Query() query: BudgetSummaryQueryDto,
   ) {
     return this.budgetSummary.summary(ownerId, id, query.currency);
+  }
+
+  @Get(':id/pdf')
+  @ApiOperation({ summary: 'ITN-28 Download an itinerary as PDF' })
+  async pdf(
+    @CurrentUserId() ownerId: string,
+    @Param('id', ParseObjectIdPipe) id: string,
+  ): Promise<StreamableFile> {
+    const detail = toItineraryDetail(await this.itineraries.findOne(ownerId, id));
+    return new StreamableFile(await itineraryPdf(detail), {
+      type: 'application/pdf',
+      disposition: `attachment; filename="itinerary-${id}.pdf"`,
+    });
   }
 
   @Get(':id')
