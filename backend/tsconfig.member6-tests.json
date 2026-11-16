@@ -3,6 +3,7 @@
     "module": "commonjs",
     "target": "ES2022",
     "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
     "outDir": ".member6-test-dist",
     "rootDir": ".",
     "strict": true,

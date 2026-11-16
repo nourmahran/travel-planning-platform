@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import { Connection, Model } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import { AccountStatus } from '../auth/constants/account-status';
 import {
   RefreshSession,
@@ -66,10 +66,7 @@ export class UsersService {
     };
   }
 
-  async deactivateMe(
-    authUser: AuthenticatedUser,
-    dto: DeactivateAccountDto,
-  ) {
+  async deactivateMe(authUser: AuthenticatedUser, dto: DeactivateAccountDto) {
     if (!dto.confirm) {
       throw new BadRequestException(
         'Confirmation is required to deactivate the account',
@@ -90,6 +87,9 @@ export class UsersService {
 
     user.status = AccountStatus.DEACTIVATED;
     await user.save();
+    await this.connection.db
+      ?.collection('itineraries')
+      .updateMany({ ownerId: user._id }, { $set: { isHidden: true } });
 
     await this.refreshSessionModel.updateMany(
       { userId: user._id, revokedAt: null },
@@ -99,10 +99,7 @@ export class UsersService {
     return { message: 'Account deactivated successfully' };
   }
 
-  /**
-   * ACC-12 — block deactivation when upcoming Confirmed bookings exist.
-   * Uses the shared bookings collection when Member 2/3 data is present.
-   */
+  /** ACC-12: check the actual flight and hotel booking collections. */
   private async hasUpcomingConfirmedBookings(userId: string): Promise<boolean> {
     const db = this.connection.db;
     if (!db) {
@@ -110,25 +107,44 @@ export class UsersService {
     }
 
     const now = new Date();
-    const upcoming = await db.collection('bookings').findOne({
-      $and: [
-        {
-          $or: [{ userId }, { user_id: userId }],
-        },
-        {
-          status: { $in: ['Confirmed', 'confirmed', 'CONFIRMED'] },
-        },
-        {
-          $or: [
-            { departureDate: { $gte: now } },
-            { checkInDate: { $gte: now } },
-            { startDate: { $gte: now } },
-            { travelDate: { $gte: now } },
-          ],
-        },
-      ],
-    });
-
-    return upcoming !== null;
+    const [flight, hotel] = await Promise.all([
+      db
+        .collection('bookings')
+        .aggregate([
+          { $match: { userId, status: 'Confirmed' } },
+          {
+            $lookup: {
+              from: 'flights',
+              localField: 'flightId',
+              foreignField: '_id',
+              as: 'outbound',
+            },
+          },
+          {
+            $lookup: {
+              from: 'flights',
+              localField: 'returnFlightId',
+              foreignField: '_id',
+              as: 'inbound',
+            },
+          },
+          {
+            $match: {
+              $or: [
+                { 'outbound.departureTimeUtc': { $gte: now } },
+                { 'inbound.departureTimeUtc': { $gte: now } },
+              ],
+            },
+          },
+          { $limit: 1 },
+        ])
+        .next(),
+      db.collection('hotel_bookings').findOne({
+        userId: new Types.ObjectId(userId),
+        status: 'CONFIRMED',
+        checkOut: { $gt: now.toISOString().slice(0, 10) },
+      }),
+    ]);
+    return !!flight || !!hotel;
   }
 }

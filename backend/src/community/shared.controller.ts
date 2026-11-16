@@ -20,7 +20,7 @@ import {
   ApiSecurity,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Access, CommunityGuard, CurrentActor } from './auth';
 import { AuditService } from './audit.service';
 import { ImagesBody, UploadImages } from './blog.controller';
@@ -38,7 +38,8 @@ import { ApiErrors, ObjectIdPipe } from './http';
 import { MediaService } from './media.service';
 import { NotificationsService } from './notifications.service';
 import { ReportsService } from './reports.service';
-import { Actor, ContentType, MediaTarget, ModerationAction } from './types';
+import { ContentType, MediaTarget, ModerationAction } from './types';
+import type { Actor } from './types';
 
 @ApiTags('Shared media')
 @ApiErrors()

@@ -11,6 +11,7 @@ node_modules/
 dist/
 coverage/
 *.tsbuildinfo
+backend/.member6-test-dist/
 
 # Temporary NestJS project
 backend-temp/

@@ -1,7 +1,6 @@
 /**
  * Contract with Member 3's hotel search (ITN-25). The port is defined here so
- * the itineraries module compiles and degrades honestly before that module
- * exists: the default provider returns nothing and every response says so.
+ * itinerary stays can use the shared hotel's live availability search.
  */
 export const HOTEL_SEARCH_PORT = Symbol('HOTEL_SEARCH_PORT');
 
@@ -33,7 +32,7 @@ export interface HotelSearchPort {
   search(query: HotelSearchQuery): Promise<HotelSearchResult>;
 }
 
-/** Placeholder until Member 3's hotel module lands. */
+/** Fallback for isolated itinerary tests without the hotel module. */
 export class UnavailableHotelSearchPort implements HotelSearchPort {
   async search(): Promise<HotelSearchResult> {
     return {

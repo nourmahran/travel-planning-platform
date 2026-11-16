@@ -7,6 +7,8 @@ import {
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { Connection, Model, Types } from 'mongoose';
+import { randomUUID } from 'node:crypto';
+import { notificationRecord } from '../common/notification-record';
 import { Airline, AirlineDocument } from '../airlines/schemas/airline.schema';
 import { AccountStatus } from '../auth/constants/account-status';
 import { BCRYPT_ROUNDS } from '../auth/constants/auth.constants';
@@ -140,6 +142,13 @@ export class AdminService {
       { userId: user._id, revokedAt: null },
       { $set: { revokedAt: new Date() } },
     );
+    await this.notifyUsers(
+      [user._id.toString()],
+      'account.suspended',
+      'Account suspended',
+      'Your account has been suspended.',
+      `account:suspended:${randomUUID()}`,
+    );
 
     return {
       message: 'Account suspended successfully',
@@ -185,6 +194,12 @@ export class AdminService {
       }
       airline.isActive = isActive;
       await airline.save();
+      if (!isActive)
+        await this.notifyProviderAffected(
+          'airline',
+          airline._id.toString(),
+          airline.name,
+        );
       return {
         message: isActive
           ? 'Airline reactivated successfully'
@@ -225,6 +240,12 @@ export class AdminService {
       name?: string;
       isActive?: boolean;
     };
+    if (!isActive)
+      await this.notifyProviderAffected(
+        'hotel',
+        hotel._id.toString(),
+        hotel.name ?? 'Hotel',
+      );
 
     return {
       message: isActive
@@ -239,9 +260,81 @@ export class AdminService {
       note: isActive
         ? undefined
         : 'Listings are hidden from search and new bookings are blocked. Existing Confirmed bookings remain valid.',
-      notification:
-        'Notification delivery will use Member 6 notification service when available.',
     };
+  }
+
+  private async notifyProviderAffected(
+    type: 'airline' | 'hotel',
+    providerId: string,
+    name: string,
+  ) {
+    const db = this.connection.db;
+    if (!db) return;
+    const oid = new Types.ObjectId(providerId);
+    const moderators = await db
+      .collection('users')
+      .distinct('_id', { providerType: type, providerId: oid });
+    let passengers: unknown[];
+    if (type === 'airline') {
+      const flights = await db
+        .collection('flights')
+        .distinct('_id', { airlineId: oid });
+      passengers = flights.length
+        ? await db.collection('bookings').distinct('userId', {
+            status: 'Confirmed',
+            $or: [
+              { flightId: { $in: flights } },
+              { returnFlightId: { $in: flights } },
+            ],
+          })
+        : [];
+    } else {
+      passengers = await db.collection('hotel_bookings').distinct('userId', {
+        hotelId: oid,
+        status: 'CONFIRMED',
+      });
+    }
+    const recipients = [...new Set([...moderators, ...passengers].map(String))];
+    await this.notifyUsers(
+      recipients,
+      'provider.suspended',
+      `${name} deactivated`,
+      `${name} is no longer accepting new bookings. Existing confirmed bookings remain valid.`,
+      `provider:${type}:${providerId}:deactivated:${randomUUID()}`,
+    );
+  }
+
+  private async notifyUsers(
+    recipients: string[],
+    type: string,
+    title: string,
+    message: string,
+    eventId: string,
+  ) {
+    const db = this.connection.db;
+    if (!db || !recipients.length) return;
+    const notifications = db.collection('notifications');
+    await notifications.bulkWrite(
+      recipients.map((recipientId) => {
+        const record = notificationRecord({
+          recipientId,
+          eventId,
+          type,
+          title,
+          message,
+        });
+        return {
+          updateOne: {
+            filter: {
+              recipientId: record.recipientId,
+              eventId: record.eventId,
+            },
+            update: { $setOnInsert: record },
+            upsert: true,
+          },
+        };
+      }),
+    );
   }
 
   async listBookings(query: ListAdminBookingsDto) {
@@ -259,17 +352,7 @@ export class AdminService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const filter: Record<string, unknown> = {};
-
-    if (query.type) {
-      filter.$or = [
-        { type: query.type },
-        { bookingType: query.type },
-        { kind: query.type },
-      ];
-    }
-    if (query.status) {
-      filter.status = query.status;
-    }
+    if (query.status) filter.status = query.status;
     if (query.from || query.to) {
       const dateFilter: Record<string, Date> = {};
       if (query.from) {
@@ -280,26 +363,80 @@ export class AdminService {
         end.setHours(23, 59, 59, 999);
         dateFilter.$lte = end;
       }
-      filter.$and = [
-        {
-          $or: [
-            { createdAt: dateFilter },
-            { bookingDate: dateFilter },
-            { departureDate: dateFilter },
-            { checkInDate: dateFilter },
-          ],
-        },
-      ];
+      filter.createdAt = dateFilter;
     }
 
-    const collection = db.collection('bookings');
-    const total = await collection.countDocuments(filter);
-    const rows = await collection
-      .find(filter)
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .toArray();
+    const flightPipeline = [
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'flights',
+          localField: 'flightId',
+          foreignField: '_id',
+          as: 'flight',
+        },
+      },
+      { $set: { flight: { $first: '$flight' } } },
+      {
+        $project: {
+          _id: 1,
+          reference: 1,
+          type: { $literal: 'flight' },
+          userId: 1,
+          providerId: '$flight.airlineId',
+          createdAt: 1,
+          departureDate: '$flight.departureTimeUtc',
+          amount: '$totalPrice',
+          currency: {
+            $literal: (process.env.PLATFORM_CURRENCY ?? 'USD').toUpperCase(),
+          },
+          status: 1,
+        },
+      },
+    ];
+    const hotelPipeline = [
+      { $match: filter },
+      {
+        $project: {
+          _id: 1,
+          reference: 1,
+          type: { $literal: 'hotel' },
+          userId: 1,
+          providerId: '$hotelId',
+          createdAt: 1,
+          checkInDate: '$checkIn',
+          checkOutDate: '$checkOut',
+          amount: { $divide: ['$totalAmountCents', 100] },
+          currency: 1,
+          status: 1,
+        },
+      },
+    ];
+    const source = query.type === 'hotel' ? 'hotel_bookings' : 'bookings';
+    const pipeline: Record<string, unknown>[] =
+      query.type === 'hotel' ? [...hotelPipeline] : [...flightPipeline];
+    if (!query.type)
+      pipeline.push({
+        $unionWith: { coll: 'hotel_bookings', pipeline: hotelPipeline },
+      });
+    pipeline.push(
+      { $sort: { createdAt: -1, _id: -1 } },
+      {
+        $facet: {
+          metadata: [{ $count: 'total' }],
+          items: [{ $skip: (page - 1) * limit }, { $limit: limit }],
+        },
+      },
+    );
+    const result = await db
+      .collection(source)
+      .aggregate<{
+        metadata: Array<{ total: number }>;
+        items: Array<Record<string, unknown>>;
+      }>(pipeline)
+      .next();
+    const total = result?.metadata[0]?.total ?? 0;
+    const rows = result?.items ?? [];
 
     return {
       page,
@@ -319,18 +456,13 @@ export class AdminService {
     return {
       id,
       reference:
-        (row.bookingReference as string) ??
-        (row.reference as string) ??
-        id,
+        (row.bookingReference as string) ?? (row.reference as string) ?? id,
       type:
         (row.type as string) ??
         (row.bookingType as string) ??
         (row.kind as string) ??
         null,
-      userId:
-        row.userId?.toString?.() ??
-        (row.user_id as string) ??
-        null,
+      userId: row.userId?.toString?.() ?? (row.user_id as string) ?? null,
       providerId:
         row.providerId?.toString?.() ??
         row.airlineId?.toString?.() ??

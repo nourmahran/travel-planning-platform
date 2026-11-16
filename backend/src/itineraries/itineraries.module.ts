@@ -1,4 +1,3 @@
-
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 
@@ -19,7 +18,9 @@ import { ItinerariesPublicService } from './itineraries-public.service';
 import { ItineraryTravelController } from './itinerary-travel.controller';
 import { ItineraryHotelsService } from './itinerary-hotels.service';
 import { ItineraryFlightsService } from './itinerary-flights.service';
-import { HOTEL_SEARCH_PORT, UnavailableHotelSearchPort } from './hotel-search.port';
+import { HOTEL_SEARCH_PORT } from './hotel-search.port';
+import { TeamHotelSearchPort } from './team-hotel-search.port';
+import { HotelsModule } from '../hotels/hotels.module';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 import { CurrencyModule } from '../currency/currency.module';
 import { FlightsModule } from '../flights/flights.module';
@@ -29,6 +30,7 @@ import { FlightsModule } from '../flights/flights.module';
     ReferenceDataModule,
     CurrencyModule,
     FlightsModule,
+    HotelsModule,
     MongooseModule.forFeature([
       { name: Itinerary.name, schema: ItinerarySchema },
     ]),
@@ -52,7 +54,8 @@ import { FlightsModule } from '../flights/flights.module';
     BudgetSummaryService,
     ItineraryHotelsService,
     ItineraryFlightsService,
-    { provide: HOTEL_SEARCH_PORT, useClass: UnavailableHotelSearchPort },
+    TeamHotelSearchPort,
+    { provide: HOTEL_SEARCH_PORT, useExisting: TeamHotelSearchPort },
   ],
   exports: [ItinerariesService],
 })

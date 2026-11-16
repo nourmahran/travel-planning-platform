@@ -37,7 +37,8 @@ import {
 } from './dto/community.dto';
 import { ApiErrors, ObjectIdPipe } from './http';
 import { MediaService } from './media.service';
-import { Actor, MAX_IMAGE_BYTES, MediaTarget } from './types';
+import { MAX_IMAGE_BYTES, MediaTarget } from './types';
+import type { Actor } from './types';
 
 export const UploadImages = () =>
   UseInterceptors(

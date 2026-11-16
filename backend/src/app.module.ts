@@ -2,6 +2,7 @@ import { AirportsController } from './airports/airports.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { Module } from '@nestjs/common';
+import { RouterModule } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -19,6 +20,10 @@ import { AdminModule } from './admin/admin.module';
 import { CurrencyModule } from './currency/currency.module';
 import { ItinerariesModule } from './itineraries/itineraries.module';
 import { ReferenceDataModule } from './reference-data/reference-data.module';
+import { HotelsModule } from './hotels/hotels.module';
+import { CommunityModule } from './community/community.module';
+import { CommunityIdentity } from './community/auth';
+import { TeamIdentity } from './community/team-identity';
 
 @Module({
   imports: [
@@ -51,10 +56,7 @@ import { ReferenceDataModule } from './reference-data/reference-data.module';
               const reason = (
                 error as Error & {
                   reason?: {
-                    servers?: Map<
-                      string,
-                      { error?: Error }
-                    >;
+                    servers?: Map<string, { error?: Error }>;
                   };
                 }
               ).reason;
@@ -89,6 +91,11 @@ import { ReferenceDataModule } from './reference-data/reference-data.module';
     UsersModule,
     AdminModule,
     ReferenceDataModule,
+    HotelsModule,
+    CommunityModule.register({
+      identityProvider: { provide: CommunityIdentity, useClass: TeamIdentity },
+    }),
+    RouterModule.register([{ path: 'api', module: CommunityModule }]),
     CurrencyModule,
     ItinerariesModule,
   ],

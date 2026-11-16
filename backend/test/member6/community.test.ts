@@ -1,3 +1,4 @@
+/* oxlint-disable typescript/no-floating-promises -- node:test owns and awaits top-level test registrations */
 import { createTestDatabase } from './test-database';
 import 'reflect-metadata';
 import assert from 'node:assert/strict';

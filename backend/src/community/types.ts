@@ -42,6 +42,8 @@ export enum ModerationAction {
 export enum NotificationType {
   BookingConfirmed = 'booking.confirmed',
   BookingCancelled = 'booking.cancelled',
+  BookingUpdated = 'booking.updated',
+  PaymentFailed = 'payment.failed',
   RefundUpdated = 'refund.updated',
   FlightScheduleChanged = 'flight.schedule_changed',
   AccountSuspended = 'account.suspended',

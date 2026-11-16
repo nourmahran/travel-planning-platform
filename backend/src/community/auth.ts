@@ -149,7 +149,7 @@ export class CommunityGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<CommunityRequest>();
     const actor = await this.identity.resolve(request);
     request.actor = actor;
-    if (access === 'optional') return true;
+    if (access === 'optional' || access === 'media') return true;
     if (!actor) throw new UnauthorizedException('Please log in');
     if (access === 'admin' && actor.role !== Role.Admin) {
       throw new ForbiddenException('Administrator access is required');

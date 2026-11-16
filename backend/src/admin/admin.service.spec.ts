@@ -35,6 +35,9 @@ describe('AdminService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    mockConnection.db.collection.mockReturnValue({
+      bulkWrite: jest.fn().mockResolvedValue({}),
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -99,7 +102,7 @@ describe('AdminService', () => {
 
   it('should suspend a user account', async () => {
     const user = {
-      _id: { toString: () => 'user-1' },
+      _id: { toString: () => '507f1f77bcf86cd799439011' },
       name: 'Test',
       email: 'test@example.com',
       role: UserRole.USER,
@@ -151,5 +154,46 @@ describe('AdminService', () => {
     expect(result.total).toBe(1);
     expect(result.accounts).toHaveLength(1);
     expect(result.limit).toBe(10);
+  });
+
+  it('lists flight and hotel reservations from their real collections', async () => {
+    const aggregate = jest.fn().mockReturnValue({
+      next: async () => ({
+        metadata: [{ total: 2 }],
+        items: [
+          {
+            _id: 'flight-1',
+            type: 'flight',
+            reference: 'FL-1',
+            amount: 100,
+            status: 'Confirmed',
+          },
+          {
+            _id: 'hotel-1',
+            type: 'hotel',
+            reference: 'HB-1',
+            amount: 200,
+            status: 'CONFIRMED',
+          },
+        ],
+      }),
+    });
+    mockConnection.db.collection.mockReturnValue({ aggregate });
+
+    const result = await service.listBookings({ page: 1, limit: 10 });
+
+    expect(mockConnection.db.collection).toHaveBeenCalledWith('bookings');
+    expect(aggregate).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        expect.objectContaining({
+          $unionWith: expect.objectContaining({ coll: 'hotel_bookings' }),
+        }),
+      ]),
+    );
+    expect(result.total).toBe(2);
+    expect(result.bookings.map((booking) => booking.type)).toEqual([
+      'flight',
+      'hotel',
+    ]);
   });
 });

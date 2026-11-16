@@ -51,9 +51,25 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
+    const hotelInternal = this.reflector.getAllAndOverride<boolean>(
+      'hotels.internal',
+      [context.getHandler(), context.getClass()],
+    );
+    if (hotelInternal && !request.cookies?.[ACCESS_TOKEN_COOKIE]) return true;
+    const communityAccess = this.reflector.getAllAndOverride<string>(
+      'community.access',
+      [context.getHandler(), context.getClass()],
+    );
+    const optionalAuth =
+      this.reflector.getAllAndOverride<boolean>('hotels.optional', [
+        context.getHandler(),
+        context.getClass(),
+      ]) ||
+      communityAccess === 'optional' ||
+      communityAccess === 'media';
+    if (optionalAuth && !request.cookies?.[ACCESS_TOKEN_COOKIE]) return true;
     const accessToken = request.cookies?.[ACCESS_TOKEN_COOKIE] as
-      | string
-      | undefined;
+      string | undefined;
 
     if (!accessToken) {
       throw new UnauthorizedException('Not logged in');
@@ -120,11 +136,13 @@ export class JwtAuthGuard implements CanActivate {
       sessionId: session._id.toString(),
     };
 
-    (request as Request & { user: AuthenticatedUser }).user =
-      authenticatedUser;
+    (request as Request & { user: AuthenticatedUser }).user = authenticatedUser;
 
     // ACC-07a / ACC-13: temporary password must be changed before other actions.
-    if (user.mustChangePassword && !this.isPasswordChangeAllowedRoute(request)) {
+    if (
+      user.mustChangePassword &&
+      !this.isPasswordChangeAllowedRoute(request)
+    ) {
       throw new ForbiddenException(
         'You must change your temporary password before continuing',
       );
@@ -141,7 +159,10 @@ export class JwtAuthGuard implements CanActivate {
     if (method === 'PATCH' && fullPath.includes('change-password')) {
       return true;
     }
-    if (method === 'GET' && /(^|\/)(auth\/)?me$/.test(fullPath.replace(/^\//, ''))) {
+    if (
+      method === 'GET' &&
+      /(^|\/)(auth\/)?me$/.test(fullPath.replace(/^\//, ''))
+    ) {
       return true;
     }
     return false;
@@ -154,8 +175,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     const csrfCookie = request.cookies?.[CSRF_TOKEN_COOKIE] as
-      | string
-      | undefined;
+      string | undefined;
     const csrfHeader = request.headers[CSRF_HEADER];
     const headerValue = Array.isArray(csrfHeader) ? csrfHeader[0] : csrfHeader;
 

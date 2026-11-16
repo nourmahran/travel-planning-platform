@@ -18,21 +18,37 @@ export class TeamBridge {
   constructor(private readonly store: CommunityStore) {}
 
   async account(id: string, session?: ClientSession): Promise<Account | null> {
-    return this.store.connection.collection(this.accountsCollection).findOne(
-      { _id: objectId(id) },
-      {
-        session,
-        projection: {
-          name: 1,
-          role: 1,
-          status: 1,
-          createdAt: 1,
-          mustChangePassword: 1,
-          assignedHotelId: 1,
-          assignedAirlineId: 1,
+    const account = await this.store.connection
+      .collection(this.accountsCollection)
+      .findOne(
+        { _id: objectId(id) },
+        {
+          session,
+          projection: {
+            name: 1,
+            role: 1,
+            status: 1,
+            createdAt: 1,
+            mustChangePassword: 1,
+            providerType: 1,
+            providerId: 1,
+            assignedHotelId: 1,
+            assignedAirlineId: 1,
+          },
         },
-      },
-    ) as Promise<Account | null>;
+      );
+    if (!account) return null;
+    return {
+      ...account,
+      assignedHotelId:
+        account.providerType === 'hotel'
+          ? account.providerId
+          : account.assignedHotelId,
+      assignedAirlineId:
+        account.providerType === 'airline'
+          ? account.providerId
+          : account.assignedAirlineId,
+    } as Account;
   }
 
   async publicAuthor(id: string) {
@@ -56,10 +72,22 @@ export class TeamBridge {
   }
 
   async publicItineraries(authorId: string, page: number) {
+    const author = await this.account(authorId);
+    if (!author || author.status === 'deactivated')
+      return pageResult([], 0, page);
     const filter = {
-      authorId: objectId(authorId),
-      visibility: 'Public',
-      hidden: { $ne: true },
+      $or: [
+        {
+          ownerId: objectId(authorId),
+          visibility: 'public',
+          isHidden: { $ne: true },
+        },
+        {
+          authorId: objectId(authorId),
+          visibility: 'Public',
+          hidden: { $ne: true },
+        },
+      ],
     };
     const collection = this.store.connection.collection('itineraries');
     const total = await collection.countDocuments(filter);
@@ -98,11 +126,50 @@ export class TeamBridge {
     id: string,
     session?: ClientSession,
   ) {
+    if (type === MediaTarget.Activity) {
+      const itinerary = await this.store.connection
+        .collection('itineraries')
+        .findOne({ 'days.activities._id': objectId(id) }, { session });
+      if (itinerary)
+        return { _id: objectId(id), itineraryId: itinerary._id } as Content;
+      const activity = await this.collection(MediaTarget.Activity).findOne(
+        { _id: objectId(id) },
+        { session },
+      );
+      if (!activity) throw new NotFoundException('Activity not found');
+      return activity as unknown as Content;
+    }
     const record = await this.collection(type).findOne(
       { _id: objectId(id) },
       { session },
     );
     if (!record) throw new NotFoundException('Content not found');
+    if (type === ContentType.Itinerary) {
+      return {
+        ...record,
+        authorId: record.ownerId ?? record.authorId,
+        hidden: record.isHidden ?? record.hidden,
+        visibility:
+          record.visibility === 'public'
+            ? 'Public'
+            : record.visibility === 'private'
+              ? 'Private'
+              : record.visibility,
+      } as unknown as Content;
+    }
+    if (type === ContentType.Review) {
+      return {
+        ...record,
+        authorId: record.userId ?? record.authorId,
+        hidden: (record.isHidden ?? record.hidden) || record.isDeleted,
+      } as unknown as Content;
+    }
+    if (type === MediaTarget.Hotel || type === MediaTarget.Airline) {
+      return {
+        ...record,
+        active: record.isActive ?? record.active,
+      } as unknown as Content;
+    }
     return record as unknown as Content;
   }
 
@@ -124,7 +191,12 @@ export class TeamBridge {
     const content = await this.content(type, id, session);
     await this.collection(type).updateOne(
       { _id: content._id },
-      { $set: { hidden: true } },
+      {
+        $set:
+          type === ContentType.Itinerary || type === ContentType.Review
+            ? { isHidden: true, hidden: true }
+            : { hidden: true },
+      },
       { session },
     );
     if (type === ContentType.Review && content.hotelId) {
@@ -135,9 +207,22 @@ export class TeamBridge {
   async remove(type: ContentType, id: string, session: ClientSession) {
     const content = await this.content(type, id, session);
     if (type === ContentType.Itinerary) {
-      const activities = await this.collection(MediaTarget.Activity)
+      const raw = await this.collection(ContentType.Itinerary).findOne(
+        { _id: content._id },
+        { session, projection: { 'days.activities._id': 1 } },
+      );
+      const embeddedActivities =
+        (
+          raw?.days as
+            | Array<{
+                activities?: Array<{ _id: import('mongoose').Types.ObjectId }>;
+              }>
+            | undefined
+        )?.flatMap((day) => day.activities ?? []) ?? [];
+      const separateActivities = await this.collection(MediaTarget.Activity)
         .find({ itineraryId: content._id }, { session, projection: { _id: 1 } })
         .toArray();
+      const activities = [...embeddedActivities, ...separateActivities];
       await this.store.media.deleteMany(
         {
           targetType: MediaTarget.Activity,
@@ -156,7 +241,18 @@ export class TeamBridge {
           .deleteMany({ itineraryId: content._id }, { session });
       }
     }
-    await this.collection(type).deleteOne({ _id: content._id }, { session });
+    if (
+      type === ContentType.Review &&
+      (content as Content & { isDeleted?: boolean }).isDeleted !== undefined
+    ) {
+      await this.collection(type).updateOne(
+        { _id: content._id },
+        { $set: { isDeleted: true } },
+        { session },
+      );
+    } else {
+      await this.collection(type).deleteOne({ _id: content._id }, { session });
+    }
     if (type === ContentType.Review && content.hotelId) {
       await this.recalculateHotel(content.hotelId.toString(), session);
     }
@@ -172,7 +268,14 @@ export class TeamBridge {
     const [summary] = await this.collection(ContentType.Review)
       .aggregate(
         [
-          { $match: { hotelId: objectId(hotelId), hidden: { $ne: true } } },
+          {
+            $match: {
+              hotelId: objectId(hotelId),
+              hidden: { $ne: true },
+              isHidden: { $ne: true },
+              isDeleted: { $ne: true },
+            },
+          },
           {
             $group: {
               _id: null,

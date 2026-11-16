@@ -1,4 +1,5 @@
 import { ConfigModule } from '@nestjs/config';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { Global, Module } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
@@ -10,6 +11,10 @@ import { AuthModule } from '../auth/auth.module';
 import { ItinerariesModule } from './itineraries.module';
 
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret';
+process.env.STRIPE_SECRET_KEY =
+  process.env.STRIPE_SECRET_KEY ?? 'sk_test_module_graph';
+process.env.STRIPE_WEBHOOK_SECRET =
+  process.env.STRIPE_WEBHOOK_SECRET ?? 'whsec_module_graph';
 
 /**
  * Every Mongo call resolves to an empty result, so the module graph boots
@@ -106,6 +111,7 @@ describe('ItinerariesModule wiring', () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
       imports: [
         ConfigModule.forRoot({ isGlobal: true, ignoreEnvFile: true }),
+        EventEmitterModule.forRoot(),
         StubDatabaseModule,
         AuthModule,
         ItinerariesModule,
@@ -151,7 +157,6 @@ describe('ItinerariesModule wiring', () => {
       }
     }
   });
-
 
   it('answers 401 on an owner route without a session', async () => {
     await request(app.getHttpServer()).get('/itineraries').expect(401);

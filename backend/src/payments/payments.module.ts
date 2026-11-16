@@ -59,6 +59,7 @@ import { PaymentExpirySweeper } from './payment-expiry.sweeper';
     NOTIFICATION_PORT,
     PaymentsService,
     RefundsService,
+    StripeService,
   ],
 })
 export class PaymentsModule {
