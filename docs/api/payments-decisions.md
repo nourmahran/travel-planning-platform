@@ -15,7 +15,7 @@ Places where the repo differed from `CLAUDE-part1-independent.md`, or where the 
 
 ## Auth (not merged yet)
 
-9. **Placeholder auth.** No auth module exists. Chose: `payments/auth/` contains `@CurrentUser()` and `PaymentsAuthGuard` (`TODO(part2)`). The guard accepts `req.user` set by a future JWT guard (`id`, `_id` or `sub`, plus `role`). **Dev only:** when `ENABLE_DEV_PAYMENT_ENDPOINTS=true` and `NODE_ENV !== 'production'`, it also accepts an `x-dev-user-id: <ObjectId>` header (and `x-dev-user-role: ADMIN`) so the routes can be tried in Swagger before auth exists. It's never active in production. Unit tests cover that. Remove it in Part 2.
+9. **Placeholder auth.** No auth module exists. Chose: `payments/auth/` contains `@CurrentUser()` and `PaymentsAuthGuard` (`TODO(part2)`). The guard accepts `req.user` set by a future JWT guard (`id`, `_id` or `sub`, plus `role`). **Dev only:** when `ENABLE_DEV_PAYMENT_ENDPOINTS=true` and `NODE_ENV !== 'production'`, it also accepts an `x-dev-user-id: <ObjectId>` header (and `x-dev-user-role: ADMIN`) so the routes can be tried in Swagger before auth exists. It's never active in production. Unit tests cover that. Remove it in Part 2. **Update (Part 2):** replaced by the auth module (ACC-04 / ACC-19). The global `JwtAuthGuard` sets `req.user`; payments uses its `@CurrentUser()`, the webhook uses its `@Public()`, admins are `UserRole.ADMIN` (`'admin'`). `PaymentsAuthGuard` and the `x-dev-user-id` header were removed.
 10. **Webhook must stay public.** Marked with `SetMetadata('isPublic', true)`, the most common key for a `@Public()` decorator. Asked the auth owner to confirm the key.
 
 ## Payments (PAY-01)

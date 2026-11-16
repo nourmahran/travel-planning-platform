@@ -128,4 +128,6 @@ The browser sends the card straight to Stripe (Stripe Elements). We only create 
 5. `GET /api/payments/{paymentId}` → `Succeeded`; the booking is now `Confirmed`
 6. Failure demo: use `pm_card_chargeDeclined` in step 4 → payment `Failed` → `POST /api/payments/{paymentId}/retry` → confirm again with `pm_card_visa`
 
-Until auth is merged, add the header `x-dev-user-id: <user ObjectId>` (dev mode only).
+Log in first with `POST /api/auth/login`; the browser (and Swagger) then sends the
+`access_token` cookie. For every POST/PATCH/DELETE also send the header
+`x-csrf-token` with the value of the `csrf_token` cookie (the auth module's CSRF check).

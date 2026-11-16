@@ -1,1 +1,198 @@
+AI PROMPT LOG
+Software Project I — Winter 2026
 
+========================================
+Date: 2026-10-28
+Student: Nour Mahran
+Tool: ChatGPT
+Related Requirement: Project Setup / Git Workflow
+
+Prompt:
+Guide me through setting up the university
+Travel Planning and Booking Platform project
+according to the official PDF requirements.
+
+How the output was used:
+Used the guidance to install development tools,
+create the project folder structure, initialize
+Git, and prepare project documentation.
+========================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: GEN-11, PAY-04
+Prompt:
+Following my CLAUDE-part1-independent.md plan, create the shared booking
+basics: booking status enum, allowed-transition guard, platform currency
+and money helpers (amounts in cents), with unit tests for all 25 status
+combinations.
+How the output was used:
+Kept backend/src/common/booking/* and the tests. Reviewed the transition
+table against GEN-11 and the rounding rules (toMinorUnits, percentOf).
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02
+Prompt:
+Build the Stripe wrapper (test keys only), the Payment/Refund/
+ProcessedEvent schemas, policy retrieval and acceptance with a stored
+snapshot, and the payment create/retry/get/cancel-on-expiry service,
+talking to bookings only through a BookingGateway interface.
+How the output was used:
+Kept the payments and policies modules. Checked the order of the payment
+checks (404/409/410/400/400/409/400), that the amount comes only from the
+booking, that the client secret is never stored, and the idempotency keys.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-03
+Prompt:
+Implement the Stripe webhook (raw body signature check, duplicate event
+protection, succeeded/failed/canceled/refund handlers, late-payment
+refund) and the refund calculator and refunds service (tier rule, policy
+snapshot, 100% for provider cancellations, Stripe failure recorded
+without throwing).
+How the output was used:
+Kept webhook.service/controller, refund-calculator and refunds.service.
+Reviewed the tier examples (30/7/0 days), the days-remaining rule for
+flights vs hotels, and the redelivery/late-payment logic against the tests.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02, PAY-03
+Prompt:
+Add the dev-only Stripe test confirm endpoint for Swagger demos, Swagger
+docs with requirement IDs, unit and HTTP wiring tests with fake gateways,
+the integration guide for Members 2 and 3, a decisions log and a study
+guide for the discussion.
+How the output was used:
+Kept the dev endpoint (disabled in production), the tests (164 passing)
+and docs/api/payments-integration.md, payments-decisions.md and
+payments-explained.md. Sent the integration guide to the team.
+================================================
+
+================================================
+Date: 2026-11-11
+Student: Fares Yasser
+Tool: Claude (Claude.ai)
+Related Requirement: PAY-01, PAY-02, PAY-03, PAY-04, GEN-11
+Prompt:
+Pasted my Member 4 responsibilities, the requirements sheet and the project
+description, and asked for an exact plan of my part, what depends on other
+members, and a CLAUDE.md file with all the work.
+How the output was used:
+Used the plan to check my existing payments branch and to list what I needed
+from Members 1, 2 and 3. Took the dependency list and open decisions (status
+names, who runs expiry, platform currency) to the team.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / GEN-11
+Prompt:
+Allowed Claude to run local git commands (fetch, checkout, merge, rm, add,
+commit, new branch feature/PAY-01-flight-gateway; no push/force/reset) to merge
+my PAY-01 payments branch into feature/member-4 and then Member 2's flight
+bookings branch into a new local branch, showing each command first.
+How the output was used:
+Kept the merges. Conflicts resolved as planned: my common/booking files won,
+the old booking-adapter.interface.ts / booking-state-machine.ts (and its spec)
+were deleted, package.json and app.module.ts kept both members' entries.
+Pushing stayed my own step.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Fares Yasser
+Tool: Claude (Claude.ai) and Claude Code (VS Code)
+Related Requirement: PAY-01, PAY-02, GEN-11
+Prompt:
+Reviewed Member 2's flight booking branch against my payments branch and asked
+for the connection between flight bookings and payments (Task 2 and Task 3).
+How the output was used:
+Used the generated FlightBookingGateway, its unit tests and the updated
+bookings.module.ts. The gateway maps Member 2's booking statuses to the shared
+GEN-11 statuses, opens the transaction their confirm() needs and registers with
+the payments registry. Kept my jest config, removed two lines from
+round-trip.spec.ts so both members' tests run, added the Node 24.9 requirement
+and a payments testing section to the README. Full suite: 269 tests passing.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: ACC-04 / ACC-19 / PAY-01 / GEN-11
+Prompt:
+Follow my CLAUDE.md: bring feature/member-4 up to date (fast-forward, revert the
+commit that deleted AI log entries, merge develop), then apply the prepared
+auth-swap patch so payments use Member 1's global JwtAuthGuard, @CurrentUser()
+and @Public(), and run tsc and the tests.
+How the output was used:
+The merge with develop had no conflicts; I checked app.module, main.ts,
+package.json, seed.ts and flights.service.ts against my reference. The patch
+applied to 16 files; payments.module.ts and auth-user.ts had been changed by a
+teammate, so they were edited by hand keeping the teammate's
+MongoNotificationAdapter and using UserRole.ADMIN for admin checks (the commit
+changed 21 files in total). Removed my temporary PaymentsAuthGuard /
+x-dev-user-id header. All 43 test suites (295 tests) pass. package-lock.json
+changes from npm install were left out of the commit. I reviewed every change
+and pushed it myself.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / PAY-03
+Prompt:
+Follow CLAUDE.md Task 0 and Task F: bring feature/member-4 up to date with
+develop, then add a scheduled job that cancels the Stripe PaymentIntent of open
+payments whose booking is Expired, Cancelled or deleted (PAY-01 "when the hold
+expires the PaymentIntent is cancelled"), and an endpoint
+GET /api/bookings/:type/:id/refund that shows the latest refund status to the
+booking owner or an admin (PAY-03). Register both in PaymentsModule, add unit
+tests, update the integration docs.
+How the output was used:
+Kept the sweeper, controller, service method and 7 tests after checking each
+import against my branch. Kept the teammate's MongoNotificationAdapter in
+payments.module.ts instead of the LoggerNotificationAdapter in the planned diff.
+Reverted a formatting-only change Prettier made to a teammate's line in
+notification.port.ts. Full suite: 44 suites, 302 tests passing.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / PAY-02 / PAY-03 / PAY-04 / GEN-11
+Prompt:
+Do Task D yourself: start the backend and stripe listen, tell me when to paste
+the webhook signing secret into backend/.env, then run the full payment flow
+with HTTP requests from the terminal, handling the login cookies and the
+x-csrf-token header. Never read or print .env or any keys. Give me a pass/fail
+table at the end.
+How the output was used:
+Used as an end-to-end test of my payments code against the real flight
+bookings module and Stripe test mode. It found that the test airline had no
+cancellation/baggage policies and that no admin user existed in the shared
+database; I seeded the admin myself and allowed one script to log in with the
+admin credentials from .env (in memory only) to PATCH the airline policies.
+All steps passed: policy block (400, intended), PaymentIntent reuse, decline
+then retry, webhook confirmation, duplicate event ignored, invalid signature
+400, other user 404, CSRF 401, hold expiry, 50% tier refund confirmed in
+Stripe, and refund notifications. No code was changed.
+================================================

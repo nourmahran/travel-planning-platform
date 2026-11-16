@@ -126,6 +126,8 @@ Inject `RefundsService` (exported by `PaymentsModule`).
 
 For booking details (PAY-03: show the refund status), use `refundsService.findLatestByBooking(type, bookingId)`.
 
+The frontend can also read it directly: `GET /api/bookings/:type/:id/refund` returns the latest refund of the booking (amount, percent, reason, status `Pending` / `Refunded` / `Failed`). Only the booking owner or an admin can read it; anyone else, or a booking without a refund, gets 404.
+
 Round trips (FLT-12a) are one booking: pass the **outbound** departure as the start time.
 
 ---
@@ -139,6 +141,8 @@ if (await gateway.expire(bookingId)) {
   await paymentsService.cancelForExpiredBooking(type, bookingId); // safe to call many times
 }
 ```
+
+If you don't call it, nothing breaks: `PaymentExpirySweeper` (in payments) runs every minute, finds open payments (`Pending` / `Failed`) whose booking is `Expired`, `Cancelled` or deleted, and cancels their PaymentIntents. Calling it yourself just cancels them right away instead of up to a minute later.
 
 ---
 
@@ -188,7 +192,7 @@ A live key (`sk_live_...`) is refused on purpose.
 
 ## 9. Requests to the setup/auth owners
 
-- **Auth:** my controllers use a temporary `PaymentsAuthGuard` / `@CurrentUser()` (in `backend/src/payments/auth/`, marked `TODO(part2)`). It reads `req.user`, so it works with a JWT guard that sets `req.user = { id | _id | sub, role }`. When the real global guard exists, the webhook route must stay public: it is marked with `SetMetadata('isPublic', true)`. Please use the key `isPublic` for `@Public()`, or tell me your key.
+- **Auth:** done. Payments uses the auth module's global `JwtAuthGuard` (`req.user`), its `@CurrentUser()` and `@Public()` (Stripe webhook). Admin checks use `UserRole.ADMIN`.
 - **`main.ts`:** I only added `rawBody: true` (needed for webhook signatures). The Swagger builder has no `.addCookieAuth()` yet, so `@ApiCookieAuth()` shows no lock icon. Please add `.addCookieAuth('access_token')`.
 - **Global prefix:** there is no `app.setGlobalPrefix('api')`. My routes put `api/` in front through one constant (`API_PREFIX` in `payments.config.ts`). If a global prefix is added, tell me and I'll set it to `''`.
 - **Lint:** `npm run lint` currently fails on `main.ts:45` (`bootstrap();` should be `void bootstrap();`). That line existed before my changes.

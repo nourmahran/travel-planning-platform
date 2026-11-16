@@ -32,7 +32,7 @@ describe('PAY-03 RefundsService', () => {
   let emitter: ReturnType<typeof fakeEmitter>;
   let notifier: ReturnType<typeof fakeNotifier>;
   let service: RefundsService;
-  const user = { id: oid(), role: 'USER' };
+  const user = { id: oid(), role: 'user' };
   const now = new Date('2026-11-08T12:00:00Z');
 
   /** A paid booking: Confirmed, policies accepted, one Succeeded payment. */
@@ -454,10 +454,10 @@ describe('PAY-03 RefundsService', () => {
       status: RefundStatus.Refunded,
     });
     await expect(
-      service.getRefund({ id: oid(), role: 'ADMIN' }, id),
+      service.getRefund({ id: oid(), role: 'admin' }, id),
     ).resolves.toBeDefined();
     await expect(
-      service.getRefund({ id: oid(), role: 'USER' }, id),
+      service.getRefund({ id: oid(), role: 'user' }, id),
     ).rejects.toThrow(NotFoundException);
   });
 });

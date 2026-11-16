@@ -6,19 +6,16 @@ import {
   HttpStatus,
   Param,
   Post,
-  UseGuards,
 } from '@nestjs/common';
 import {
   ApiCookieAuth,
   ApiCreatedResponse,
-  ApiHeader,
   ApiOkResponse,
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from './auth/auth-user';
-import { CurrentUser } from './auth/current-user.decorator';
-import { DEV_USER_HEADER, PaymentsAuthGuard } from './auth/payments-auth.guard';
 import { CreatePaymentDto, IdParamDto } from './dto/create-payment.dto';
 import {
   CreatePaymentResponseDto,
@@ -44,14 +41,7 @@ const PAYABLE_ERRORS: Array<[number, string]> = [
 ];
 
 @ApiTags('Payments')
-@ApiCookieAuth()
-@ApiHeader({
-  name: DEV_USER_HEADER,
-  required: false,
-  description:
-    'DEV ONLY (until auth is merged): user ObjectId to act as. Ignored in production.',
-})
-@UseGuards(PaymentsAuthGuard) // TODO(part2): use real auth guard
+@ApiCookieAuth('access_token')
 @Controller(`${API_PREFIX}/payments`)
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}

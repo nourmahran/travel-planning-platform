@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { getModelToken } from '@nestjs/mongoose';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import type Stripe from 'stripe';
@@ -20,7 +21,7 @@ import { Refund } from '../schemas/refund.schema';
 import { STRIPE_CLIENT } from '../stripe/stripe.provider';
 import { StripeService } from '../stripe/stripe.service';
 import { FakeBookingGateway } from './fake-booking.gateway';
-import { FakeStripe, makeModels } from './test-helpers';
+import { FakeStripe, makeModels, TestAuthGuard } from './test-helpers';
 
 /**
  * Wiring test: the REAL modules, controllers, guards, DTO validation and the
@@ -58,6 +59,8 @@ describe('Payments flow over HTTP (module wiring)', () => {
         PoliciesModule,
         DevPaymentsModule.register(),
       ],
+      // Stand-in for the auth module's global JwtAuthGuard.
+      providers: [{ provide: APP_GUARD, useClass: TestAuthGuard }],
     })
       .overrideProvider(getModelToken(Payment.name))
       .useValue(models.payments)
@@ -94,7 +97,7 @@ describe('Payments flow over HTTP (module wiring)', () => {
   });
 
   const http = () => request(app.getHttpServer());
-  const as = (id: string) => ({ 'x-dev-user-id': id });
+  const as = (id: string) => ({ 'x-test-user-id': id });
 
   it('full flow: policies → payment → dev confirm → webhook → Confirmed', async () => {
     const booking = flights.seed({
