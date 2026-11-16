@@ -218,6 +218,49 @@ describe('combined backend against an isolated MongoDB replica set', () => {
         expect.objectContaining({ type: 'booking.confirmed' }),
       ]),
     );
+    const owner = await connection.db!.collection('users').findOne({ email: 'integration@example.test' });
+    if (!owner) throw new Error('Integration user missing');
+    const itineraryId = new Types.ObjectId();
+    const dayId = new Types.ObjectId();
+    await connection.db!.collection('itineraries').insertOne({
+      _id: itineraryId, ownerId: owner._id, title: 'Booked trip', countries: ['EG'],
+      startDate: checkIn, currency: 'USD', visibility: 'private', isHidden: false,
+      days: [{ _id: dayId, dayNumber: 1, date: checkIn, cityId: 'Cairo', activities: [], budgets: [] }],
+      transportCosts: [], cloneCount: 0,
+    });
+    const linked = await request(http)
+      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/hotel/${hold.body.id}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf(cookies));
+    if (linked.status !== 201) throw new Error(JSON.stringify(linked.body));
+    expect(linked.body.bookingId).toBe(hold.body.id);
+    const budget = await request(http)
+      .get(`/itineraries/${itineraryId.toString()}/budget-summary`)
+      .set('Cookie', cookies).expect(200);
+    expect(budget.body.totals.categories.accommodation).toBe(240);
+    const flightBookingId = new Types.ObjectId();
+    await connection.db!.collection('bookings').insertOne({
+      _id: flightBookingId, userId: owner._id.toString(), status: 'Confirmed', totalPrice: 75,
+    });
+    await request(http)
+      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).expect(201);
+    const withFlight = await request(http)
+      .get(`/itineraries/${itineraryId.toString()}/budget-summary`)
+      .set('Cookie', cookies).expect(200);
+    expect(withFlight.body.totals.categories.local_transport).toBe(75);
+    await request(http)
+      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).expect(409);
+    await connection.db!.collection('itineraries').updateOne(
+      { _id: itineraryId }, { $set: { visibility: 'public' } },
+    );
+    const publicDetail = await request(http)
+      .get(`/itineraries/public/${itineraryId.toString()}`).expect(200);
+    expect(publicDetail.body.days[0].budgets[0].bookingId).toBeUndefined();
+    const clone = await request(http)
+      .post(`/itineraries/${itineraryId.toString()}/clone`)
+      .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).send({}).expect(201);
+    expect(clone.body.days[0].budgets).toEqual([]);
   });
 
   it('saves only active hotels and public itineraries for the signed-in user', async () => {
@@ -288,5 +331,22 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       expect.objectContaining({ type: 'hotel', providerId: hotelId.toString(), bookings: 1, grossRevenue: 120, refunds: 20, netRevenue: 100 }),
     ]));
     await request(http).get(`/admin/analytics?from=${date}&to=${date}`).expect(401);
+  });
+
+  it('shows only unoccupied numbered flight seats', async () => {
+    const connection = app.get<Connection>(getConnectionToken());
+    const flightId = new Types.ObjectId();
+    await connection.db!.collection('flights').insertOne({
+      _id: flightId, status: 'Scheduled', departureTimeUtc: new Date(Date.now() + 86400000),
+      cabins: [{ cabinClass: 'Economy', totalSeats: 3, availableSeats: 2 }],
+    });
+    await connection.db!.collection('bookings').insertOne({
+      flightId, cabinClass: 'Economy', status: 'Confirmed',
+      passengers: [{ seatNumber: 2 }],
+    });
+    const seats = await request(app.getHttpServer())
+      .get(`/bookings/flights/${flightId.toString()}/seats?cabin=Economy`).expect(200);
+    expect(seats.body.numberedSeats).toEqual([1, 3]);
+    expect(seats.body.availableSeats).toBe(2);
   });
 });

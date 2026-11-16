@@ -53,6 +53,12 @@ export const ActivitySchema = SchemaFactory.createForClass(Activity);
 
 @Schema({ _id: true })
 export class BudgetEntry {
+  @Prop({ type: String, enum: ['flight', 'hotel'] })
+  bookingType?: 'flight' | 'hotel';
+
+  @Prop({ type: Types.ObjectId })
+  bookingId?: Types.ObjectId;
+
   @Prop({ type: String, enum: BUDGET_CATEGORIES, required: true })
   category: BudgetCategory;
 

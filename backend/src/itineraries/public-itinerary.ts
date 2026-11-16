@@ -109,12 +109,14 @@ export function toPublicDetail(
         activities: (day.activities ?? []).map((activity) =>
           toActivityResponse(activity as typeof activity & Identified),
         ),
-        budgets: (day.budgets ?? []).map((budget) =>
-          toBudgetResponse(
+        budgets: (day.budgets ?? []).map((budget) => {
+          const response = toBudgetResponse(
             budget as BudgetEntry & Identified,
             itinerary.currency,
-          ),
-        ),
+          );
+          delete response.bookingId;
+          return response;
+        }),
       };
     }),
     budget: {

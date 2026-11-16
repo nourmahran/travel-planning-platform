@@ -263,7 +263,7 @@ export class ItinerariesService {
           sizeBytes: image.sizeBytes,
         })),
       })),
-      budgets: (day.budgets ?? []).map((budget) => ({
+      budgets: (day.budgets ?? []).filter((budget) => !budget.bookingId).map((budget) => ({
         category: budget.category,
         amount: budget.amount,
         currency: budget.currency,

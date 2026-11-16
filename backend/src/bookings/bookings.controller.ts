@@ -27,6 +27,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { FlightCancellationService } from './flight-cancellation.service';
+import { Public } from '../auth/decorators/public.decorator';
+import { CabinClass } from '../flights/schemas/flight.schema';
 
 @ApiTags('Bookings')
 @Controller('bookings')
@@ -69,6 +71,14 @@ export class BookingsController {
   history(@CurrentUser() user: AuthenticatedUser) {
     return this.bookingsService.historyForUser(user.id);
   }
+
+  @Get('flights/:flightId/seats')
+  @Public()
+  @ApiOperation({ summary: 'FLT-28 Available numbered seats for a flight cabin' })
+  seats(
+    @Param('flightId', ParseObjectIdPipe) flightId: string,
+    @Query('cabin') cabin: CabinClass,
+  ) { return this.bookingsService.availableSeats(flightId, cabin); }
 
   @Get('airline/:flightId/passengers')
   @Roles(UserRole.AIRLINE_MODERATOR, UserRole.ADMIN)

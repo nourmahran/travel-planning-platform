@@ -17,6 +17,8 @@ export enum BookingStatus {
 
 @Schema({ _id: false })
 export class BookingPassenger {
+  @Prop({ type: Number, min: 1 }) seatNumber?: number;
+  @Prop({ type: Number, min: 1 }) returnSeatNumber?: number;
   @Prop({ required: true, trim: true })
   firstName: string;
 

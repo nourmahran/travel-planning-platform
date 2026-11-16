@@ -8,6 +8,8 @@ import {
   IsNotEmpty,
   IsOptional,
   IsNumber,
+  IsInt,
+  Min,
   Matches,
   IsString,
   ValidateNested,
@@ -15,6 +17,18 @@ import {
 import { CabinClass } from '../../flights/schemas/flight.schema';
 
 export class BookingPassengerDto {
+  @ApiProperty({ required: false, description: 'Optional numbered seat in the selected outbound cabin' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  seatNumber?: number;
+
+  @ApiProperty({ required: false, description: 'Optional numbered seat in the return cabin' })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  returnSeatNumber?: number;
+
   @ApiProperty({ example: 'Ahmed' })
   @IsString()
   @IsNotEmpty()

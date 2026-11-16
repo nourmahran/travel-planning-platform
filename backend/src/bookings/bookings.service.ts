@@ -12,6 +12,7 @@ import { ClientSession, Model, Types } from 'mongoose';
 import { Booking, BookingStatus } from './schemas/booking.schema';
 import {
   CabinDetails,
+  CabinClass,
   Flight,
   FlightStatus,
 } from '../flights/schemas/flight.schema';
@@ -29,6 +30,69 @@ import { notificationRecord } from '../common/notification-record';
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
+
+  private validateSeatNumbers(
+    selected: Array<number | undefined>,
+    passengerTypes: string[],
+    totalSeats: number,
+  ): number[] {
+    const numbers = selected.filter((number): number is number => number !== undefined);
+    if (new Set(numbers).size !== numbers.length ||
+        selected.some((number, index) => number !== undefined && passengerTypes[index] === 'infant') ||
+        numbers.some((number) => !Number.isInteger(number) || number < 1 || number > totalSeats)) {
+      throw new BadRequestException('Invalid or duplicate seat selection');
+    }
+    return numbers;
+  }
+
+  private async assertSeatsFree(
+    flightId: Types.ObjectId,
+    cabinClass: string,
+    numbers: number[],
+    session: ClientSession,
+  ) {
+    if (!numbers.length) return;
+    const occupied = await this.bookingModel.exists({
+      cabinClass,
+      status: { $in: [BookingStatus.PENDING_PAYMENT, BookingStatus.CONFIRMED, BookingStatus.COMPLETED] },
+      $or: [
+        { flightId, 'passengers.seatNumber': { $in: numbers } },
+        { returnFlightId: flightId, 'passengers.returnSeatNumber': { $in: numbers } },
+      ],
+    }).session(session);
+    if (occupied) throw new BadRequestException('A selected seat is no longer available');
+  }
+
+  async availableSeats(flightId: string, cabinClass: CabinClass) {
+    if (!Object.values(CabinClass).includes(cabinClass)) {
+      throw new BadRequestException('Invalid cabin class');
+    }
+    const flight = await this.flightModel.findById(flightId).lean();
+    if (!flight || flight.status !== FlightStatus.SCHEDULED || flight.departureTimeUtc <= new Date()) {
+      throw new NotFoundException('Flight not found');
+    }
+    const cabin = flight.cabins.find((item) => item.cabinClass === cabinClass);
+    if (!cabin) throw new NotFoundException('Cabin not found');
+    const bookings = await this.bookingModel.find({
+      cabinClass,
+      status: { $in: [BookingStatus.PENDING_PAYMENT, BookingStatus.CONFIRMED, BookingStatus.COMPLETED] },
+      $or: [{ flightId: flight._id }, { returnFlightId: flight._id }],
+    }).select('flightId returnFlightId passengers').lean();
+    const occupied = new Set<number>();
+    for (const booking of bookings) {
+      const outbound = booking.flightId.toString() === flightId;
+      for (const passenger of booking.passengers) {
+        const seat = outbound ? passenger.seatNumber : passenger.returnSeatNumber;
+        if (seat) occupied.add(seat);
+      }
+    }
+    return {
+      flightId, cabinClass,
+      availableSeats: cabin.availableSeats,
+      numberedSeats: Array.from({ length: cabin.totalSeats }, (_, index) => index + 1)
+        .filter((number) => !occupied.has(number)),
+    };
+  }
 
   private baggageForCabin(
     cabin: CabinDetails,
@@ -372,6 +436,14 @@ export class BookingsService {
       this.baggageForCabin(cabin, airline?.flightPolicies?.baggage),
     );
     const passengerCount = quote.seats;
+    this.validateSeatNumbers(
+      dto.passengers.map((passenger) => passenger.seatNumber),
+      quote.passengers.map((passenger) => passenger.passengerType),
+      cabin.totalSeats,
+    );
+    if (!dto.returnFlightId && dto.passengers.some((passenger) => passenger.returnSeatNumber !== undefined)) {
+      throw new BadRequestException('A return seat requires a return flight');
+    }
 
     const returnFlightId = dto.returnFlightId
       ? new Types.ObjectId(dto.returnFlightId)
@@ -420,6 +492,13 @@ export class BookingsService {
       returnCabin.availableSeats < returnQuote.seats
     ) {
       throw new BadRequestException('Not enough return seats');
+    }
+    if (returnCabin && returnQuote) {
+      this.validateSeatNumbers(
+        dto.passengers.map((passenger) => passenger.returnSeatNumber),
+        returnQuote.passengers.map((passenger) => passenger.passengerType),
+        returnCabin.totalSeats,
+      );
     }
 
     if (cabin.availableSeats < passengerCount) {
@@ -480,6 +559,12 @@ export class BookingsService {
           reservedCabin.price,
           this.baggageForCabin(reservedCabin, airline?.flightPolicies?.baggage),
         );
+        const outboundSeats = this.validateSeatNumbers(
+          dto.passengers.map((passenger) => passenger.seatNumber),
+          finalQuote.passengers.map((passenger) => passenger.passengerType),
+          reservedCabin.totalSeats,
+        );
+        await this.assertSeatsFree(flightId, dto.cabinClass, outboundSeats, session);
         let totalPrice = finalQuote.totalPrice;
         let finalReturnQuote: typeof finalQuote | null = null;
         if (returnFlightId && returnQuote) {
@@ -519,6 +604,12 @@ export class BookingsService {
               returnAirline?.flightPolicies?.baggage,
             ),
           );
+          const returnSeats = this.validateSeatNumbers(
+            dto.passengers.map((passenger) => passenger.returnSeatNumber),
+            finalReturnQuote.passengers.map((passenger) => passenger.passengerType),
+            reservedReturnCabin.totalSeats,
+          );
+          await this.assertSeatsFree(returnFlightId, dto.cabinClass, returnSeats, session);
           totalPrice += finalReturnQuote.totalPrice;
         }
 
@@ -531,7 +622,11 @@ export class BookingsService {
               returnFlightId,
               userId: dto.userId,
               cabinClass: dto.cabinClass,
-              passengers: finalQuote.passengers,
+              passengers: finalQuote.passengers.map((passenger, index) => ({
+                ...passenger,
+                seatNumber: dto.passengers[index].seatNumber,
+                returnSeatNumber: dto.passengers[index].returnSeatNumber,
+              })),
               totalPrice,
               seatCount: finalQuote.seats,
               returnSeatCount: finalReturnQuote?.seats,
@@ -925,7 +1020,9 @@ export class BookingsService {
       'Cabin: ' + booking.cabinClass,
       'Passengers:',
       ...booking.passengers.map((p) =>
-        [p.firstName, p.lastName, p.passengerType, p.dateOfBirth]
+        [p.firstName, p.lastName, p.passengerType, p.dateOfBirth,
+          p.seatNumber ? `Seat ${p.seatNumber}` : '',
+          p.returnSeatNumber ? `Return seat ${p.returnSeatNumber}` : '']
           .filter(Boolean)
           .join(' '),
       ),

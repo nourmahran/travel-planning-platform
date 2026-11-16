@@ -6,7 +6,7 @@ Sources read in full: the supplied 14-page project description, the user's Membe
 
 Official workbook: https://drive.google.com/file/d/17WYE0p9EHUn-GUDrtqtCAekhqecOX8H1
 
-Mandatory requirements take priority. HTL-26 moderator review replies, BLG-13 itinerary attachment, ITN-28 PDF export, BON-01 provider analytics and BON-02 favourites are implemented in the backend. Email notification delivery (GEN-01-B), email verification (ACC-02), password reset email (ACC-07), flight change (FLT-27), seat selection (FLT-28) and booked travel links (ITN-27) remain open. The email worker requires an approved SMTP destination before it can send account or notification content externally.
+Mandatory requirements take priority. HTL-26 moderator review replies, BLG-13 itinerary attachment, ITN-27 booked travel links, ITN-28 PDF export, FLT-28 numbered seat selection, BON-01 provider analytics and BON-02 favourites are implemented in the backend. Email notification delivery (GEN-01-B), email verification (ACC-02), password reset email (ACC-07) and flight change with fare adjustment (FLT-27) remain open. The email worker requires an approved SMTP destination before it can send account or notification content externally.
 
 ## Requirement traceability
 

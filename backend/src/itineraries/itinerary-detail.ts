@@ -34,6 +34,8 @@ export type BudgetResponse = {
   currency: string;
   amount: number;
   note?: string;
+  bookingType?: 'flight' | 'hotel';
+  bookingId?: string;
 };
 
 export type TransportCostResponse = {
@@ -108,6 +110,8 @@ export function toBudgetResponse(
     currency: budget.currency?.trim().toUpperCase() ?? defaultCurrency,
     amount: budget.amount,
     note: budget.note,
+    bookingType: budget.bookingType,
+    bookingId: budget.bookingId?.toString(),
   };
 }
 

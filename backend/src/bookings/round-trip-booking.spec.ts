@@ -46,7 +46,7 @@ const dto = {
 };
 
 describe('Round-trip booking', () => {
-  function setup(failReturn = false) {
+  function setup(failReturn = false, occupiedSeat = false) {
     const session = {
       withTransaction: jest
         .fn<(callback: () => Promise<void>) => Promise<void>>()
@@ -56,6 +56,7 @@ describe('Round-trip booking', () => {
     const bookings = {
       db: { startSession: async () => session },
       create: jest.fn().mockResolvedValue([{ _id: 'booking' }]),
+      exists: jest.fn().mockImplementation(() => ({ session: async () => occupiedSeat ? { _id: 'occupied' } : null })),
     };
     const flights = {
       findById: jest.fn().mockImplementation((id: unknown) => ({
@@ -110,5 +111,35 @@ describe('Round-trip booking', () => {
     );
     expect(bookings.create).not.toHaveBeenCalled();
     expect(session.endSession).toHaveBeenCalledTimes(1);
+  });
+
+  it('reserves requested outbound and return seat numbers with the hold', async () => {
+    const { service, bookings } = setup();
+    await service.create({ ...dto, passengers: [{ ...dto.passengers[0], seatNumber: 3, returnSeatNumber: 5 }] });
+    expect(bookings.exists).toHaveBeenCalledTimes(2);
+    expect(bookings.create).toHaveBeenCalledWith(
+      [expect.objectContaining({ passengers: [expect.objectContaining({ seatNumber: 3, returnSeatNumber: 5 })] })],
+      expect.anything(),
+    );
+  });
+
+  it('rejects a seat held by another active booking', async () => {
+    const { service, bookings } = setup(false, true);
+    await expect(service.create({ ...dto, passengers: [{ ...dto.passengers[0], seatNumber: 3 }] }))
+      .rejects.toThrow('selected seat is no longer available');
+    expect(bookings.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate seats in one booking and seats assigned to infants', async () => {
+    const { service, bookings } = setup();
+    await expect(service.create({ ...dto, passengers: [
+      { ...dto.passengers[0], seatNumber: 3 },
+      { ...dto.passengers[0], firstName: 'Mona', seatNumber: 3 },
+    ] })).rejects.toThrow('Invalid or duplicate seat selection');
+    await expect(service.create({ ...dto, passengers: [
+      dto.passengers[0],
+      { ...dto.passengers[0], dateOfBirth: '2030-01-01', seatNumber: 4 },
+    ] })).rejects.toThrow('Invalid or duplicate seat selection');
+    expect(bookings.create).not.toHaveBeenCalled();
   });
 });

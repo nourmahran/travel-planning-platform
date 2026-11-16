@@ -60,6 +60,7 @@ export class BudgetsService {
   async update(ownerId: string, budgetId: string, dto: UpdateBudgetDto) {
     const itinerary = await this.itineraries.findOneByBudget(ownerId, budgetId);
     const { budget } = requireBudget(itinerary, budgetId);
+    if (budget.bookingId) throw new BadRequestException('Linked booking costs cannot be edited');
 
     this.assertFields(dto);
 
@@ -91,6 +92,9 @@ export class BudgetsService {
   async remove(ownerId: string, budgetId: string) {
     const itinerary = await this.itineraries.findOneByBudget(ownerId, budgetId);
     const { day, index } = requireBudget(itinerary, budgetId);
+    if ((day.budgets[index] as BudgetEntry).bookingId) {
+      throw new BadRequestException('Unlink the booking to remove its cost');
+    }
 
     (day.budgets as unknown as BudgetSubdocument[]).splice(index, 1);
 

@@ -24,6 +24,8 @@ import { HotelsModule } from '../hotels/hotels.module';
 import { Itinerary, ItinerarySchema } from './schemas/itinerary.schema';
 import { CurrencyModule } from '../currency/currency.module';
 import { FlightsModule } from '../flights/flights.module';
+import { ItineraryBookingsController } from './itinerary-bookings.controller';
+import { ItineraryBookingsService } from './itinerary-bookings.service';
 
 @Module({
   imports: [
@@ -43,6 +45,7 @@ import { FlightsModule } from '../flights/flights.module';
     BudgetsController,
     TransportCostsController,
     ItineraryTravelController,
+    ItineraryBookingsController,
   ],
   providers: [
     ItinerariesService,
@@ -54,6 +57,7 @@ import { FlightsModule } from '../flights/flights.module';
     BudgetSummaryService,
     ItineraryHotelsService,
     ItineraryFlightsService,
+    ItineraryBookingsService,
     TeamHotelSearchPort,
     { provide: HOTEL_SEARCH_PORT, useExisting: TeamHotelSearchPort },
   ],
