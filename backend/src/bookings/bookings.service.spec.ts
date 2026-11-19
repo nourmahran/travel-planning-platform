@@ -48,7 +48,10 @@ describe('BookingsService', () => {
         },
         {
           provide: getModelToken(Airline.name),
-          useValue: { findById: jest.fn() },
+          // ACC-15: booking checks that the airline is active.
+          useValue: {
+            findById: jest.fn(() => ({ exec: async () => ({ isActive: true }) })),
+          },
         },
       ],
     }).compile();

@@ -30,6 +30,18 @@ The older unlisted /api/bookings flight routes still work for existing clients b
 
 Mail goes only to the SMTP server set in `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`). Without `SMTP_HOST` nothing is sent; outside production the email text is printed in the server log so the flows can be tried from Swagger. For a demo, use a test inbox such as Ethereal or Mailtrap.
 
+## Full API verification (test/qa)
+
+`test/qa/run.cjs` starts the built backend against a private in-memory MongoDB replica set (seeded with the reference data), then exercises every module over HTTP like Swagger UI: valid and invalid requests, authentication, roles, ownership, duplicates, concurrency and Stripe test-mode payments (real PaymentIntents and refunds; webhooks are signed with a harness-only secret). The shared Atlas database is never touched. It needs a Stripe test key in `.env`.
+
+```bash
+npm run build
+node test/qa/run.cjs
+node test/qa/make-reports.cjs
+```
+
+Results go to `test/qa/results.json`; the reports are written to `docs/qa/`.
+
 The API applies DTO validation globally and returns normalized HTTP errors. Scheduled jobs release expired seat holds and mark flights Departed. Use a replica-set MongoDB deployment for transactions.
 
 ## Checks

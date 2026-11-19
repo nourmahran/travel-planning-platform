@@ -1,9 +1,69 @@
 {
- "ranAt": "2026-11-19T16:00:48.803Z",
- "total": 140,
- "pass": 139,
- "fail": 1,
+ "ranAt": "2026-11-19T16:17:03.694Z",
+ "total": 700,
+ "pass": 700,
+ "fail": 0,
  "results": [
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed countries",
+   "test": "countries seeded from the reference CSV",
+   "expected": ">=8",
+   "actual": "8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed cities",
+   "test": "cities seeded from the reference CSV",
+   "expected": ">=8",
+   "actual": "8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed airports",
+   "test": "airports seeded from the reference CSV",
+   "expected": ">=8",
+   "actual": "8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed attractions",
+   "test": "attractions seeded from the reference CSV",
+   "expected": ">=8",
+   "actual": "8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed currencies",
+   "test": "supported currencies seeded",
+   "expected": ">=1",
+   "actual": "5",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-12",
+   "endpoint": "seed airports",
+   "test": "official identifiers kept (CAI, Africa/Cairo)",
+   "expected": "Africa/Cairo",
+   "actual": "Africa/Cairo",
+   "pass": true,
+   "note": ""
+  },
   {
    "section": "1. Authentication and accounts",
    "req": "ACC-01",
@@ -146,6 +206,36 @@
   },
   {
    "section": "1. Authentication and accounts",
+   "req": "GEN-13",
+   "endpoint": "POST /auth/register",
+   "test": "malformed JSON -> 400",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-13",
+   "endpoint": "POST /auth/register",
+   "test": "error response has no stack trace",
+   "expected": "no stack",
+   "actual": "no stack",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
+   "req": "GEN-13",
+   "endpoint": "POST /auth/register",
+   "test": "consistent error shape (statusCode, message, path)",
+   "expected": "statusCode,message,path",
+   "actual": "statusCode,message,timestamp,path",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "1. Authentication and accounts",
    "req": "ACC-04",
    "endpoint": "POST /auth/login",
    "test": "valid login",
@@ -209,8 +299,8 @@
    "req": "ACC-19",
    "endpoint": "GET /auth/me",
    "test": "returns own email",
-   "expected": "traveler-1795104040199@travel.test",
-   "actual": "traveler-1795104040199@travel.test",
+   "expected": "traveler-1795104962957@travel.test",
+   "actual": "traveler-1795104962957@travel.test",
    "pass": true,
    "note": ""
   },
@@ -529,6 +619,3236 @@
    "req": "ACC-12",
    "endpoint": "POST /auth/login",
    "test": "deactivated user cannot log in",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "POST /airlines",
+   "test": "admin creates airline",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "POST /airlines",
+   "test": "duplicate airline code",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "POST /airlines",
+   "test": "invalid airline code",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "POST /airlines",
+   "test": "user cannot create airline",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "GET /airlines/:id",
+   "test": "public airline profile",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "POST /admin/moderators",
+   "test": "admin creates airline moderator",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "POST /admin/moderators",
+   "test": "unknown provider rejected",
+   "expected": "400,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "POST /admin/moderators",
+   "test": "duplicate moderator email",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "POST /auth/login",
+   "test": "moderator logs in with temporary password",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "POST /flights",
+   "test": "temporary password must be changed first",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-13",
+   "endpoint": "PATCH /auth/change-password",
+   "test": "moderator sets own password",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "PATCH /airlines/:id",
+   "test": "moderator edits own airline",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-01",
+   "endpoint": "PATCH /airlines/:id",
+   "test": "moderator cannot edit another airline",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-08",
+   "endpoint": "PUT /airlines/:id/baggage-policy",
+   "test": "set baggage policy",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-08",
+   "endpoint": "PUT /airlines/:id/baggage-policy",
+   "test": "negative extra-bag limit rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-09",
+   "endpoint": "PUT /airlines/:id/cancellation-policy",
+   "test": "set cancellation tiers",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-09",
+   "endpoint": "PUT /airlines/:id/cancellation-policy",
+   "test": "duplicate thresholds rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-09",
+   "endpoint": "PUT /airlines/:id/cancellation-policy",
+   "test": "refund > 100% rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-09",
+   "endpoint": "PUT /airlines/:id/cancellation-policy",
+   "test": "other airline moderator forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "GET /airports",
+   "test": "list airports",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "GET /airports",
+   "test": "seeded airports listed with time zones",
+   "expected": ">=8",
+   "actual": "8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "GET /airports/:code",
+   "test": "airport with IANA zone",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "GET /airports/CAI",
+   "test": "time zone Africa/Cairo",
+   "expected": "Africa/Cairo",
+   "actual": "Africa/Cairo",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "moderator creates flight",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "DB: departure stored in UTC from airport local time",
+   "expected": "08:00Z",
+   "actual": "08:00",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "duplicate flight number same day",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "identical airports rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "arrival before departure rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "arrival compared in UTC, not local time",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "departure in the past rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "POST /flights",
+   "test": "airport not in reference list rejected",
+   "expected": "400,404",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "cannot create flight for another airline",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights",
+   "test": "cabin class used twice rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights",
+   "test": "price 0 rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights",
+   "test": "seat count 0 rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights",
+   "test": "unknown cabin class rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "traveler cannot create flights",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-03",
+   "endpoint": "POST /flights",
+   "test": "test flights created",
+   "expected": "all ids",
+   "actual": "7",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights/:id/cabins",
+   "test": "add cabin class",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "POST /flights/:id/cabins",
+   "test": "same class twice rejected",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "update cabin price",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-04",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "unknown cabin id",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "other airline forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-11",
+   "endpoint": "GET /flights/search",
+   "test": "guest one-way search",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-11",
+   "endpoint": "GET /flights/search",
+   "test": "finds both CAI->DXB flights on that local date",
+   "expected": "QA100,QA200",
+   "actual": "QA100,QB100,QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-11",
+   "endpoint": "GET /flights/search",
+   "test": "excludes flights without enough seats (QA100 has 4+2)",
+   "expected": "QA200 only",
+   "actual": "QB100,QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-11",
+   "endpoint": "GET /flights/search",
+   "test": "no match -> empty list",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-12",
+   "endpoint": "GET /flights/search",
+   "test": "cabin filter Business",
+   "expected": "QA100 only",
+   "actual": "QA100",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-15",
+   "endpoint": "GET /flights/search",
+   "test": "min price > max price rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-15",
+   "endpoint": "GET /flights/search",
+   "test": "price range 100-200 inclusive keeps QA200 (150)",
+   "expected": "QA200",
+   "actual": "QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-15",
+   "endpoint": "GET /flights/search",
+   "test": "sort price_desc",
+   "expected": "QA100 before QA200",
+   "actual": "QA100,QB100,QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-15",
+   "endpoint": "GET /flights/search",
+   "test": "invalid sort value rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-02",
+   "endpoint": "GET /flights/search",
+   "test": "unknown airport in search rejected",
+   "expected": "400,404",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-12",
+   "endpoint": "GET /flights/search",
+   "test": "round-trip search",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-12",
+   "endpoint": "GET /flights/search",
+   "test": "round trip returns outbound and return options",
+   "expected": "QA100/QA300",
+   "actual": "QA100,QB100,QA200/QA300",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-17",
+   "endpoint": "GET /flights/:id",
+   "test": "flight details",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-17",
+   "endpoint": "GET /flights/:id",
+   "test": "airline, local times, duration, cabins with baggage and cancellation tiers",
+   "expected": "all present",
+   "actual": "all present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-06",
+   "endpoint": "GET /flights/:id",
+   "test": "departure shown in Cairo local time",
+   "expected": "10:00+02:00",
+   "actual": "10:00:00.000+02:00",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-06",
+   "endpoint": "GET /flights/:id",
+   "test": "arrival shown in Dubai local time",
+   "expected": "15:00+04:00",
+   "actual": "15:00:00.000+04:00",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-17",
+   "endpoint": "GET /flights/:id",
+   "test": "malformed id",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-17",
+   "endpoint": "GET /flights/:id",
+   "test": "unknown id",
+   "expected": "404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-14",
+   "endpoint": "GET /admin/accounts",
+   "test": "filter by role",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-14",
+   "endpoint": "GET /admin/accounts",
+   "test": "only moderators returned",
+   "expected": "airline_moderator",
+   "actual": "airline_moderator",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-14",
+   "endpoint": "GET /admin/accounts",
+   "test": "search by email",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-14",
+   "endpoint": "GET /admin/accounts",
+   "test": "filter by status with pagination",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-14",
+   "endpoint": "GET /admin/accounts",
+   "test": "invalid role filter",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-13",
+   "endpoint": "GET /admin/accounts?search=.*",
+   "test": "search text matched literally (regex escaped)",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-13",
+   "endpoint": "GET /admin/accounts?search=(a+)+$",
+   "test": "no regex injection / ReDoS",
+   "expected": "200 fast",
+   "actual": "200 5ms",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-16",
+   "endpoint": "PATCH /admin/accounts/:id/suspend",
+   "test": "suspend user",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-16",
+   "endpoint": "GET /auth/me",
+   "test": "suspended user session rejected",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-04",
+   "endpoint": "POST /auth/login",
+   "test": "suspended account message",
+   "expected": "/suspended/i",
+   "actual": "Account is suspended",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-16",
+   "endpoint": "PATCH /admin/accounts/:id/reactivate",
+   "test": "reactivate user",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-16",
+   "endpoint": "POST /auth/login",
+   "test": "reactivated user can log in",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-16",
+   "endpoint": "PATCH /admin/accounts/:id/suspend",
+   "test": "non-admin cannot suspend",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "POST /admin/users/:id/reset-password",
+   "test": "admin sets temporary password",
+   "expected": "200,201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "POST /auth/login",
+   "test": "login with temporary password",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "GET /flight-bookings",
+   "test": "must change temporary password first",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "PATCH /auth/change-password",
+   "test": "set new password",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "GET /flight-bookings",
+   "test": "access restored after change",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-07a",
+   "endpoint": "POST /admin/users/:id/reset-password",
+   "test": "temporary password must meet rules",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/accounts/:id/suspend",
+   "test": "suspend moderator",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "POST /auth/login",
+   "test": "suspended moderator cannot log in",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/accounts/:id/reactivate",
+   "test": "reactivate moderator",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/providers/:type/:id/deactivate",
+   "test": "deactivate airline",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "GET /flights/search",
+   "test": "deactivated airline's flights hidden",
+   "expected": "no QB100",
+   "actual": "QA100,QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "deactivated airline's flight cannot be booked",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "GET /notifications",
+   "test": "airline moderator notified of deactivation",
+   "expected": "notification",
+   "actual": "provider.suspended",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/providers/:type/:id/reactivate",
+   "test": "reactivate airline",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "GET /flights/search",
+   "test": "reactivated airline visible again",
+   "expected": "QB100",
+   "actual": "QA100,QB100,QA200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/providers/:type/:id/deactivate",
+   "test": "invalid provider type",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-07",
+   "endpoint": "GET /admin/audit-logs",
+   "test": "audit log list",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-07",
+   "endpoint": "GET /admin/audit-logs",
+   "test": "suspension and provider deactivation logged",
+   "expected": "suspend + deactivate",
+   "actual": "provider.reactivate,provider.deactivate,account.reactivate,account.suspend,account.password_reset,account.reactivate,account.suspend,moderator.create,moderator.create",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "GEN-07",
+   "endpoint": "GET /admin/audit-logs",
+   "test": "non-admin forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-30",
+   "endpoint": "cron depart-flights",
+   "test": "flight past departure becomes Departed",
+   "expected": "Departed",
+   "actual": "Departed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-30",
+   "endpoint": "PATCH /flights/:id",
+   "test": "departed flight not editable",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "2. Administration, airlines and flights",
+   "req": "FLT-30",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "departed flight not bookable",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-02",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "unverified email cannot book",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-10",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "guest must log in to book",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "moderator cannot book as traveler",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-12",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "booking without an adult rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-12",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "more infants than adults rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "extra bags above airline maximum (2) rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-08",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "extra bag heavier than max weight (23kg) rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "missing passport number",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "date of birth in the future",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "no passengers",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "malformed flight id",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-19",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "cabin not on this flight",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "hold 1 adult + 1 child + 1 infant with one extra bag",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-12",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "price: adult+child full fare, infant 10%, bag fee",
+   "expected": "365",
+   "actual": "365",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "status Pending Payment",
+   "expected": "Pending Payment",
+   "actual": "Pending Payment",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "hold lasts 10 minutes",
+   "expected": "9-10",
+   "actual": "10",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-12",
+   "endpoint": "POST /flight-bookings/hold",
+   "test": "DB: infant takes no seat (2 seats held)",
+   "expected": "28",
+   "actual": "28",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-21",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "booking summary before payment",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-21",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "summary has passengers, baggage and total",
+   "expected": "3 passengers",
+   "actual": "3",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "other user's booking hidden",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "guest rejected",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "POST /payments",
+   "test": "payment blocked before policies accepted",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "GET /bookings/:type/:id/policies",
+   "test": "airline policies shown",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "GET /bookings/flight/:id/policies",
+   "test": "includes cancellation tiers and baggage",
+   "expected": "both",
+   "actual": "{\"bookingType\":\"flight\",\"bookingId\":\"6aff20d2d9e9b135b09314f7\",\"policies\":{\"kind\":\"flight\",\"cancellationTiers\":[{\"daysBe",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "GET /bookings/:type/:id/policies",
+   "test": "other user can't read",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "POST /bookings/:type/:id/accept-policies",
+   "test": "unchecked box rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "POST /bookings/:type/:id/accept-policies",
+   "test": "accept policies",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-02",
+   "endpoint": "POST /bookings/flight/:id/accept-policies",
+   "test": "acceptance timestamp returned",
+   "expected": "date",
+   "actual": "2026-11-19T16:16:18.097Z",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments",
+   "test": "cannot pay someone else's booking",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments",
+   "test": "create PaymentIntent",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments",
+   "test": "amount equals booking total (USD)",
+   "expected": "365 usd",
+   "actual": "365 usd",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "Stripe confirm",
+   "test": "declined test card does not succeed",
+   "expected": "requires_payment_method",
+   "actual": "requires_payment_method",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "webhook payment_failed",
+   "test": "booking stays unconfirmed after failure",
+   "expected": "Pending Payment",
+   "actual": "Pending Payment",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments/:id/retry",
+   "test": "retry after failure",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "Stripe confirm",
+   "test": "test card 4242 succeeds on retry",
+   "expected": "succeeded",
+   "actual": "succeeded",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "before webhook",
+   "test": "not confirmed until webhook verified",
+   "expected": "Pending Payment",
+   "actual": "Pending Payment",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments/webhook",
+   "test": "forged webhook signature rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "forged webhook",
+   "test": "forged event does not confirm",
+   "expected": "Pending Payment",
+   "actual": "Pending Payment",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments/webhook",
+   "test": "signed payment_intent.succeeded accepted",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-23",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "booking Confirmed after verified payment",
+   "expected": "Confirmed",
+   "actual": "Confirmed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-23",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "unique booking reference generated",
+   "expected": "reference",
+   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments/webhook",
+   "test": "duplicate event acknowledged",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "duplicate webhook",
+   "test": "DB: event processed once",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "duplicate webhook",
+   "test": "no duplicate confirmation notification",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "DB payments",
+   "test": "no card data or client secret stored",
+   "expected": "no card/secret fields",
+   "actual": "_id,bookingType,bookingId,userId,stripePaymentIntentId,amount,currency,status,attempts,createdAt,updatedAt,__v,succeededAt",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "GET /payments/:id",
+   "test": "payment status",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "GET /payments/:id",
+   "test": "status Succeeded",
+   "expected": "Succeeded",
+   "actual": "Succeeded",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "GET /payments/:id",
+   "test": "other user can't view payment",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-23",
+   "endpoint": "GET /notifications",
+   "test": "booking confirmation notification",
+   "expected": "booking confirmed",
+   "actual": "booking.confirmed,payment.failed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "GET /notifications/unread-count",
+   "test": "unread count",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "GET /notifications/unread-count",
+   "test": "unread count >= 1",
+   "expected": ">=1",
+   "actual": "2",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "PATCH /notifications/:id/read",
+   "test": "mark one read",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "PATCH /notifications/:id/read",
+   "test": "cannot mark another user's notification",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "PATCH /notifications/read-all",
+   "test": "mark all read",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-01",
+   "endpoint": "GET /notifications/unread-count",
+   "test": "zero after read-all",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-23",
+   "endpoint": "GET /flight-bookings/:id/e-ticket",
+   "test": "download e-ticket",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-23",
+   "endpoint": "GET /flight-bookings/:id/e-ticket",
+   "test": "is a PDF",
+   "expected": "%PDF",
+   "actual": "%PDF",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "GET /flight-bookings/:id/e-ticket",
+   "test": "other user's ticket hidden",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "GET /flight-bookings/flights/:id/seats",
+   "test": "free numbered seats",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "PATCH /flight-bookings/:id/seat",
+   "test": "choose seat 7",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "PATCH /flight-bookings/:id/seat",
+   "test": "infant cannot take a seat",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "PATCH /flight-bookings/:id/seat",
+   "test": "seat number out of range",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "PATCH /flight-bookings/:id/seat",
+   "test": "seat already taken by another booking",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-28",
+   "endpoint": "GET /flight-bookings/flights/:id/seats",
+   "test": "seat 7 no longer listed",
+   "expected": "absent",
+   "actual": "absent",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-22",
+   "endpoint": "cron expire-seat-holds",
+   "test": "unpaid hold becomes Expired",
+   "expected": "Expired",
+   "actual": "Expired",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-22",
+   "endpoint": "cron expire-seat-holds",
+   "test": "DB: held seat released",
+   "expected": "28",
+   "actual": "28",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-01",
+   "endpoint": "POST /payments",
+   "test": "expired hold cannot be paid",
+   "expected": "4xx",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-25",
+   "endpoint": "GET /flight-bookings",
+   "test": "my bookings",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-25",
+   "endpoint": "GET /flight-bookings",
+   "test": "grouped as upcoming / past / cancelled",
+   "expected": "upcoming,past,cancelled",
+   "actual": "upcoming,past,cancelled",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-25",
+   "endpoint": "GET /flight-bookings",
+   "test": "confirmed booking under upcoming",
+   "expected": "6aff20d2d9e9b135b09314f7",
+   "actual": "6aff20d2d9e9b135b09314f7",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "GET /flight-bookings",
+   "test": "other user's list excludes my booking",
+   "expected": "absent",
+   "actual": "absent",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/bookings",
+   "test": "moderator lists flight bookings",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/bookings",
+   "test": "includes the confirmed booking",
+   "expected": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/passengers/export",
+   "test": "CSV export",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/passengers/export",
+   "test": "CSV with passenger names",
+   "expected": "Adult",
+   "actual": "text/csv; charset=utf-8",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/bookings",
+   "test": "other airline's moderator forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-29",
+   "endpoint": "GET /flights/:id/bookings",
+   "test": "traveler forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-17",
+   "endpoint": "GET /admin/bookings",
+   "test": "admin lists confirmed flight bookings",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-17",
+   "endpoint": "GET /admin/bookings",
+   "test": "contains the confirmed booking",
+   "expected": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-17",
+   "endpoint": "GET /admin/bookings",
+   "test": "traveler forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "BON-01",
+   "endpoint": "GET /admin/analytics",
+   "test": "analytics for period",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "BON-01",
+   "endpoint": "GET /admin/analytics",
+   "test": "revenue per provider includes 365 for QA Airways",
+   "expected": "365",
+   "actual": "{\"from\":\"2026-11-18\",\"to\":\"2026-11-20\",\"providers\":[{\"bookings\":1,\"type\":\"flight\",\"providerId\":\"6aff20c9d9e9b135b09314d1\",\"currency\":\"USD\",\"grossRevenue\":365,\"refunds\":0,\"netRevenue\":365}]}",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "BON-01",
+   "endpoint": "GET /admin/analytics",
+   "test": "from after to rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id",
+   "test": "airport change blocked once booked",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id",
+   "test": "rejected for the airport reason",
+   "expected": "/airport/i",
+   "actual": "departureLocalTime is required when changing the departure airport",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "seat count below booked rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "rejected for the booked-seats reason",
+   "expected": "/book|held|allocated|below/i",
+   "actual": "Seat count cannot fall below held or booked seats",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "seat count reduced but above booked",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "DB flights",
+   "test": "total 25, available = 25 - booked/held",
+   "expected": "25 / 23",
+   "actual": "25 / 23",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id/cabins/:cabinId",
+   "test": "price change",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "price change does not affect booking",
+   "expected": "365",
+   "actual": "365",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id",
+   "test": "time change",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "GET /notifications",
+   "test": "passenger notified of schedule change",
+   "expected": "schedule change",
+   "actual": "flight.schedule_changed,booking.confirmed,payment.failed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-05",
+   "endpoint": "PATCH /flights/:id",
+   "test": "other airline can't edit",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-26",
+   "endpoint": "GET /flight-bookings/:id/cancellation-preview",
+   "test": "refund preview",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-09",
+   "endpoint": "GET /flight-bookings/:id/cancellation-preview",
+   "test": "40 days before -> 100% tier",
+   "expected": "100% / 365",
+   "actual": "100% / 365",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "ACC-11",
+   "endpoint": "POST /flight-bookings/:id/cancel",
+   "test": "cannot cancel another user's booking",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-26",
+   "endpoint": "POST /flight-bookings/:id/cancel",
+   "test": "cancel confirmed booking",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-26",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "status Cancelled",
+   "expected": "Cancelled",
+   "actual": "Cancelled",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-26",
+   "endpoint": "DB flights",
+   "test": "seats returned to inventory",
+   "expected": "25",
+   "actual": "25",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-03",
+   "endpoint": "GET /bookings/:type/:id/refund",
+   "test": "refund status on booking",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-03",
+   "endpoint": "GET /bookings/flight/:id/refund",
+   "test": "Stripe refund created (Pending or Refunded)",
+   "expected": "Pending|Refunded",
+   "actual": "Refunded",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-03",
+   "endpoint": "GET /refunds/:id",
+   "test": "refund record",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-03",
+   "endpoint": "DB refunds",
+   "test": "refund amount 365 with Stripe refund id",
+   "expected": "36500 + re_",
+   "actual": "36500 re_",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "PAY-03",
+   "endpoint": "GET /notifications",
+   "test": "cancellation/refund notification",
+   "expected": "refund",
+   "actual": "refund.updated,booking.cancelled,flight.schedule_changed,booking.confirmed,payment.failed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "GEN-11",
+   "endpoint": "POST /flight-bookings/:id/cancel",
+   "test": "cancelled booking cannot be cancelled again",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-09",
+   "endpoint": "GET /flight-bookings/:id/cancellation-preview",
+   "test": "3 days before -> tier 0 (0%)",
+   "expected": "0%",
+   "actual": "0%",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-26",
+   "endpoint": "POST /flight-bookings/:id/cancel",
+   "test": "cancellation after departure blocked",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "GET /flight-bookings/:id/change-preview",
+   "test": "preview change to same-route flight",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "GET /flight-bookings/:id/change-preview",
+   "test": "different route rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "PATCH /flight-bookings/:id/change-flight",
+   "test": "change to higher fare holds replacement",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "POST /payments",
+   "test": "fare difference payment (bookingType flight_change)",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "POST /payments",
+   "test": "fare difference = 50",
+   "expected": "50",
+   "actual": "50",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-27",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "booking moved to the new flight after payment",
+   "expected": "6aff20cbd9e9b135b09314e0",
+   "actual": "6aff20cbd9e9b135b09314e0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "POST /flights/:id/cancel",
+   "test": "other airline can't cancel",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "POST /flights/:id/cancel",
+   "test": "airline cancels flight",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "DB flights",
+   "test": "flight Cancelled",
+   "expected": "Cancelled",
+   "actual": "Cancelled",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "GET /flight-bookings/:id",
+   "test": "confirmed booking Cancelled",
+   "expected": "Cancelled",
+   "actual": "Cancelled",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "DB refunds",
+   "test": "100% refund (250) issued",
+   "expected": "25000",
+   "actual": "25000",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "DB bookings",
+   "test": "pending hold released",
+   "expected": "not Pending Payment",
+   "actual": "Cancelled",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "GET /notifications",
+   "test": "passenger notified",
+   "expected": "flight cancelled",
+   "actual": "refund.updated,booking.cancelled,booking.confirmed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "3. Flight bookings, payments and refunds",
+   "req": "FLT-06",
+   "endpoint": "GET /flights/search",
+   "test": "cancelled flight hidden from search",
+   "expected": "absent",
+   "actual": "absent",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "POST /hotels",
+   "test": "admin creates hotel",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "POST /hotels",
+   "test": "star class > 5 rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "POST /hotels",
+   "test": "missing fields",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "POST /hotels",
+   "test": "traveler cannot create hotel",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-13",
+   "endpoint": "POST /admin/moderators",
+   "test": "admin creates hotel moderator",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "PATCH /hotels/:id",
+   "test": "moderator edits own hotel",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-01",
+   "endpoint": "PATCH /hotels/:id",
+   "test": "other hotel's moderator forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-09",
+   "endpoint": "PUT /hotels/:id/policies",
+   "test": "set check-in/out and tiers",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-09",
+   "endpoint": "PUT /hotels/:id/policies",
+   "test": "invalid time rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-10",
+   "endpoint": "PUT /hotels/:id/policies",
+   "test": "duplicate tier thresholds rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-10",
+   "endpoint": "PUT /hotels/:id/policies",
+   "test": "refund > 100% rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-03",
+   "endpoint": "POST /hotels/:id/rooms",
+   "test": "add room",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-03",
+   "endpoint": "POST /hotels/:id/rooms",
+   "test": "duplicate room number in hotel",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-03",
+   "endpoint": "POST /hotels/:id/rooms",
+   "test": "max occupancy 0 rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-03",
+   "endpoint": "POST /hotels/:id/rooms",
+   "test": "negative price rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-03",
+   "endpoint": "POST /hotels/:id/rooms",
+   "test": "other hotel's moderator forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "POST /hotels/:id/rooms/:roomId/availability",
+   "test": "block dates",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "POST /hotels/:id/rooms/:roomId/availability",
+   "test": "end before start rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-11",
+   "endpoint": "GET /hotels/search",
+   "test": "guest searches by city and dates",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-11",
+   "endpoint": "GET /hotels/search",
+   "test": "active hotels with free rooms listed",
+   "expected": "both hotels",
+   "actual": "QA Nile Hotel,Second Hotel",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-11",
+   "endpoint": "GET /hotels/search",
+   "test": "guests exceed combined occupancy of best 2 rooms (5+3=8) -> excluded",
+   "expected": "none",
+   "actual": "none",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-11",
+   "endpoint": "GET /hotels/search",
+   "test": "check-out before check-in rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-11",
+   "endpoint": "GET /hotels/search",
+   "test": "check-in in the past rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-12",
+   "endpoint": "GET /hotels/search",
+   "test": "price filter uses cheapest qualifying room",
+   "expected": "QA Nile 10000 only",
+   "actual": "QA Nile Hotel:10000",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-12",
+   "endpoint": "GET /hotels/search",
+   "test": "min > max rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-12",
+   "endpoint": "GET /hotels/search",
+   "test": "sort by price ascending",
+   "expected": "ascending",
+   "actual": "8000,10000",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-12",
+   "endpoint": "GET /hotels/search",
+   "test": "unrated hotels excluded with rating filter",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-02",
+   "endpoint": "GET /hotels/:id",
+   "test": "hotel details",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-02",
+   "endpoint": "GET /hotels/:id",
+   "test": "shows check-in/out times and cancellation policy",
+   "expected": "14:00 + tiers",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-15",
+   "endpoint": "GET /hotels/:id/rooms/available",
+   "test": "free rooms for dates",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-15",
+   "endpoint": "GET /hotels/:id/rooms/available",
+   "test": "blocked room 104 excluded; total stay price shown",
+   "expected": "101,102,103 and 30000",
+   "actual": "ok",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-08",
+   "endpoint": "GET /hotels/:id/availability",
+   "test": "moderator room calendar",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-08",
+   "endpoint": "GET /hotels/:id/availability",
+   "test": "room 104 shows blocked days",
+   "expected": "blocked",
+   "actual": "blocked",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-08",
+   "endpoint": "GET /hotels/:id/availability",
+   "test": "public calendar (statuses only)",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-02",
+   "endpoint": "POST /hotel-bookings",
+   "test": "unverified email cannot book",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-10",
+   "endpoint": "POST /hotel-bookings",
+   "test": "guest must log in",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-16",
+   "endpoint": "POST /hotel-bookings",
+   "test": "guests exceed room occupancy",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-16",
+   "endpoint": "POST /hotel-bookings",
+   "test": "no adult in reservation",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings",
+   "test": "check-out before check-in",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings",
+   "test": "blocked room rejected",
+   "expected": "400,409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-16",
+   "endpoint": "POST /hotel-bookings",
+   "test": "reserve two rooms together",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-16",
+   "endpoint": "POST /hotel-bookings",
+   "test": "total = 3 nights x (100 + 150)",
+   "expected": "75000",
+   "actual": "75000",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings",
+   "test": "held 10 minutes as one reservation",
+   "expected": "HELD, 9-10 min",
+   "actual": "HELD 10",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings",
+   "test": "overlap with an unexpired hold rejects whole request",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "GET /hotels/:id/rooms/available",
+   "test": "nothing partially held after the rejected request (103 still free)",
+   "expected": "103 free",
+   "actual": "103 free",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-11",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "other user's reservation hidden",
+   "expected": "403,404",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "POST /hotels/:id/rooms/:roomId/availability",
+   "test": "cannot block dates with a pending reservation",
+   "expected": "400,409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "DELETE /hotels/:id/rooms/:roomId",
+   "test": "reserved room cannot be deleted",
+   "expected": "400,409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-02",
+   "endpoint": "POST /payments",
+   "test": "hotel payment blocked before policies accepted",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-02",
+   "endpoint": "GET /bookings/:type/:id/policies",
+   "test": "hotel policies (tiers + check-in/out)",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-02",
+   "endpoint": "GET /bookings/hotel/:id/policies",
+   "test": "check-in time included",
+   "expected": "14:00",
+   "actual": "14:00",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-02",
+   "endpoint": "POST /bookings/:type/:id/accept-policies",
+   "test": "accept hotel policies",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-01",
+   "endpoint": "POST /payments",
+   "test": "create hotel PaymentIntent",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-04",
+   "endpoint": "POST /payments",
+   "test": "hotel amount in platform currency (USD 750)",
+   "expected": "750 usd",
+   "actual": "750 usd",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-01",
+   "endpoint": "Stripe confirm",
+   "test": "test card succeeds",
+   "expected": "succeeded",
+   "actual": "succeeded",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-17",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "reservation confirmed with reference",
+   "expected": "CONFIRMED + ref",
+   "actual": "CONFIRMED HB-M3SMN9",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-17",
+   "endpoint": "GET /notifications",
+   "test": "confirmation notification",
+   "expected": "confirmed",
+   "actual": "booking.confirmed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings",
+   "test": "my reservations",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings",
+   "test": "contains the reservation",
+   "expected": "6aff20efd9e9b135b093153f",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings?status=",
+   "test": "filter by status (frontend groups Upcoming/Past/Cancelled)",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-22",
+   "endpoint": "GET /hotels/:id/reservations",
+   "test": "moderator sees reservations",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-22",
+   "endpoint": "GET /hotels/:id/reservations",
+   "test": "includes the reservation",
+   "expected": "6aff20efd9e9b135b093153f",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-22",
+   "endpoint": "GET /hotels/:id/reservations",
+   "test": "other hotel's moderator forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-17",
+   "endpoint": "GET /admin/bookings?type=hotel",
+   "test": "admin sees hotel reservation",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-05",
+   "endpoint": "PATCH /hotels/:id/rooms/:roomId",
+   "test": "edit room price",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-05",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "existing reservation total unchanged",
+   "expected": "75000",
+   "actual": "75000",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "POST /hotels/:id/rooms/:roomId/availability",
+   "test": "cannot block dates with a confirmed reservation",
+   "expected": "400,409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-08",
+   "endpoint": "GET /hotels/:id/availability",
+   "test": "moderator sees Booked with reservation reference",
+   "expected": "HB-M3SMN9",
+   "actual": "shown",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-08",
+   "endpoint": "GET /hotels/:id/availability",
+   "test": "public calendar hides reservation reference",
+   "expected": "hidden",
+   "actual": "hidden",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-21",
+   "endpoint": "GET /hotel-bookings/:id/cancellation-quote",
+   "test": "refund quote",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-21",
+   "endpoint": "GET /hotel-bookings/:id/cancellation-quote",
+   "test": "20 days before -> 100% of full total",
+   "expected": "100% 75000",
+   "actual": "{\"bookingId\":\"6aff20efd9e9b135b093153f\",\"daysBeforeCheckIn\":20,\"refundPercent\":100,\"refundAmountCents\":75000,\"totalAmountCents\":75000,\"currency\":\"USD\"}",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-11",
+   "endpoint": "POST /hotel-bookings/:id/cancel",
+   "test": "cannot cancel someone else's reservation",
+   "expected": "403,404",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-21",
+   "endpoint": "POST /hotel-bookings/:id/cancel",
+   "test": "cancel whole reservation",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-21",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "status cancelled",
+   "expected": "CANCELLED",
+   "actual": "CANCELLED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "PAY-03",
+   "endpoint": "DB refunds",
+   "test": "Stripe refund of 750 created for hotel",
+   "expected": "75000 re_",
+   "actual": "75000 re_",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-21",
+   "endpoint": "GET /hotels/:id/rooms/available",
+   "test": "rooms released after cancellation",
+   "expected": "101 and 102 free",
+   "actual": "free",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings/maintenance/run",
+   "test": "run hold expiry",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-18",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "unpaid hold expired",
+   "expected": "EXPIRED",
+   "actual": "EXPIRED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "GEN-13",
+   "endpoint": "POST /hotel-bookings/maintenance/run",
+   "test": "internal endpoint rejects wrong key",
+   "expected": "401,403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "review before stay completed rejected",
+   "expected": "400,403,409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "GET /hotel-bookings/:id",
+   "test": "confirmed stay becomes COMPLETED after check-out",
+   "expected": "COMPLETED",
+   "actual": "COMPLETED",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "rating 6 rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "review over 1000 characters rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "non-owner cannot review",
+   "expected": "403,404",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "rating-only review of completed stay (text optional)",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "POST /hotel-bookings/:id/review",
+   "test": "second review for same reservation rejected",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-24",
+   "endpoint": "GET /hotels/:id/reviews",
+   "test": "public reviews",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "GET /hotels/:id",
+   "test": "average rating recalculated",
+   "expected": "4 (1 rating)",
+   "actual": "4 (1)",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "PATCH /reviews/:id",
+   "test": "edit own review (add text, change rating)",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "GET /hotels/:id",
+   "test": "average updated after edit",
+   "expected": "2",
+   "actual": "2",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-23",
+   "endpoint": "PATCH /reviews/:id",
+   "test": "cannot edit someone else's review",
+   "expected": "403,404",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-26",
+   "endpoint": "POST /reviews/:id/reply",
+   "test": "hotel moderator replies (bonus)",
+   "expected": "200,201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-26",
+   "endpoint": "POST /reviews/:id/reply",
+   "test": "other hotel's moderator cannot reply",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-26",
+   "endpoint": "POST /reviews/:id/reply",
+   "test": "traveler cannot reply",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-26",
+   "endpoint": "GET /hotels/:id/reviews",
+   "test": "reply visible on review",
+   "expected": "Thank you",
+   "actual": "visible",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-06",
+   "endpoint": "DELETE /hotels/:id/rooms/:roomId",
+   "test": "never-reserved room can be deleted",
+   "expected": "200,204",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-15",
+   "endpoint": "PATCH /admin/providers/:type/:id/deactivate",
+   "test": "deactivate hotel",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-15",
+   "endpoint": "GET /hotels/search",
+   "test": "deactivated hotel hidden",
+   "expected": "no Second Hotel",
+   "actual": "QA Nile Hotel",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "ACC-15",
+   "endpoint": "POST /hotel-bookings",
+   "test": "deactivated hotel cannot be booked",
+   "expected": "4xx",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "POST /favourites/:type/:id",
+   "test": "save hotel to favourites",
+   "expected": "200,201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "POST /favourites/:type/:id",
+   "test": "saving twice is idempotent",
+   "expected": "200,201,409",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "GET /favourites",
+   "test": "list favourites",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "GET /favourites",
+   "test": "hotel listed once",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "DELETE /favourites/:type/:id",
+   "test": "remove favourite",
+   "expected": "200,204",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "BON-02",
+   "endpoint": "GET /favourites",
+   "test": "guest must log in",
    "expected": "401",
    "actual": "401",
    "pass": true,
@@ -1129,7 +4449,7 @@
    "req": "ITN-21",
    "endpoint": "GET /itineraries/public/search?q=Dubai",
    "test": "finds the public itinerary",
-   "expected": "6aff1d2f3f2125ceb53567a3",
+   "expected": "6aff20f5d9e9b135b093155f",
    "actual": "found",
    "pass": true,
    "note": ""
@@ -1270,7 +4590,7 @@
    "endpoint": "GET /itineraries/:id/hotels",
    "test": "uses group dates (check-out = day after last day)",
    "expected": "group dates",
-   "actual": "{\"itineraryId\":\"6aff1d2f3f2125ceb53567a3\",\"guests\":2,\"rooms\":1,\"available\":false,\"reason\":\"No hotels found for these dates\",\"groups\":[{\"cityId\":\"dubai\",\"cityNam",
+   "actual": "{\"itineraryId\":\"6aff20f5d9e9b135b093155f\",\"guests\":2,\"rooms\":1,\"available\":true,\"groups\":[{\"cityId\":\"dubai\",\"cityName\":\"Dubai\",\"countryCode\":\"AE\",\"fromDay\":1,\"t",
    "pass": true,
    "note": ""
   },
@@ -1347,11 +4667,81 @@
   {
    "section": "5. Itineraries and budgeting",
    "req": "ITN-27",
-   "endpoint": "setup",
-   "test": "confirmed flight booking available",
-   "expected": "yes",
-   "actual": "no (section 3 not run)",
-   "pass": false,
+   "endpoint": "POST /itineraries",
+   "test": "booking owner creates itinerary",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "POST /itineraries/:id/days",
+   "test": "add day for the flight",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "POST /itineraries/:id/days/:dayId/bookings/:type/:bookingId",
+   "test": "link confirmed flight booking",
+   "expected": "200,201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "GET /itineraries/:id/budget-summary",
+   "test": "booking amount feeds the budget",
+   "expected": ">0",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "POST .../bookings/flight/:id",
+   "test": "linking twice is rejected or idempotent",
+   "expected": "200/201/409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "POST /itineraries/:id/days/:dayId/bookings/:type/:bookingId",
+   "test": "cannot link someone else's booking",
+   "expected": "403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ITN-27",
+   "endpoint": "DELETE /itineraries/:id/days/:dayId/bookings/:type/:bookingId",
+   "test": "unlink booking",
+   "expected": "200,204",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "5. Itineraries and budgeting",
+   "req": "ACC-12",
+   "endpoint": "DELETE /users/me",
+   "test": "deactivation blocked while an upcoming Confirmed booking exists",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
    "note": ""
   },
   {
@@ -1401,6 +4791,2216 @@
    "test": "clone survives deletion of original",
    "expected": "200",
    "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-10",
+   "endpoint": "POST /posts",
+   "test": "guest must log in to post",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "POST /posts",
+   "test": "title required",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-08",
+   "endpoint": "POST /posts",
+   "test": "more than 5 tags rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-08",
+   "endpoint": "POST /posts",
+   "test": "tag over 30 chars rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "POST /posts",
+   "test": "save draft",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "GET /posts/:id",
+   "test": "draft hidden from public",
+   "expected": "404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "GET /posts/:id",
+   "test": "draft hidden from other users",
+   "expected": "404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "GET /posts/:id",
+   "test": "author sees own draft",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-01",
+   "endpoint": "POST /posts",
+   "test": "publish post",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-02",
+   "endpoint": "GET /posts",
+   "test": "public list filtered by tag",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-02",
+   "endpoint": "GET /posts?tag=",
+   "test": "published posts only (no draft)",
+   "expected": "2 posts",
+   "actual": "2",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-08",
+   "endpoint": "GET /tags/:tag/posts",
+   "test": "click tag to list posts",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-02",
+   "endpoint": "GET /posts/:id",
+   "test": "post page",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-02",
+   "endpoint": "GET /posts/:id",
+   "test": "shows author, tags, like count",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-03",
+   "endpoint": "GET /posts/mine",
+   "test": "own posts incl. drafts",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-03",
+   "endpoint": "GET /posts/mine",
+   "test": "includes the draft",
+   "expected": "6aff20f7d9e9b135b09316a7",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-04",
+   "endpoint": "PATCH /posts/:id",
+   "test": "edit own post",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-04",
+   "endpoint": "PATCH /posts/:id",
+   "test": "empty edit rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-04",
+   "endpoint": "PATCH /posts/:id",
+   "test": "cannot edit someone else's post",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-04",
+   "endpoint": "DELETE /posts/:id",
+   "test": "cannot delete someone else's post",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-03",
+   "endpoint": "DELETE /posts/:id",
+   "test": "delete requires confirmation",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-10",
+   "endpoint": "POST /posts/:id/images",
+   "test": "attach PNG",
+   "expected": "200,201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-08",
+   "endpoint": "POST /posts/:id/images",
+   "test": "GIF rejected",
+   "expected": "400,415",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-08",
+   "endpoint": "POST /posts/:id/images",
+   "test": "file with fake PNG type rejected",
+   "expected": "400,415",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-10",
+   "endpoint": "POST /posts/:id/images",
+   "test": "cannot add images to someone else's post",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-08",
+   "endpoint": "GET /media/:id",
+   "test": "published post image served publicly",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-10",
+   "endpoint": "DELETE /posts/:id/images/:imageId",
+   "test": "remove image",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "POST /posts/:id/comments",
+   "test": "empty comment rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "POST /posts/:id/comments",
+   "test": "comment over 500 chars rejected",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-10",
+   "endpoint": "POST /posts/:id/comments",
+   "test": "guest must log in to comment",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "POST /posts/:id/comments",
+   "test": "cannot comment on a draft",
+   "expected": "403/404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "POST /posts/:id/comments",
+   "test": "comment on published post",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "GET /posts/:id/comments",
+   "test": "comments listed",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-05",
+   "endpoint": "GET /posts/:id/comments",
+   "test": "chronological order",
+   "expected": "Great trip! first",
+   "actual": "Great trip! | Thanks for sharing.",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-07",
+   "endpoint": "PATCH /comments/:id",
+   "test": "edit own comment",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-07",
+   "endpoint": "PATCH /comments/:id",
+   "test": "cannot edit someone else's comment",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-06",
+   "endpoint": "POST /posts/:id/like",
+   "test": "like",
+   "expected": "200,201",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-06",
+   "endpoint": "POST /posts/:id/like",
+   "test": "second like does not double count",
+   "expected": "200/201/409",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-06",
+   "endpoint": "DB likes",
+   "test": "one like per user (2 users -> 2 likes)",
+   "expected": "2",
+   "actual": "2",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-06",
+   "endpoint": "DELETE /posts/:id/like",
+   "test": "remove like",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-10",
+   "endpoint": "POST /posts/:id/like",
+   "test": "guest must log in to like",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-09",
+   "endpoint": "GET /posts?q=",
+   "test": "keyword search",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-09",
+   "endpoint": "GET /posts?q=Nile",
+   "test": "ordered by likes + comments (post with 1 like + 2 comments first)",
+   "expected": "6aff20f7d9e9b135b09316a8",
+   "actual": "6aff20f7d9e9b135b09316a8,6aff20f7d9e9b135b09316a9",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-09",
+   "endpoint": "GET /posts?q=",
+   "test": "no results -> empty list",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-12",
+   "endpoint": "GET /authors/:id",
+   "test": "public author page",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-12",
+   "endpoint": "GET /authors/:id",
+   "test": "name and published posts; no email or drafts",
+   "expected": "no email/draft",
+   "actual": "ok",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-13",
+   "endpoint": "PATCH /posts/:id/itinerary",
+   "test": "private itinerary cannot be attached",
+   "expected": "400,403,404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-13",
+   "endpoint": "PATCH /posts/:id/itinerary",
+   "test": "attach own public itinerary",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-13",
+   "endpoint": "GET /posts/:id",
+   "test": "post shows the itinerary",
+   "expected": "6aff20f7d9e9b135b09316ad",
+   "actual": "linked",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-13",
+   "endpoint": "PATCH /posts/:id/itinerary",
+   "test": "cannot attach to someone else's post",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "BLG-13",
+   "endpoint": "PATCH /posts/:id/itinerary",
+   "test": "detach itinerary",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-09",
+   "endpoint": "POST /reports",
+   "test": "report a post",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-09",
+   "endpoint": "POST /reports",
+   "test": "second report of same item rejected",
+   "expected": "409",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-09",
+   "endpoint": "POST /reports",
+   "test": "report a comment",
+   "expected": "201",
+   "actual": "201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-09",
+   "endpoint": "POST /reports",
+   "test": "reason required",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-09",
+   "endpoint": "POST /reports",
+   "test": "unsupported target type",
+   "expected": "400",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-10",
+   "endpoint": "POST /reports",
+   "test": "guest must log in to report",
+   "expected": "401",
+   "actual": "401",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /admin/reports",
+   "test": "non-admin forbidden",
+   "expected": "403",
+   "actual": "403",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /admin/reports",
+   "test": "admin lists open reports",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /admin/reports",
+   "test": "post report listed",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "PATCH /admin/reports/:id",
+   "test": "resolve by hiding content",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /posts/:id",
+   "test": "hidden post invisible to public",
+   "expected": "404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /posts/:id",
+   "test": "author still sees hidden post",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /admin/content/:type/:id",
+   "test": "admin sees hidden post",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "PATCH /admin/reports/:id",
+   "test": "dismiss report",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "DELETE /admin/content/:type/:id",
+   "test": "admin deletes post directly",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-10",
+   "endpoint": "GET /posts/:id",
+   "test": "deleted post gone",
+   "expected": "404",
+   "actual": "404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-07",
+   "endpoint": "GET /admin/audit-logs",
+   "test": "moderation actions audited (hide + delete)",
+   "expected": "hide,delete",
+   "actual": "content.deleted,report.dismissed,content.hidden,provider.reactivate,provider.deactivate,moderator.create,moderator.create,provider.reactivate,provider.deactivate,account.reactivate",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-12",
+   "endpoint": "DELETE /users/me",
+   "test": "commenter deactivates account",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "ACC-12",
+   "endpoint": "GET /posts/:id/comments",
+   "test": "deactivated user's comment shown as 'Deleted user'",
+   "expected": "Deleted user",
+   "actual": "Deleted user",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-05",
+   "endpoint": "GET /posts",
+   "test": "lists paginate at 10 per page",
+   "expected": "10 of 11",
+   "actual": "10 of 11",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "6. Blog, community and moderation",
+   "req": "GEN-05",
+   "endpoint": "GET /posts?page=2",
+   "test": "second page has the rest",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold x10 concurrent",
+   "test": "exactly one user gets the last seat",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "DB flights",
+   "test": "inventory never negative",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold x10 concurrent",
+   "test": "others rejected with 400/409, no 500",
+   "expected": "4xx",
+   "actual": "400",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold x6 concurrent (2 seats each, 5 available)",
+   "test": "at most 2 bookings succeed",
+   "expected": "2",
+   "actual": "2",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "DB flights/bookings",
+   "test": "held seats + available = capacity",
+   "expected": "4 held + 1 free",
+   "actual": "4 held + 1 free",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings x8 concurrent same room",
+   "test": "exactly one reservation holds the room",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings x8 concurrent same room",
+   "test": "others rejected without 500",
+   "expected": "4xx",
+   "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "HTL-18",
+   "endpoint": "POST /hotel-bookings x2 concurrent overlapping multi-room",
+   "test": "one wins, the other is rejected as a whole",
+   "expected": "201 + 409",
+   "actual": "409+201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "HTL-18",
+   "endpoint": "DB hotel_bookings",
+   "test": "rejected request held nothing",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-22",
+   "endpoint": "POST /flight-bookings/hold x2 identical",
+   "test": "both handled without error; each hold reserves its own seat (no idempotency key)",
+   "expected": "201,201",
+   "actual": "201,201",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "PAY-01",
+   "endpoint": "POST /payments/webhook x5 concurrent same event",
+   "test": "all acknowledged (2xx)",
+   "expected": "2xx",
+   "actual": "200,200,200,200,200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "PAY-01",
+   "endpoint": "DB processed_stripe_events",
+   "test": "event processed exactly once",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "PAY-01",
+   "endpoint": "DB notifications",
+   "test": "single confirmation notification",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-23",
+   "endpoint": "DB bookings",
+   "test": "booking confirmed once with one reference",
+   "expected": "Confirmed",
+   "actual": "Confirmed",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-26",
+   "endpoint": "POST /flight-bookings/:id/cancel x3 concurrent",
+   "test": "only one cancellation succeeds",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "PAY-03",
+   "endpoint": "DB refunds",
+   "test": "only one refund issued",
+   "expected": "1",
+   "actual": "1",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "7. Concurrency",
+   "req": "FLT-26",
+   "endpoint": "POST /flight-bookings/:id/cancel x3 concurrent",
+   "test": "no 500 errors",
+   "expected": "no 5xx",
+   "actual": "200,404,404",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-13",
+   "endpoint": "GET /api-json",
+   "test": "OpenAPI document served",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-13",
+   "endpoint": "GET /api",
+   "test": "Swagger UI served at /api",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-01",
+   "endpoint": "POST /api/auth/register",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-02",
+   "endpoint": "GET /api/auth/verify-email",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-04",
+   "endpoint": "POST /api/auth/login",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-06",
+   "endpoint": "POST /api/auth/logout",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-07",
+   "endpoint": "POST /api/auth/forgot-password",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-07",
+   "endpoint": "POST /api/auth/reset-password",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-07a",
+   "endpoint": "POST /api/admin/users/{id}/reset-password",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-08",
+   "endpoint": "PATCH /api/auth/change-password",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-19",
+   "endpoint": "GET /api/auth/me",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-11",
+   "endpoint": "GET /api/users/me",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-09",
+   "endpoint": "PATCH /api/users/me",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-12",
+   "endpoint": "DELETE /api/users/me",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-13",
+   "endpoint": "POST /api/admin/moderators",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-14",
+   "endpoint": "GET /api/admin/accounts",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-15",
+   "endpoint": "PATCH /api/admin/accounts/{id}/suspend",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-15",
+   "endpoint": "PATCH /api/admin/accounts/{id}/reactivate",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-15",
+   "endpoint": "PATCH /api/admin/providers/{type}/{id}/deactivate",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-15",
+   "endpoint": "PATCH /api/admin/providers/{type}/{id}/reactivate",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-17",
+   "endpoint": "GET /api/admin/bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-09",
+   "endpoint": "GET /api/admin/reports",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-10",
+   "endpoint": "PATCH /api/admin/reports/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-10",
+   "endpoint": "DELETE /api/admin/content/{type}/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-07",
+   "endpoint": "GET /api/admin/audit-logs",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-01",
+   "endpoint": "POST /api/airlines",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-01",
+   "endpoint": "GET /api/airlines/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-01",
+   "endpoint": "PATCH /api/airlines/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-02",
+   "endpoint": "GET /api/airports",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-03",
+   "endpoint": "POST /api/flights",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-11",
+   "endpoint": "GET /api/flights/search",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-17",
+   "endpoint": "GET /api/flights/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-05",
+   "endpoint": "PATCH /api/flights/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-06",
+   "endpoint": "POST /api/flights/{id}/cancel",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-04",
+   "endpoint": "POST /api/flights/{id}/cabins",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-04",
+   "endpoint": "PATCH /api/flights/{id}/cabins/{cabinId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-08",
+   "endpoint": "PUT /api/airlines/{id}/baggage-policy",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-09",
+   "endpoint": "PUT /api/airlines/{id}/cancellation-policy",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-29",
+   "endpoint": "GET /api/flights/{id}/bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-29",
+   "endpoint": "GET /api/flights/{id}/passengers/export",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-22",
+   "endpoint": "POST /api/flight-bookings/hold",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-19",
+   "endpoint": "POST /api/flight-bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-25",
+   "endpoint": "GET /api/flight-bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-25",
+   "endpoint": "GET /api/flight-bookings/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-26",
+   "endpoint": "POST /api/flight-bookings/{id}/cancel",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-27",
+   "endpoint": "PATCH /api/flight-bookings/{id}/change-flight",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-23",
+   "endpoint": "GET /api/flight-bookings/{id}/e-ticket",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "FLT-28",
+   "endpoint": "PATCH /api/flight-bookings/{id}/seat",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-01",
+   "endpoint": "POST /api/hotels",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-11",
+   "endpoint": "GET /api/hotels/search",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-02",
+   "endpoint": "GET /api/hotels/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-01",
+   "endpoint": "PATCH /api/hotels/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-03",
+   "endpoint": "POST /api/hotels/{hotelId}/rooms",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-05",
+   "endpoint": "PATCH /api/hotels/{hotelId}/rooms/{roomId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-06",
+   "endpoint": "DELETE /api/hotels/{hotelId}/rooms/{roomId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-15",
+   "endpoint": "GET /api/hotels/{hotelId}/rooms/available",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-04",
+   "endpoint": "POST /api/hotels/{hotelId}/rooms/{roomId}/availability",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-05",
+   "endpoint": "PATCH /api/hotels/{hotelId}/rooms/{roomId}/availability/{blockId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-08",
+   "endpoint": "GET /api/hotels/{id}/availability",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-09",
+   "endpoint": "PUT /api/hotels/{id}/policies",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-22",
+   "endpoint": "GET /api/hotels/{id}/reservations",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-16",
+   "endpoint": "POST /api/hotel-bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-20",
+   "endpoint": "GET /api/hotel-bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-20",
+   "endpoint": "GET /api/hotel-bookings/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-21",
+   "endpoint": "POST /api/hotel-bookings/{id}/cancel",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-23",
+   "endpoint": "POST /api/hotel-bookings/{id}/review",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-23",
+   "endpoint": "PATCH /api/reviews/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-23",
+   "endpoint": "DELETE /api/reviews/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-24",
+   "endpoint": "GET /api/hotels/{hotelId}/reviews",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-26",
+   "endpoint": "POST /api/reviews/{id}/reply",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-02",
+   "endpoint": "GET /api/bookings/{type}/{id}/policies",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-02",
+   "endpoint": "POST /api/bookings/{type}/{id}/accept-policies",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-01",
+   "endpoint": "POST /api/payments",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-01",
+   "endpoint": "POST /api/payments/{id}/retry",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-01",
+   "endpoint": "GET /api/payments/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-01",
+   "endpoint": "POST /api/payments/webhook",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "PAY-03",
+   "endpoint": "GET /api/refunds/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-01",
+   "endpoint": "POST /api/itineraries",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-03",
+   "endpoint": "GET /api/itineraries",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-03",
+   "endpoint": "GET /api/itineraries/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-01",
+   "endpoint": "PATCH /api/itineraries/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-01",
+   "endpoint": "DELETE /api/itineraries/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-05",
+   "endpoint": "POST /api/itineraries/{itineraryId}/days",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-05",
+   "endpoint": "PATCH /api/itineraries/{itineraryId}/days/{dayId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-07",
+   "endpoint": "DELETE /api/itineraries/{itineraryId}/days/{dayId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-08",
+   "endpoint": "PATCH /api/itineraries/{itineraryId}/days/reorder",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-10",
+   "endpoint": "POST /api/itineraries/{itineraryId}/days/{dayId}/activities",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-10",
+   "endpoint": "PATCH /api/activities/{activityId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-10",
+   "endpoint": "DELETE /api/activities/{activityId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-12",
+   "endpoint": "POST /api/activities/{id}/images",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-12",
+   "endpoint": "DELETE /api/activities/{id}/images/{imageId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-14",
+   "endpoint": "POST /api/itineraries/{itineraryId}/days/{dayId}/budgets",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-14",
+   "endpoint": "PATCH /api/budgets/{budgetId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-14",
+   "endpoint": "DELETE /api/budgets/{budgetId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-16",
+   "endpoint": "POST /api/itineraries/{itineraryId}/transport-costs",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-16",
+   "endpoint": "PATCH /api/transport-costs/{costId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-16",
+   "endpoint": "DELETE /api/transport-costs/{costId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-14",
+   "endpoint": "GET /api/itineraries/{id}/budget-summary",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-21",
+   "endpoint": "GET /api/itineraries/public/search",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-21",
+   "endpoint": "GET /api/itineraries/public/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-21",
+   "endpoint": "POST /api/itineraries/{id}/clone",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-25",
+   "endpoint": "GET /api/itineraries/{id}/hotels",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-26",
+   "endpoint": "GET /api/itineraries/{id}/flights",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-27",
+   "endpoint": "POST /api/itineraries/{itineraryId}/days/{dayId}/bookings/{type}/{bookingId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-28",
+   "endpoint": "GET /api/itineraries/{id}/pdf",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-01",
+   "endpoint": "POST /api/posts",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-02",
+   "endpoint": "GET /api/posts",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-02",
+   "endpoint": "GET /api/posts/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-03",
+   "endpoint": "GET /api/posts/mine",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-04",
+   "endpoint": "PATCH /api/posts/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-04",
+   "endpoint": "DELETE /api/posts/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-05",
+   "endpoint": "POST /api/posts/{id}/comments",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-07",
+   "endpoint": "PATCH /api/comments/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-07",
+   "endpoint": "DELETE /api/comments/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-06",
+   "endpoint": "POST /api/posts/{id}/like",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-06",
+   "endpoint": "DELETE /api/posts/{id}/like",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-10",
+   "endpoint": "POST /api/posts/{id}/images",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-10",
+   "endpoint": "DELETE /api/posts/{id}/images/{imageId}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-08",
+   "endpoint": "GET /api/tags/{tag}/posts",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-12",
+   "endpoint": "GET /api/authors/{id}",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "BLG-13",
+   "endpoint": "PATCH /api/posts/{id}/itinerary",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-09",
+   "endpoint": "POST /api/reports",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-01",
+   "endpoint": "GET /api/notifications",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ITN-18",
+   "endpoint": "GET /api/currency/convert",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-13",
+   "endpoint": "OpenAPI",
+   "test": "every route under /api",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-13",
+   "endpoint": "OpenAPI",
+   "test": "every operation has a summary",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-13",
+   "endpoint": "OpenAPI",
+   "test": "every JSON write endpoint documents its request body",
+   "expected": "0",
+   "actual": "0",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-19",
+   "endpoint": "OpenAPI",
+   "test": "cookie authentication scheme declared",
+   "expected": "cookie",
+   "actual": "{\"cookie\":{\"type\":\"apiKey\",\"in\":\"cookie\",\"name\":\"access_token\"}}",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-01-B",
+   "endpoint": "mail outbox",
+   "test": "moderator invitation email produced",
+   "expected": "invitation",
+   "actual": "invitation",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-01-B",
+   "endpoint": "mail outbox",
+   "test": "in-app notifications also produced as emails",
+   "expected": "notification email",
+   "actual": "notification email",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "GEN-01-B",
+   "endpoint": "mail outbox",
+   "test": "temporary passwords never emailed",
+   "expected": "absent",
+   "actual": "absent",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "ACC-02",
+   "endpoint": "mail outbox",
+   "test": "verification email sent on registration",
+   "expected": "Verify your email",
+   "actual": "sent",
    "pass": true,
    "note": ""
   }

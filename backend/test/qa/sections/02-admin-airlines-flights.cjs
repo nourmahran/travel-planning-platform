@@ -154,6 +154,10 @@ module.exports = {
     check('ACC-14', 'GET /admin/accounts', 'search by email', 1, items(r.body).length, items(r.body).length === 1);
     r = await admin.get('/admin/accounts?status=suspended&page=1&limit=10'); st('ACC-14', 'GET', '/admin/accounts', 'filter by status with pagination', r, 200);
     r = await admin.get('/admin/accounts?role=wizard'); st('ACC-14', 'GET', '/admin/accounts', 'invalid role filter', r, 400);
+    r = await admin.get(`/admin/accounts?search=${encodeURIComponent('.*')}`);
+    check('GEN-13', 'GET /admin/accounts?search=.*', 'search text matched literally (regex escaped)', 0, items(r.body).length, r.status === 200 && items(r.body).length === 0);
+    const t0 = Date.now(); r = await admin.get(`/admin/accounts?search=${encodeURIComponent('(a+)+$')}`);
+    check('GEN-13', 'GET /admin/accounts?search=(a+)+$', 'no regex injection / ReDoS', '200 fast', `${r.status} ${Date.now() - t0}ms`, r.status === 200 && Date.now() - t0 < 2000);
 
     // ACC-16 suspend / reactivate user
     const victim = await H.newUser(db, 'suspendme');

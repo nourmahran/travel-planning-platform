@@ -80,7 +80,8 @@ describe('Round-trip booking', () => {
       service: new BookingsService(
         bookings as never,
         flights as never,
-        {} as never,
+        // ACC-15: booking checks that the airline is active.
+        { findById: () => ({ exec: async () => ({ isActive: true }) }) } as never,
       ),
     };
   }

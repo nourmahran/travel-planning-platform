@@ -164,16 +164,21 @@ module.exports = {
     // ITN-27 link confirmed bookings (bonus)
     const fu = ctx.flightUser; const fb = ctx.confirmedFlightBooking;
     if (fu && fb) {
-      r = await fu.post('/itineraries', { title: 'With flight', countries: ['EG'], startDate: start });
+      r = await fu.post('/itineraries', { title: 'With flight', countries: ['EG', 'AE'], startDate: start });
+      st('ITN-27', 'POST', '/itineraries', 'booking owner creates itinerary', r, 201);
       const it2 = idOf(r.body);
       r = await fu.post(`/itineraries/${it2}/days`, { cityId: 'dubai' });
-      const d2 = (r.body?.days || [])[0]?.id || idOf(r.body);
+      st('ITN-27', 'POST', '/itineraries/:id/days', 'add day for the flight', r, 201);
+      r = await fu.get(`/itineraries/${it2}`);
+      const d2 = (r.body?.days || [])[0]?.id;
       r = await fu.post(`/itineraries/${it2}/days/${d2}/bookings/flight/${fb}`); st('ITN-27', 'POST', '/itineraries/:id/days/:dayId/bookings/:type/:bookingId', 'link confirmed flight booking', r, [200, 201]);
       r = await fu.get(`/itineraries/${it2}/budget-summary`);
       check('ITN-27', 'GET /itineraries/:id/budget-summary', 'booking amount feeds the budget', '>0', r.body?.totals?.grandTotal, r.body?.totals?.grandTotal > 0);
       r = await fu.post(`/itineraries/${it2}/days/${d2}/bookings/flight/${fb}`); check('ITN-27', 'POST .../bookings/flight/:id', 'linking twice is rejected or idempotent', '200/201/409', r.status, [200, 201, 409].includes(r.status));
       r = await owner.post(`/itineraries/${itn}/days/${dayIds[0]}/bookings/flight/${fb}`); st('ITN-27', 'POST', '/itineraries/:id/days/:dayId/bookings/:type/:bookingId', "cannot link someone else's booking", r, [403, 404]);
       r = await fu.del(`/itineraries/${it2}/days/${d2}/bookings/flight/${fb}`); st('ITN-27', 'DELETE', '/itineraries/:id/days/:dayId/bookings/:type/:bookingId', 'unlink booking', r, [200, 204]);
+      r = await fu.del('/users/me', { confirm: true });
+      check('ACC-12', 'DELETE /users/me', 'deactivation blocked while an upcoming Confirmed booking exists', '4xx', r.status, r.status >= 400 && r.status < 500);
     } else check('ITN-27', 'setup', 'confirmed flight booking available', 'yes', 'no (section 3 not run)', false);
 
     // BON-02 favourite public itinerary

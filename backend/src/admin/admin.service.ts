@@ -23,6 +23,7 @@ import { CreateModeratorDto } from './dto/create-moderator.dto';
 import { ListAccountsDto } from './dto/list-accounts.dto';
 import { ListAdminBookingsDto } from './dto/list-bookings.dto';
 import { MailService } from '../mail/mail.service';
+import { escapeRegex } from '../common/utils/escape-regex';
 
 @Injectable()
 export class AdminService {
@@ -128,7 +129,8 @@ export class AdminService {
       filter.status = query.status;
     }
     if (query.search?.trim()) {
-      const term = query.search.trim();
+      // Escape user input so it is matched literally (no regex injection / ReDoS).
+      const term = escapeRegex(query.search.trim());
       filter.$or = [
         { name: { $regex: term, $options: 'i' } },
         { email: { $regex: term, $options: 'i' } },

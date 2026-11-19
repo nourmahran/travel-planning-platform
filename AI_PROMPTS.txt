@@ -624,3 +624,28 @@ production. Login is gated on verification only when
 REQUIRE_EMAIL_VERIFICATION=true. Verified with an in-memory MongoDB test
 of every flow and the full test suite.
 ================================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: All Milestone 1 requirements and bonuses (official workbook)
+
+Prompt:
+Read the project PDF and the official requirements workbook, inspect the
+whole backend, implement anything missing, test every endpoint through the
+API (valid/invalid data, auth, roles, ownership, duplicates, concurrency,
+Stripe test payments) on an isolated database, fix verified failures and
+write requirement, Swagger, bonus, security and readiness reports.
+
+How the output was used:
+Kept the black-box test harness (backend/test/qa) that starts the built
+backend on an in-memory MongoDB replica set and the reports in docs/qa.
+Kept the fixes it found: booking gate for unverified emails (ACC-02), reset
+link (ACC-07), moderator invitation email (GEN-01-B), admin audit logging
+(GEN-07), deactivated-airline booking (ACC-15), booked-flight time and seat
+edits (FLT-05), HTL-08 reservation references, optional review text up to
+1000 characters (HTL-23), activity image upload (ITN-12), escaped admin
+search, and Swagger schemas for the hotel DTOs. Reviewed each change and
+re-ran the full Jest suite and the harness.
+================================================

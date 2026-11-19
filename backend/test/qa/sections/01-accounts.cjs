@@ -7,6 +7,16 @@ module.exports = {
     const db = ctx.db;
     const email = `traveler-${Date.now()}@travel.test`;
 
+    // GEN-12 reference data seeded at setup
+    for (const [coll, min] of [['countries', 8], ['cities', 8], ['airports', 8], ['attractions', 8]]) {
+      const n = await db.collection(coll).countDocuments();
+      check('GEN-12', `seed ${coll}`, `${coll} seeded from the reference CSV`, `>=${min}`, n, n >= min);
+    }
+    const cur = await db.collection('currencies').countDocuments() + await db.collection('supportedcurrencies').countDocuments() + await db.collection('supported_currencies').countDocuments();
+    check('GEN-12', 'seed currencies', 'supported currencies seeded', '>=1', cur, cur >= 1);
+    const cai = await db.collection('airports').findOne({ $or: [{ iata_code: 'CAI' }, { code: 'CAI' }, { iataCode: 'CAI' }] });
+    check('GEN-12', 'seed airports', 'official identifiers kept (CAI, Africa/Cairo)', 'Africa/Cairo', cai?.time_zone ?? cai?.timeZone, (cai?.time_zone ?? cai?.timeZone) === 'Africa/Cairo');
+
     // ACC-01 register
     let r = await register('Traveler One', email);
     st('ACC-01', 'POST', '/auth/register', 'valid registration', r, 201);
@@ -31,6 +41,10 @@ module.exports = {
     r = await guest.post('/auth/register', { name: { $gt: '' }, email: { $ne: null }, password: 'Start123!', acceptedTerms: true, acceptedPrivacyPolicy: true });
     st('GEN-13', 'POST', '/auth/register', 'NoSQL operator objects rejected', r, 400);
 
+    r = await guest.raw('POST', '/auth/register', undefined, { rawBody: '{"name": broken json', headers: { 'content-type': 'application/json' } });
+    st('GEN-13', 'POST', '/auth/register', 'malformed JSON -> 400', r, 400);
+    check('GEN-13', 'POST /auth/register', 'error response has no stack trace', 'no stack', /at \w+ \(|node_modules|\.ts:\d+/.test(JSON.stringify(r.body)) ? 'stack leaked' : 'no stack', !/at \w+ \(|node_modules|\.ts:\d+/.test(JSON.stringify(r.body)));
+    check('GEN-13', 'POST /auth/register', 'consistent error shape (statusCode, message, path)', 'statusCode,message,path', Object.keys(r.body || {}).join(','), ['statusCode', 'message', 'path'].every((k) => k in (r.body || {})));
     // ACC-04 login
     const c = new Client('traveler');
     r = await login(c, email, 'Start123!');
