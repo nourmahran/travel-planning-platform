@@ -404,6 +404,44 @@ export class HotelBookingsService implements OnModuleInit {
     return this.paginateBookings(filter, query, user);
   }
 
+  /**
+   * HTL-20: the user's reservations grouped as Upcoming, Past and Cancelled
+   * (same rules as flight bookings): Upcoming = Confirmed with the stay not
+   * yet finished; Past = Completed, or Confirmed after check-out; Cancelled.
+   * Unpaid holds and expired holds are not reservations yet and are left out.
+   */
+  async groupedForUser(user: AuthUser, today = todayISO()) {
+    const bookings = await this.bookingModel
+      .find({
+        userId: toObjectId(user.id),
+        status: {
+          $in: [
+            HotelBookingStatus.CONFIRMED,
+            HotelBookingStatus.COMPLETED,
+            HotelBookingStatus.CANCELLED,
+          ],
+        },
+      })
+      .sort({ checkIn: 1, createdAt: 1 })
+      .exec();
+    const groups = {
+      upcoming: [] as HotelBookingResponseDto[],
+      past: [] as HotelBookingResponseDto[],
+      cancelled: [] as HotelBookingResponseDto[],
+    };
+    for (const booking of bookings) {
+      const item = toBookingResponse(booking, user);
+      if (booking.status === HotelBookingStatus.CANCELLED) groups.cancelled.push(item);
+      else if (booking.status === HotelBookingStatus.CONFIRMED && booking.checkOut > today)
+        groups.upcoming.push(item);
+      else groups.past.push(item);
+    }
+    // Upcoming soonest first; past and cancelled most recent first.
+    groups.past.reverse();
+    groups.cancelled.reverse();
+    return groups;
+  }
+
   /** HTL-22: hotel moderator reservation list. */
   async listForHotel(
     hotelId: Types.ObjectId,

@@ -63,6 +63,7 @@ PUT /api/hotels/{id}/policies HTL-09
 GET /api/hotels/{id}/reservations HTL-22
 POST /api/hotel-bookings HTL-16
 GET /api/hotel-bookings HTL-20
+GET /api/hotel-bookings/grouped HTL-20
 GET /api/hotel-bookings/{id} HTL-20
 POST /api/hotel-bookings/{id}/cancel HTL-21
 POST /api/hotel-bookings/{id}/review HTL-23

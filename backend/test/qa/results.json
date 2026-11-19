@@ -1,7 +1,7 @@
 {
- "ranAt": "2026-11-19T16:17:03.694Z",
- "total": 700,
- "pass": 700,
+ "ranAt": "2026-11-19T16:33:16.309Z",
+ "total": 707,
+ "pass": 707,
  "fail": 0,
  "results": [
   {
@@ -299,8 +299,8 @@
    "req": "ACC-19",
    "endpoint": "GET /auth/me",
    "test": "returns own email",
-   "expected": "traveler-1795104962957@travel.test",
-   "actual": "traveler-1795104962957@travel.test",
+   "expected": "traveler-1795105925790@travel.test",
+   "actual": "traveler-1795105925790@travel.test",
    "pass": true,
    "note": ""
   },
@@ -1820,7 +1820,7 @@
    "endpoint": "GET /bookings/flight/:id/policies",
    "test": "includes cancellation tiers and baggage",
    "expected": "both",
-   "actual": "{\"bookingType\":\"flight\",\"bookingId\":\"6aff20d2d9e9b135b09314f7\",\"policies\":{\"kind\":\"flight\",\"cancellationTiers\":[{\"daysBe",
+   "actual": "{\"bookingType\":\"flight\",\"bookingId\":\"6aff249face8ee94f9e0e56d\",\"policies\":{\"kind\":\"flight\",\"cancellationTiers\":[{\"daysBe",
    "pass": true,
    "note": ""
   },
@@ -1860,7 +1860,7 @@
    "endpoint": "POST /bookings/flight/:id/accept-policies",
    "test": "acceptance timestamp returned",
    "expected": "date",
-   "actual": "2026-11-19T16:16:18.097Z",
+   "actual": "2026-11-19T16:32:31.816Z",
    "pass": true,
    "note": ""
   },
@@ -1990,7 +1990,7 @@
    "endpoint": "GET /flight-bookings/:id",
    "test": "unique booking reference generated",
    "expected": "reference",
-   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "actual": "38BDD9CE-C0A6-4B40-8EAE-21BD67A76938",
    "pass": true,
    "note": ""
   },
@@ -2279,8 +2279,8 @@
    "req": "FLT-25",
    "endpoint": "GET /flight-bookings",
    "test": "confirmed booking under upcoming",
-   "expected": "6aff20d2d9e9b135b09314f7",
-   "actual": "6aff20d2d9e9b135b09314f7",
+   "expected": "6aff249face8ee94f9e0e56d",
+   "actual": "6aff249face8ee94f9e0e56d",
    "pass": true,
    "note": ""
   },
@@ -2309,8 +2309,8 @@
    "req": "FLT-29",
    "endpoint": "GET /flights/:id/bookings",
    "test": "includes the confirmed booking",
-   "expected": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
-   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "expected": "38BDD9CE-C0A6-4B40-8EAE-21BD67A76938",
+   "actual": "38BDD9CE-C0A6-4B40-8EAE-21BD67A76938",
    "pass": true,
    "note": ""
   },
@@ -2369,8 +2369,8 @@
    "req": "ACC-17",
    "endpoint": "GET /admin/bookings",
    "test": "contains the confirmed booking",
-   "expected": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
-   "actual": "F2D46E39-A4FA-4185-94ED-A126F5FFA908",
+   "expected": "38BDD9CE-C0A6-4B40-8EAE-21BD67A76938",
+   "actual": "38BDD9CE-C0A6-4B40-8EAE-21BD67A76938",
    "pass": true,
    "note": ""
   },
@@ -2400,7 +2400,7 @@
    "endpoint": "GET /admin/analytics",
    "test": "revenue per provider includes 365 for QA Airways",
    "expected": "365",
-   "actual": "{\"from\":\"2026-11-18\",\"to\":\"2026-11-20\",\"providers\":[{\"bookings\":1,\"type\":\"flight\",\"providerId\":\"6aff20c9d9e9b135b09314d1\",\"currency\":\"USD\",\"grossRevenue\":365,\"refunds\":0,\"netRevenue\":365}]}",
+   "actual": "{\"from\":\"2026-11-18\",\"to\":\"2026-11-20\",\"providers\":[{\"bookings\":1,\"type\":\"flight\",\"providerId\":\"6aff248bace8ee94f9e0e547\",\"currency\":\"USD\",\"grossRevenue\":365,\"refunds\":0,\"netRevenue\":365}]}",
    "pass": true,
    "note": ""
   },
@@ -2719,8 +2719,8 @@
    "req": "FLT-27",
    "endpoint": "GET /flight-bookings/:id",
    "test": "booking moved to the new flight after payment",
-   "expected": "6aff20cbd9e9b135b09314e0",
-   "actual": "6aff20cbd9e9b135b09314e0",
+   "expected": "6aff248cace8ee94f9e0e556",
+   "actual": "6aff248cace8ee94f9e0e556",
    "pass": true,
    "note": ""
   },
@@ -3360,7 +3360,7 @@
    "endpoint": "GET /hotel-bookings/:id",
    "test": "reservation confirmed with reference",
    "expected": "CONFIRMED + ref",
-   "actual": "CONFIRMED HB-M3SMN9",
+   "actual": "CONFIRMED HB-W6K7R3",
    "pass": true,
    "note": ""
   },
@@ -3389,8 +3389,28 @@
    "req": "HTL-20",
    "endpoint": "GET /hotel-bookings",
    "test": "contains the reservation",
-   "expected": "6aff20efd9e9b135b093153f",
+   "expected": "6aff24bcace8ee94f9e0e5b5",
    "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "confirmed future reservation under upcoming",
+   "expected": "upcoming",
+   "actual": "upcoming",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "guest must log in",
+   "expected": "401",
+   "actual": "401",
    "pass": true,
    "note": ""
   },
@@ -3419,7 +3439,7 @@
    "req": "HTL-22",
    "endpoint": "GET /hotels/:id/reservations",
    "test": "includes the reservation",
-   "expected": "6aff20efd9e9b135b093153f",
+   "expected": "6aff24bcace8ee94f9e0e5b5",
    "actual": "present",
    "pass": true,
    "note": ""
@@ -3479,7 +3499,7 @@
    "req": "HTL-08",
    "endpoint": "GET /hotels/:id/availability",
    "test": "moderator sees Booked with reservation reference",
-   "expected": "HB-M3SMN9",
+   "expected": "HB-W6K7R3",
    "actual": "shown",
    "pass": true,
    "note": ""
@@ -3510,7 +3530,7 @@
    "endpoint": "GET /hotel-bookings/:id/cancellation-quote",
    "test": "20 days before -> 100% of full total",
    "expected": "100% 75000",
-   "actual": "{\"bookingId\":\"6aff20efd9e9b135b093153f\",\"daysBeforeCheckIn\":20,\"refundPercent\":100,\"refundAmountCents\":75000,\"totalAmountCents\":75000,\"currency\":\"USD\"}",
+   "actual": "{\"bookingId\":\"6aff24bcace8ee94f9e0e5b5\",\"daysBeforeCheckIn\":20,\"refundPercent\":100,\"refundAmountCents\":75000,\"totalAmountCents\":75000,\"currency\":\"USD\"}",
    "pass": true,
    "note": ""
   },
@@ -3531,6 +3551,16 @@
    "test": "cancel whole reservation",
    "expected": "200,201",
    "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "after cancellation it moves to cancelled",
+   "expected": "cancelled",
+   "actual": "cancelled",
    "pass": true,
    "note": ""
   },
@@ -3596,11 +3626,41 @@
   },
   {
    "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "grouped reservations",
+   "expected": "200",
+   "actual": "200",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "confirmed future stay under upcoming",
+   "expected": "upcoming",
+   "actual": "upcoming",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
    "req": "HTL-23",
    "endpoint": "POST /hotel-bookings/:id/review",
    "test": "review before stay completed rejected",
    "expected": "400,403,409",
    "actual": "409",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "4. Hotels, rooms, reservations and reviews",
+   "req": "HTL-20",
+   "endpoint": "GET /hotel-bookings/grouped",
+   "test": "finished stay moves to past",
+   "expected": "past",
+   "actual": "past",
    "pass": true,
    "note": ""
   },
@@ -4449,7 +4509,7 @@
    "req": "ITN-21",
    "endpoint": "GET /itineraries/public/search?q=Dubai",
    "test": "finds the public itinerary",
-   "expected": "6aff20f5d9e9b135b093155f",
+   "expected": "6aff24c2ace8ee94f9e0e5d5",
    "actual": "found",
    "pass": true,
    "note": ""
@@ -4590,7 +4650,7 @@
    "endpoint": "GET /itineraries/:id/hotels",
    "test": "uses group dates (check-out = day after last day)",
    "expected": "group dates",
-   "actual": "{\"itineraryId\":\"6aff20f5d9e9b135b093155f\",\"guests\":2,\"rooms\":1,\"available\":true,\"groups\":[{\"cityId\":\"dubai\",\"cityName\":\"Dubai\",\"countryCode\":\"AE\",\"fromDay\":1,\"t",
+   "actual": "{\"itineraryId\":\"6aff24c2ace8ee94f9e0e5d5\",\"guests\":2,\"rooms\":1,\"available\":true,\"groups\":[{\"cityId\":\"dubai\",\"cityName\":\"Dubai\",\"countryCode\":\"AE\",\"fromDay\":1,\"t",
    "pass": true,
    "note": ""
   },
@@ -4949,7 +5009,7 @@
    "req": "BLG-03",
    "endpoint": "GET /posts/mine",
    "test": "includes the draft",
-   "expected": "6aff20f7d9e9b135b09316a7",
+   "expected": "6aff24c4ace8ee94f9e0e71d",
    "actual": "present",
    "pass": true,
    "note": ""
@@ -5219,8 +5279,8 @@
    "req": "BLG-09",
    "endpoint": "GET /posts?q=Nile",
    "test": "ordered by likes + comments (post with 1 like + 2 comments first)",
-   "expected": "6aff20f7d9e9b135b09316a8",
-   "actual": "6aff20f7d9e9b135b09316a8,6aff20f7d9e9b135b09316a9",
+   "expected": "6aff24c4ace8ee94f9e0e71e",
+   "actual": "6aff24c4ace8ee94f9e0e71e,6aff24c4ace8ee94f9e0e71f",
    "pass": true,
    "note": ""
   },
@@ -5279,7 +5339,7 @@
    "req": "BLG-13",
    "endpoint": "GET /posts/:id",
    "test": "post shows the itinerary",
-   "expected": "6aff20f7d9e9b135b09316ad",
+   "expected": "6aff24c4ace8ee94f9e0e723",
    "actual": "linked",
    "pass": true,
    "note": ""
@@ -5590,7 +5650,7 @@
    "endpoint": "POST /hotel-bookings x2 concurrent overlapping multi-room",
    "test": "one wins, the other is rejected as a whole",
    "expected": "201 + 409",
-   "actual": "409+201",
+   "actual": "201+409",
    "pass": true,
    "note": ""
   },
@@ -5680,7 +5740,7 @@
    "endpoint": "POST /flight-bookings/:id/cancel x3 concurrent",
    "test": "no 500 errors",
    "expected": "no 5xx",
-   "actual": "200,404,404",
+   "actual": "404,200,404",
    "pass": true,
    "note": ""
   },
@@ -6308,6 +6368,16 @@
    "section": "8. Swagger documentation accuracy",
    "req": "HTL-20",
    "endpoint": "GET /api/hotel-bookings",
+   "test": "documented in Swagger (PDF section 8)",
+   "expected": "present",
+   "actual": "present",
+   "pass": true,
+   "note": ""
+  },
+  {
+   "section": "8. Swagger documentation accuracy",
+   "req": "HTL-20",
+   "endpoint": "GET /api/hotel-bookings/grouped",
    "test": "documented in Swagger (PDF section 8)",
    "expected": "present",
    "actual": "present",
