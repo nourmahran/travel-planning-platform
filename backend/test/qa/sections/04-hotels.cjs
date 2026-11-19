@@ -126,6 +126,9 @@ module.exports = {
     // HTL-20 / HTL-22
     r = await u.get('/hotel-bookings'); st('HTL-20', 'GET', '/hotel-bookings', 'my reservations', r, 200);
     check('HTL-20', 'GET /hotel-bookings', 'contains the reservation', res1Id, JSON.stringify(r.body).includes(res1Id) ? 'present' : 'missing', JSON.stringify(r.body).includes(res1Id));
+    r = await u.get('/hotel-bookings/grouped');
+    check('HTL-20', 'GET /hotel-bookings/grouped', 'confirmed future reservation under upcoming', 'upcoming', (r.body?.upcoming || []).some((b) => b.id === res1Id) ? 'upcoming' : 'missing', (r.body?.upcoming || []).some((b) => b.id === res1Id));
+    r = await guest.get('/hotel-bookings/grouped'); st('HTL-20', 'GET', '/hotel-bookings/grouped', 'guest must log in', r, 401);
     r = await u.get('/hotel-bookings?status=CANCELLED');
     st('HTL-20', 'GET', '/hotel-bookings?status=', 'filter by status (frontend groups Upcoming/Past/Cancelled)', r, 200);
     r = await hm.get(`/hotels/${hotelId}/reservations?page=1&limit=10`); st('HTL-22', 'GET', '/hotels/:id/reservations', 'moderator sees reservations', r, 200);
@@ -147,6 +150,8 @@ module.exports = {
     check('HTL-21', 'GET /hotel-bookings/:id/cancellation-quote', '20 days before -> 100% of full total', '100% 75000', JSON.stringify(r.body).slice(0, 160), /100/.test(JSON.stringify(r.body)) && /75000/.test(JSON.stringify(r.body)));
     r = await other.post(`/hotel-bookings/${res1Id}/cancel`, {}); st('ACC-11', 'POST', '/hotel-bookings/:id/cancel', "cannot cancel someone else's reservation", r, [403, 404]);
     r = await u.post(`/hotel-bookings/${res1Id}/cancel`, {}); st('HTL-21', 'POST', '/hotel-bookings/:id/cancel', 'cancel whole reservation', r, [200, 201]);
+    r = await u.get('/hotel-bookings/grouped');
+    check('HTL-20', 'GET /hotel-bookings/grouped', 'after cancellation it moves to cancelled', 'cancelled', (r.body?.cancelled || []).some((b) => b.id === res1Id) ? 'cancelled' : 'missing', (r.body?.cancelled || []).some((b) => b.id === res1Id) && !(r.body?.upcoming || []).some((b) => b.id === res1Id));
     r = await u.get(`/hotel-bookings/${res1Id}`); check('HTL-21', 'GET /hotel-bookings/:id', 'status cancelled', 'CANCELLED', r.body?.status, /cancel/i.test(r.body?.status || ''));
     const hr = await db.collection('refunds').findOne({ bookingId: new ObjectId(res1Id) });
     check('PAY-03', 'DB refunds', 'Stripe refund of 750 created for hotel', '75000 re_', `${hr?.amount} ${hr?.stripeRefundId?.slice(0, 3)}`, hr?.amount === 75000 && /^re_/.test(hr?.stripeRefundId || ''));
@@ -170,11 +175,15 @@ module.exports = {
     const rvRes = idOf(r.body);
     await rv.post(`/bookings/hotel/${rvRes}/accept-policies`, { accepted: true });
     const rp = await payWithTestCard(rv, 'hotel', rvRes); await deliverPaymentSucceeded(rp.pi);
+    r = await rv.get('/hotel-bookings/grouped'); st('HTL-20', 'GET', '/hotel-bookings/grouped', 'grouped reservations', r, 200);
+    check('HTL-20', 'GET /hotel-bookings/grouped', 'confirmed future stay under upcoming', 'upcoming', (r.body?.upcoming || []).some((b) => b.id === rvRes) ? 'upcoming' : JSON.stringify(Object.keys(r.body || {})), (r.body?.upcoming || []).some((b) => b.id === rvRes) && !(r.body?.past || []).length);
     r = await rv.post(`/hotel-bookings/${rvRes}/review`, { rating: 5, comment: 'Lovely stay, very clean rooms.' }); st('HTL-23', 'POST', '/hotel-bookings/:id/review', 'review before stay completed rejected', r, [400, 403, 409]);
     const coll = (await db.listCollections({ name: 'hotel_bookings' }).toArray()).length ? 'hotel_bookings' : 'hotelbookings';
     const past = (n) => { const d = new Date(); d.setUTCDate(d.getUTCDate() - n); return d; };
     await db.collection(coll).updateOne({ _id: new ObjectId(rvRes) }, { $set: { checkIn: past(3).toISOString().slice(0, 10), checkOut: past(1).toISOString().slice(0, 10) } });
     await guest.raw('POST', '/hotel-bookings/maintenance/run', {}, { headers: { 'x-internal-api-key': 'qa-internal-key-0123456789' } });
+    r = await rv.get('/hotel-bookings/grouped');
+    check('HTL-20', 'GET /hotel-bookings/grouped', 'finished stay moves to past', 'past', (r.body?.past || []).some((b) => b.id === rvRes) ? 'past' : 'missing', (r.body?.past || []).some((b) => b.id === rvRes) && !(r.body?.upcoming || []).some((b) => b.id === rvRes));
     r = await rv.get(`/hotel-bookings/${rvRes}`); check('HTL-23', 'GET /hotel-bookings/:id', 'confirmed stay becomes COMPLETED after check-out', 'COMPLETED', r.body?.status, /complete/i.test(r.body?.status || ''));
     r = await rv.post(`/hotel-bookings/${rvRes}/review`, { rating: 6, comment: 'Out of range rating.' }); st('HTL-23', 'POST', '/hotel-bookings/:id/review', 'rating 6 rejected', r, 400);
     r = await rv.post(`/hotel-bookings/${rvRes}/review`, { rating: 4, comment: 'x'.repeat(1001) }); st('HTL-23', 'POST', '/hotel-bookings/:id/review', 'review over 1000 characters rejected', r, 400);

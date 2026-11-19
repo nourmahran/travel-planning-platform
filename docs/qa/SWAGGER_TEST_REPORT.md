@@ -1,6 +1,6 @@
 # Swagger / API test report
 
-Generated 2026-11-19 16:17 UTC. Every row is a real HTTP request against the built backend (`node dist/main.js`) on an isolated in-memory MongoDB replica set seeded with the repository's reference data, using Stripe **test mode** (real PaymentIntents and refunds; webhooks delivered with a valid Stripe signature). Reproduce with:
+Generated 2026-11-19 16:33 UTC. Every row is a real HTTP request against the built backend (`node dist/main.js`) on an isolated in-memory MongoDB replica set seeded with the repository's reference data, using Stripe **test mode** (real PaymentIntents and refunds; webhooks delivered with a valid Stripe signature). Reproduce with:
 
 ```bash
 cd backend
@@ -8,18 +8,18 @@ npm run build
 node test/qa/run.cjs
 ```
 
-**Result: 700 / 700 checks passed.**
+**Result: 707 / 707 checks passed.**
 
 | Section | Passed | Total |
 |---|---|---|
 | 1. Authentication and accounts | 62 | 62 |
 | 2. Administration, airlines and flights | 96 | 96 |
 | 3. Flight bookings, payments and refunds | 122 | 122 |
-| 4. Hotels, rooms, reservations and reviews | 105 | 105 |
+| 4. Hotels, rooms, reservations and reviews | 111 | 111 |
 | 5. Itineraries and budgeting | 94 | 94 |
 | 6. Blog, community and moderation | 72 | 72 |
 | 7. Concurrency | 17 | 17 |
-| 8. Swagger documentation accuracy | 132 | 132 |
+| 8. Swagger documentation accuracy | 133 | 133 |
 
 ## 1. Authentication and accounts
 
@@ -54,7 +54,7 @@ node test/qa/run.cjs
 | POST /auth/login | ACC-19 | auth cookies are SameSite | SameSite | SameSite | PASS |
 | POST /auth/login | ACC-19 | tokens not returned in JSON body | absent | absent | PASS |
 | GET /auth/me | ACC-19 | current user from cookie | 200 | 200 | PASS |
-| GET /auth/me | ACC-19 | returns own email | traveler-1795104962957@travel.test | traveler-1795104962957@travel.test | PASS |
+| GET /auth/me | ACC-19 | returns own email | traveler-1795105925790@travel.test | traveler-1795105925790@travel.test | PASS |
 | GET /auth/me | ACC-19 | no cookie -> 401 | 401 | 401 | PASS |
 | POST /auth/login | ACC-04 | wrong password | 401 | 401 | PASS |
 | POST /auth/login | ACC-04 | generic message for unknown email vs wrong password | Invalid email or password | Invalid email or password | PASS |
@@ -216,11 +216,11 @@ node test/qa/run.cjs
 | GET /flight-bookings/:id | ACC-11 | guest rejected | 401 | 401 | PASS |
 | POST /payments | PAY-02 | payment blocked before policies accepted | 400 | 400 | PASS |
 | GET /bookings/:type/:id/policies | PAY-02 | airline policies shown | 200 | 200 | PASS |
-| GET /bookings/flight/:id/policies | PAY-02 | includes cancellation tiers and baggage | both | {"bookingType":"flight","bookingId":"6aff20d2d9e9b135b09314f7","policies":{"kind | PASS |
+| GET /bookings/flight/:id/policies | PAY-02 | includes cancellation tiers and baggage | both | {"bookingType":"flight","bookingId":"6aff249face8ee94f9e0e56d","policies":{"kind | PASS |
 | GET /bookings/:type/:id/policies | PAY-02 | other user can't read | 403,404 | 404 | PASS |
 | POST /bookings/:type/:id/accept-policies | PAY-02 | unchecked box rejected | 400 | 400 | PASS |
 | POST /bookings/:type/:id/accept-policies | PAY-02 | accept policies | 200 | 200 | PASS |
-| POST /bookings/flight/:id/accept-policies | PAY-02 | acceptance timestamp returned | date | 2026-11-19T16:16:18.097Z | PASS |
+| POST /bookings/flight/:id/accept-policies | PAY-02 | acceptance timestamp returned | date | 2026-11-19T16:32:31.816Z | PASS |
 | POST /payments | PAY-01 | cannot pay someone else's booking | 403,404 | 404 | PASS |
 | POST /payments | PAY-01 | create PaymentIntent | 201 | 201 | PASS |
 | POST /payments | PAY-01 | amount equals booking total (USD) | 365 usd | 365 usd | PASS |
@@ -233,7 +233,7 @@ node test/qa/run.cjs
 | forged webhook | PAY-01 | forged event does not confirm | Pending Payment | Pending Payment | PASS |
 | POST /payments/webhook | PAY-01 | signed payment_intent.succeeded accepted | 200,201 | 200 | PASS |
 | GET /flight-bookings/:id | FLT-23 | booking Confirmed after verified payment | Confirmed | Confirmed | PASS |
-| GET /flight-bookings/:id | FLT-23 | unique booking reference generated | reference | F2D46E39-A4FA-4185-94ED-A126F5FFA908 | PASS |
+| GET /flight-bookings/:id | FLT-23 | unique booking reference generated | reference | 38BDD9CE-C0A6-4B40-8EAE-21BD67A76938 | PASS |
 | POST /payments/webhook | PAY-01 | duplicate event acknowledged | 200,201 | 200 | PASS |
 | duplicate webhook | PAY-01 | DB: event processed once | 1 | 1 | PASS |
 | duplicate webhook | PAY-01 | no duplicate confirmation notification | 1 | 1 | PASS |
@@ -262,16 +262,16 @@ node test/qa/run.cjs
 | POST /payments | PAY-01 | expired hold cannot be paid | 4xx | 409 | PASS |
 | GET /flight-bookings | FLT-25 | my bookings | 200 | 200 | PASS |
 | GET /flight-bookings | FLT-25 | grouped as upcoming / past / cancelled | upcoming,past,cancelled | upcoming,past,cancelled | PASS |
-| GET /flight-bookings | FLT-25 | confirmed booking under upcoming | 6aff20d2d9e9b135b09314f7 | 6aff20d2d9e9b135b09314f7 | PASS |
+| GET /flight-bookings | FLT-25 | confirmed booking under upcoming | 6aff249face8ee94f9e0e56d | 6aff249face8ee94f9e0e56d | PASS |
 | GET /flight-bookings | ACC-11 | other user's list excludes my booking | absent | absent | PASS |
 | GET /flights/:id/bookings | FLT-29 | moderator lists flight bookings | 200 | 200 | PASS |
-| GET /flights/:id/bookings | FLT-29 | includes the confirmed booking | F2D46E39-A4FA-4185-94ED-A126F5FFA908 | F2D46E39-A4FA-4185-94ED-A126F5FFA908 | PASS |
+| GET /flights/:id/bookings | FLT-29 | includes the confirmed booking | 38BDD9CE-C0A6-4B40-8EAE-21BD67A76938 | 38BDD9CE-C0A6-4B40-8EAE-21BD67A76938 | PASS |
 | GET /flights/:id/passengers/export | FLT-29 | CSV export | 200 | 200 | PASS |
 | GET /flights/:id/passengers/export | FLT-29 | CSV with passenger names | Adult | text/csv; charset=utf-8 | PASS |
 | GET /flights/:id/bookings | FLT-29 | other airline's moderator forbidden | 403 | 403 | PASS |
 | GET /flights/:id/bookings | FLT-29 | traveler forbidden | 403 | 403 | PASS |
 | GET /admin/bookings | ACC-17 | admin lists confirmed flight bookings | 200 | 200 | PASS |
-| GET /admin/bookings | ACC-17 | contains the confirmed booking | F2D46E39-A4FA-4185-94ED-A126F5FFA908 | F2D46E39-A4FA-4185-94ED-A126F5FFA908 | PASS |
+| GET /admin/bookings | ACC-17 | contains the confirmed booking | 38BDD9CE-C0A6-4B40-8EAE-21BD67A76938 | 38BDD9CE-C0A6-4B40-8EAE-21BD67A76938 | PASS |
 | GET /admin/bookings | ACC-17 | traveler forbidden | 403 | 403 | PASS |
 | GET /admin/analytics | BON-01 | analytics for period | 200 | 200 | PASS |
 | GET /admin/analytics | BON-01 | revenue per provider includes 365 for QA Airways | 365 | {"from":"2026-11-18","to":"2026-11-20","providers":[{"bookings":1,"type":"flight | PASS |
@@ -306,7 +306,7 @@ node test/qa/run.cjs
 | PATCH /flight-bookings/:id/change-flight | FLT-27 | change to higher fare holds replacement | 200,201 | 200 | PASS |
 | POST /payments | FLT-27 | fare difference payment (bookingType flight_change) | 201 | 201 | PASS |
 | POST /payments | FLT-27 | fare difference = 50 | 50 | 50 | PASS |
-| GET /flight-bookings/:id | FLT-27 | booking moved to the new flight after payment | 6aff20cbd9e9b135b09314e0 | 6aff20cbd9e9b135b09314e0 | PASS |
+| GET /flight-bookings/:id | FLT-27 | booking moved to the new flight after payment | 6aff248cace8ee94f9e0e556 | 6aff248cace8ee94f9e0e556 | PASS |
 | POST /flights/:id/cancel | FLT-06 | other airline can't cancel | 403 | 403 | PASS |
 | POST /flights/:id/cancel | FLT-06 | airline cancels flight | 200 | 200 | PASS |
 | DB flights | FLT-06 | flight Cancelled | Cancelled | Cancelled | PASS |
@@ -375,31 +375,37 @@ node test/qa/run.cjs
 | POST /payments | PAY-01 | create hotel PaymentIntent | 201 | 201 | PASS |
 | POST /payments | PAY-04 | hotel amount in platform currency (USD 750) | 750 usd | 750 usd | PASS |
 | Stripe confirm | PAY-01 | test card succeeds | succeeded | succeeded | PASS |
-| GET /hotel-bookings/:id | HTL-17 | reservation confirmed with reference | CONFIRMED + ref | CONFIRMED HB-M3SMN9 | PASS |
+| GET /hotel-bookings/:id | HTL-17 | reservation confirmed with reference | CONFIRMED + ref | CONFIRMED HB-W6K7R3 | PASS |
 | GET /notifications | HTL-17 | confirmation notification | confirmed | booking.confirmed | PASS |
 | GET /hotel-bookings | HTL-20 | my reservations | 200 | 200 | PASS |
-| GET /hotel-bookings | HTL-20 | contains the reservation | 6aff20efd9e9b135b093153f | present | PASS |
+| GET /hotel-bookings | HTL-20 | contains the reservation | 6aff24bcace8ee94f9e0e5b5 | present | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | confirmed future reservation under upcoming | upcoming | upcoming | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | guest must log in | 401 | 401 | PASS |
 | GET /hotel-bookings?status= | HTL-20 | filter by status (frontend groups Upcoming/Past/Cancelled) | 200 | 200 | PASS |
 | GET /hotels/:id/reservations | HTL-22 | moderator sees reservations | 200 | 200 | PASS |
-| GET /hotels/:id/reservations | HTL-22 | includes the reservation | 6aff20efd9e9b135b093153f | present | PASS |
+| GET /hotels/:id/reservations | HTL-22 | includes the reservation | 6aff24bcace8ee94f9e0e5b5 | present | PASS |
 | GET /hotels/:id/reservations | HTL-22 | other hotel's moderator forbidden | 403 | 403 | PASS |
 | GET /admin/bookings?type=hotel | ACC-17 | admin sees hotel reservation | present | present | PASS |
 | PATCH /hotels/:id/rooms/:roomId | HTL-05 | edit room price | 200 | 200 | PASS |
 | GET /hotel-bookings/:id | HTL-05 | existing reservation total unchanged | 75000 | 75000 | PASS |
 | POST /hotels/:id/rooms/:roomId/availability | HTL-06 | cannot block dates with a confirmed reservation | 400,409 | 409 | PASS |
-| GET /hotels/:id/availability | HTL-08 | moderator sees Booked with reservation reference | HB-M3SMN9 | shown | PASS |
+| GET /hotels/:id/availability | HTL-08 | moderator sees Booked with reservation reference | HB-W6K7R3 | shown | PASS |
 | GET /hotels/:id/availability | HTL-08 | public calendar hides reservation reference | hidden | hidden | PASS |
 | GET /hotel-bookings/:id/cancellation-quote | HTL-21 | refund quote | 200 | 200 | PASS |
-| GET /hotel-bookings/:id/cancellation-quote | HTL-21 | 20 days before -> 100% of full total | 100% 75000 | {"bookingId":"6aff20efd9e9b135b093153f","daysBeforeCheckIn":20,"refundPercent":1 | PASS |
+| GET /hotel-bookings/:id/cancellation-quote | HTL-21 | 20 days before -> 100% of full total | 100% 75000 | {"bookingId":"6aff24bcace8ee94f9e0e5b5","daysBeforeCheckIn":20,"refundPercent":1 | PASS |
 | POST /hotel-bookings/:id/cancel | ACC-11 | cannot cancel someone else's reservation | 403,404 | 403 | PASS |
 | POST /hotel-bookings/:id/cancel | HTL-21 | cancel whole reservation | 200,201 | 200 | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | after cancellation it moves to cancelled | cancelled | cancelled | PASS |
 | GET /hotel-bookings/:id | HTL-21 | status cancelled | CANCELLED | CANCELLED | PASS |
 | DB refunds | PAY-03 | Stripe refund of 750 created for hotel | 75000 re_ | 75000 re_ | PASS |
 | GET /hotels/:id/rooms/available | HTL-21 | rooms released after cancellation | 101 and 102 free | free | PASS |
 | POST /hotel-bookings/maintenance/run | HTL-18 | run hold expiry | 200,201 | 200 | PASS |
 | GET /hotel-bookings/:id | HTL-18 | unpaid hold expired | EXPIRED | EXPIRED | PASS |
 | POST /hotel-bookings/maintenance/run | GEN-13 | internal endpoint rejects wrong key | 401,403 | 403 | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | grouped reservations | 200 | 200 | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | confirmed future stay under upcoming | upcoming | upcoming | PASS |
 | POST /hotel-bookings/:id/review | HTL-23 | review before stay completed rejected | 400,403,409 | 409 | PASS |
+| GET /hotel-bookings/grouped | HTL-20 | finished stay moves to past | past | past | PASS |
 | GET /hotel-bookings/:id | HTL-23 | confirmed stay becomes COMPLETED after check-out | COMPLETED | COMPLETED | PASS |
 | POST /hotel-bookings/:id/review | HTL-23 | rating 6 rejected | 400 | 400 | PASS |
 | POST /hotel-bookings/:id/review | HTL-23 | review over 1000 characters rejected | 400 | 400 | PASS |
@@ -489,7 +495,7 @@ node test/qa/run.cjs
 | GET /itineraries/public/:id | ITN-21 | guest views public itinerary | 200 | 200 | PASS |
 | GET /itineraries/public/:id | ITN-21 | shows author, days and budget | author+days | ["id","title","countries","startDate","currency","cloneCount","updatedAt","days" | PASS |
 | GET /itineraries/public/search | ITN-21 | keyword search | 200 | 200 | PASS |
-| GET /itineraries/public/search?q=Dubai | ITN-21 | finds the public itinerary | 6aff20f5d9e9b135b093155f | found | PASS |
+| GET /itineraries/public/search?q=Dubai | ITN-21 | finds the public itinerary | 6aff24c2ace8ee94f9e0e5d5 | found | PASS |
 | GET /itineraries/public/search?city&minDays&maxDays | ITN-21 | city and duration filters | found | found | PASS |
 | GET /itineraries/public/search?minDays=10 | ITN-21 | excluded by duration | absent | absent | PASS |
 | GET /itineraries/public/search | ITN-21 | minDays > maxDays rejected | 400 | 400 | PASS |
@@ -503,7 +509,7 @@ node test/qa/run.cjs
 | GET /itineraries | ITN-03 | list own itineraries | 200 | 200 | PASS |
 | GET /itineraries | ACC-11 | list shows only the owner's itineraries | no clone | own only | PASS |
 | GET /itineraries/:id/hotels | ITN-25 | hotels for city groups | 200 | 200 | PASS |
-| GET /itineraries/:id/hotels | ITN-25 | uses group dates (check-out = day after last day) | group dates | {"itineraryId":"6aff20f5d9e9b135b093155f","guests":2,"rooms":1,"available":true, | PASS |
+| GET /itineraries/:id/hotels | ITN-25 | uses group dates (check-out = day after last day) | group dates | {"itineraryId":"6aff24c2ace8ee94f9e0e5d5","guests":2,"rooms":1,"available":true, | PASS |
 | GET /itineraries/:id/flights | ITN-26 | flights from origin to first-day city | 200 | 200 | PASS |
 | GET /itineraries/:id/flights | ITN-26 | unknown origin airport | 400,404 | 400 | PASS |
 | GET /itineraries/:id/flights | ITN-26 | non-owner blocked | 403/404 | 403 | PASS |
@@ -544,7 +550,7 @@ node test/qa/run.cjs
 | GET /posts/:id | BLG-02 | post page | 200 | 200 | PASS |
 | GET /posts/:id | BLG-02 | shows author, tags, like count | present | present | PASS |
 | GET /posts/mine | BLG-03 | own posts incl. drafts | 200 | 200 | PASS |
-| GET /posts/mine | BLG-03 | includes the draft | 6aff20f7d9e9b135b09316a7 | present | PASS |
+| GET /posts/mine | BLG-03 | includes the draft | 6aff24c4ace8ee94f9e0e71d | present | PASS |
 | PATCH /posts/:id | BLG-04 | edit own post | 200 | 200 | PASS |
 | PATCH /posts/:id | BLG-04 | empty edit rejected | 400 | 400 | PASS |
 | PATCH /posts/:id | BLG-04 | cannot edit someone else's post | 403 | 403 | PASS |
@@ -571,13 +577,13 @@ node test/qa/run.cjs
 | DELETE /posts/:id/like | BLG-06 | remove like | 200 | 200 | PASS |
 | POST /posts/:id/like | ACC-10 | guest must log in to like | 401 | 401 | PASS |
 | GET /posts?q= | BLG-09 | keyword search | 200 | 200 | PASS |
-| GET /posts?q=Nile | BLG-09 | ordered by likes + comments (post with 1 like + 2 comments first) | 6aff20f7d9e9b135b09316a8 | 6aff20f7d9e9b135b09316a8,6aff20f7d9e9b135b09316a9 | PASS |
+| GET /posts?q=Nile | BLG-09 | ordered by likes + comments (post with 1 like + 2 comments first) | 6aff24c4ace8ee94f9e0e71e | 6aff24c4ace8ee94f9e0e71e,6aff24c4ace8ee94f9e0e71f | PASS |
 | GET /posts?q= | BLG-09 | no results -> empty list | 0 | 0 | PASS |
 | GET /authors/:id | BLG-12 | public author page | 200 | 200 | PASS |
 | GET /authors/:id | BLG-12 | name and published posts; no email or drafts | no email/draft | ok | PASS |
 | PATCH /posts/:id/itinerary | BLG-13 | private itinerary cannot be attached | 400,403,404 | 404 | PASS |
 | PATCH /posts/:id/itinerary | BLG-13 | attach own public itinerary | 200 | 200 | PASS |
-| GET /posts/:id | BLG-13 | post shows the itinerary | 6aff20f7d9e9b135b09316ad | linked | PASS |
+| GET /posts/:id | BLG-13 | post shows the itinerary | 6aff24c4ace8ee94f9e0e723 | linked | PASS |
 | PATCH /posts/:id/itinerary | BLG-13 | cannot attach to someone else's post | 403 | 403 | PASS |
 | PATCH /posts/:id/itinerary | BLG-13 | detach itinerary | 200 | 200 | PASS |
 | POST /reports | GEN-09 | report a post | 201 | 201 | PASS |
@@ -613,7 +619,7 @@ node test/qa/run.cjs
 | DB flights/bookings | FLT-22 | held seats + available = capacity | 4 held + 1 free | 4 held + 1 free | PASS |
 | POST /hotel-bookings x8 concurrent same room | HTL-18 | exactly one reservation holds the room | 1 | 1 | PASS |
 | POST /hotel-bookings x8 concurrent same room | HTL-18 | others rejected without 500 | 4xx | 409 | PASS |
-| POST /hotel-bookings x2 concurrent overlapping multi-room | HTL-18 | one wins, the other is rejected as a whole | 201 + 409 | 409+201 | PASS |
+| POST /hotel-bookings x2 concurrent overlapping multi-room | HTL-18 | one wins, the other is rejected as a whole | 201 + 409 | 201+409 | PASS |
 | DB hotel_bookings | HTL-18 | rejected request held nothing | 0 | 0 | PASS |
 | POST /flight-bookings/hold x2 identical | FLT-22 | both handled without error; each hold reserves its own seat (no idempotency key) | 201,201 | 201,201 | PASS |
 | POST /payments/webhook x5 concurrent same event | PAY-01 | all acknowledged (2xx) | 2xx | 200,200,200,200,200 | PASS |
@@ -622,7 +628,7 @@ node test/qa/run.cjs
 | DB bookings | FLT-23 | booking confirmed once with one reference | Confirmed | Confirmed | PASS |
 | POST /flight-bookings/:id/cancel x3 concurrent | FLT-26 | only one cancellation succeeds | 1 | 1 | PASS |
 | DB refunds | PAY-03 | only one refund issued | 1 | 1 | PASS |
-| POST /flight-bookings/:id/cancel x3 concurrent | FLT-26 | no 500 errors | no 5xx | 200,404,404 | PASS |
+| POST /flight-bookings/:id/cancel x3 concurrent | FLT-26 | no 500 errors | no 5xx | 404,200,404 | PASS |
 
 ## 8. Swagger documentation accuracy
 
@@ -691,6 +697,7 @@ node test/qa/run.cjs
 | GET /api/hotels/{id}/reservations | HTL-22 | documented in Swagger (PDF section 8) | present | present | PASS |
 | POST /api/hotel-bookings | HTL-16 | documented in Swagger (PDF section 8) | present | present | PASS |
 | GET /api/hotel-bookings | HTL-20 | documented in Swagger (PDF section 8) | present | present | PASS |
+| GET /api/hotel-bookings/grouped | HTL-20 | documented in Swagger (PDF section 8) | present | present | PASS |
 | GET /api/hotel-bookings/{id} | HTL-20 | documented in Swagger (PDF section 8) | present | present | PASS |
 | POST /api/hotel-bookings/{id}/cancel | HTL-21 | documented in Swagger (PDF section 8) | present | present | PASS |
 | POST /api/hotel-bookings/{id}/review | HTL-23 | documented in Swagger (PDF section 8) | present | present | PASS |

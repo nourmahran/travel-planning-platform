@@ -87,6 +87,22 @@ export class HotelBookingsController {
     return this.bookings.listMine(user, query);
   }
 
+  @Get('grouped')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'HTL-20 My reservations grouped as Upcoming, Past and Cancelled',
+    description:
+      'Upcoming: confirmed stays not yet finished (soonest first). Past: completed stays, or confirmed stays after check-out (most recent first). Cancelled: cancelled reservations (most recent first). Unpaid and expired holds are not included.',
+  })
+  @ApiOkResponse({
+    description:
+      '{ upcoming: HotelBookingResponseDto[], past: HotelBookingResponseDto[], cancelled: HotelBookingResponseDto[] }',
+  })
+  grouped(@CurrentUser() user: AuthUser) {
+    return this.bookings.groupedForUser(user);
+  }
+
   @Get(':id')
   @UseGuards(AuthGuard)
   @ApiBearerAuth()
