@@ -30,7 +30,6 @@ const FRONTEND = {
 const PARTIAL = {
   'GEN-11': 'Lifecycle is enforced, but hotel reservations name the states HELD/CONFIRMED/COMPLETED/EXPIRED/CANCELLED instead of "Pending Payment" etc., and both modules also allow cancelling an unpaid hold (an extra Pending -> Cancelled transition).',
   'HTL-04': 'Rooms are bookable by default and moderators block date ranges (HTL-06); explicit "bookable date ranges" are not modelled as such.',
-  'HTL-20': 'Reservations are listed with status and date filters; the Upcoming/Past/Cancelled grouping is left to the client (flights return the three groups).',
   'ACC-19': 'Cookies are httpOnly and SameSite=Lax; the Secure flag is set only when NODE_ENV=production (local http testing).',
   'HTL-01': 'Hotel city/country are free text; they are not validated against the seeded city list (GEN-12).',
 };

@@ -1,6 +1,6 @@
 # Requirements audit
 
-Generated 2026-11-19 16:17 UTC from the official workbook (`Final_ SP1_Reviewed_Requirements.xlsx`, 104 mandatory + 11 bonus rows) and the black-box API run in `backend/test/qa` (700 checks, 700 passed).
+Generated 2026-11-19 16:33 UTC from the official workbook (`Final_ SP1_Reviewed_Requirements.xlsx`, 104 mandatory + 11 bonus rows) and the black-box API run in `backend/test/qa` (707 checks, 707 passed).
 
 **Status meanings.** *Verified*: every black-box check for the requirement passed against the running backend. *Partial*: works, with the documented gap. *Frontend (Milestone 2)*: user-interface behaviour; the backend part is noted. *Not black-box tested*: implemented, covered only by unit tests or not exercised over HTTP.
 
@@ -57,7 +57,7 @@ Generated 2026-11-19 16:17 UTC from the official workbook (`Final_ SP1_Reviewed_
 | HTL-16 | Hotels | The system shall allow a registered user to book one or more available rooms in the same hotel for the same dates in one reservation, assigning adults... | Verified | 5/5 |  |
 | HTL-17 | Hotels | After successful payment, the system shall set the reservation (all its rooms) to Confirmed, generate a unique booking reference, show a confirmation ... | Verified | 2/2 |  |
 | HTL-18 | Hotels | When a user proceeds to payment, the system shall hold all selected rooms together for 10 minutes as one Pending Payment reservation | Verified | 11/11 |  |
-| HTL-20 | Hotels | The system shall allow a registered user to view their hotel reservations grouped as Upcoming, Past and Cancelled, showing reference, hotel, rooms, da... | Partial | 5/5 | Reservations are listed with status and date filters; the Upcoming/Past/Cancelled grouping is left to the client (flights return the three groups). |
+| HTL-20 | Hotels | The system shall allow a registered user to view their hotel reservations grouped as Upcoming, Past and Cancelled, showing reference, hotel, rooms, da... | Verified | 12/12 |  |
 | HTL-21 | Hotels | The system shall allow a registered user to cancel their own Confirmed reservation as a whole before the check-in date, after viewing the refund compu... | Verified | 6/6 |  |
 | HTL-22 | Hotels | The system shall allow a hotel moderator to view reservations for their hotel (guest, dates, status). | Verified | 4/4 |  |
 | HTL-23 | Hotels | A Confirmed reservation becomes Completed once its check-out date has passed | Verified | 14/14 |  |
