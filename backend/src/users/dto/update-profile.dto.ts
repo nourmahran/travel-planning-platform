@@ -5,6 +5,7 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  IsBoolean,
 } from 'class-validator';
 
 export class UpdateProfileDto {
@@ -33,4 +34,12 @@ export class UpdateProfileDto {
     message: 'Preferred currency must be a 3-letter code',
   })
   preferredCurrency?: string;
+
+  @ApiPropertyOptional({
+    example: true,
+    description: 'GEN-01-B: receive email copies of in-app notifications',
+  })
+  @IsOptional()
+  @IsBoolean()
+  emailNotifications?: boolean;
 }

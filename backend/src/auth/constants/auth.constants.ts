@@ -22,3 +22,12 @@ export const MAX_FAILED_LOGIN_ATTEMPTS = 5;
 export const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 export const BCRYPT_ROUNDS = 12;
+
+/** ACC-02 (optional): email verification link lifetime. */
+export const EMAIL_VERIFICATION_TTL_MS = 24 * 60 * 60 * 1000;
+
+/** ACC-07 (optional): password reset code lifetime. */
+export const PASSWORD_RESET_TTL_MS = 30 * 60 * 1000;
+
+/** Minimum gap between two verification or reset emails to one account. */
+export const EMAIL_RESEND_COOLDOWN_MS = 60 * 1000;

@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   Res,
 } from '@nestjs/common';
@@ -32,6 +34,7 @@ import { Roles } from './decorators/roles.decorator';
 import { UserRole } from './constants/roles';
 import type { AuthenticatedUser } from './types/authenticated-user';
 import { AdminResetPasswordDto } from './dto/admin-reset-password.dto';
+import { EmailOnlyDto, ResetPasswordDto } from './dto/email-flows.dto';
 
 @ApiTags('Authentication')
 @ApiCookieAuth('access_token')
@@ -68,6 +71,59 @@ export class AuthController {
   })
   register(@Body() registerDto: RegisterDto) {
     return this.authService.register(registerDto);
+  }
+
+  @Public()
+  @Get('verify-email')
+  @ApiOperation({
+    summary: 'ACC-02 (Optional) Verify your email address',
+    description:
+      'Opened from the link in the verification email. Tokens are single-use and expire after 24 hours.',
+  })
+  @ApiOkResponse({ description: 'Email verified.' })
+  @ApiBadRequestResponse({ description: 'Link invalid or expired.' })
+  verifyEmail(@Query('token') token: string) {
+    if (typeof token !== 'string' || !token || token.length > 200) {
+      throw new BadRequestException('Verification token is required');
+    }
+    return this.authService.verifyEmail(token);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'ACC-02 (Optional) Send a new verification email',
+    description:
+      'Always answers the same way so it cannot be used to find registered emails. At most one email per minute.',
+  })
+  resendVerification(@Body() dto: EmailOnlyDto) {
+    return this.authService.resendVerification(dto.email);
+  }
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'ACC-07 (Optional) Email a password reset code',
+    description:
+      'Always answers the same way so it cannot be used to find registered emails. The code is single-use and expires after 30 minutes.',
+  })
+  forgotPassword(@Body() dto: EmailOnlyDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(200)
+  @ApiOperation({
+    summary: 'ACC-07 (Optional) Set a new password with the emailed code',
+    description:
+      'Clears any lockout and signs the account out on every device.',
+  })
+  @ApiBadRequestResponse({ description: 'Code invalid or expired.' })
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Public()

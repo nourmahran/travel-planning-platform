@@ -13,9 +13,11 @@ import {
   RefreshSessionSchema,
 } from './schemas/refresh-session.schema';
 import { User, UserSchema } from './schemas/user.schema';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
   imports: [
+    MailModule,
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: RefreshSession.name, schema: RefreshSessionSchema },

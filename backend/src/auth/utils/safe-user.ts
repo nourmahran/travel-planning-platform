@@ -13,6 +13,8 @@ export interface SafeUser {
   mustChangePassword: boolean;
   providerType: 'airline' | 'hotel' | null;
   providerId: string | null;
+  emailVerified: boolean;
+  emailNotifications: boolean;
 }
 
 export function toSafeUser(user: UserDocument): SafeUser {
@@ -27,5 +29,7 @@ export function toSafeUser(user: UserDocument): SafeUser {
     mustChangePassword: user.mustChangePassword,
     providerType: user.providerType ?? null,
     providerId: user.providerId ? user.providerId.toString() : null,
+    emailVerified: user.emailVerified !== false,
+    emailNotifications: user.emailNotifications !== false,
   };
 }

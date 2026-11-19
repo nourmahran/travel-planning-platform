@@ -23,6 +23,9 @@ import {
   INACTIVITY_TTL_MS,
   REFRESH_TOKEN_TTL_MS,
   REFRESH_TOKEN_COOKIE,
+  EMAIL_RESEND_COOLDOWN_MS,
+  EMAIL_VERIFICATION_TTL_MS,
+  PASSWORD_RESET_TTL_MS,
 } from './constants/auth.constants';
 import { UserRole } from './constants/roles';
 import { AuthCookieService } from './cookies/auth-cookie.service';
@@ -38,6 +41,7 @@ import { AccessTokenPayload } from './types/jwt-payload';
 import { AuthenticatedUser } from './types/authenticated-user';
 import { generateOpaqueToken, hashToken } from './utils/token-hash';
 import { SafeUser, toSafeUser } from './utils/safe-user';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AuthService {
@@ -49,6 +53,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly authCookieService: AuthCookieService,
+    private readonly mail: MailService,
   ) {}
 
   async register(registerDto: RegisterDto) {
@@ -76,10 +81,14 @@ export class AuthService {
       preferredCurrency: 'USD',
       providerType: null,
       providerId: null,
+      emailVerified: false,
     });
+
+    await this.sendVerificationEmail(user);
 
     return {
       message: 'Registration successful',
+      nextStep: 'Check your email for a link to verify your address.',
       user: {
         id: user._id.toString(),
         name: user.name,
@@ -122,6 +131,16 @@ export class AuthService {
     if (!passwordMatches) {
       await this.registerFailedLogin(user);
       throw new UnauthorizedException('Invalid email or password');
+    }
+
+    // ACC-02 (optional): only enforced when REQUIRE_EMAIL_VERIFICATION=true.
+    if (
+      user.emailVerified === false &&
+      this.configService.get<string>('REQUIRE_EMAIL_VERIFICATION') === 'true'
+    ) {
+      throw new ForbiddenException(
+        'Verify your email address before logging in',
+      );
     }
 
     user.failedLoginAttempts = 0;
@@ -346,6 +365,161 @@ export class AuthService {
       },
       temporaryPassword,
     };
+  }
+
+  /** ACC-02 (optional): confirm the email address with the emailed token. */
+  async verifyEmail(token: string) {
+    const user = await this.userModel
+      .findOneAndUpdate(
+        {
+          emailVerificationTokenHash: hashToken(token),
+          emailVerificationExpiresAt: { $gt: new Date() },
+        },
+        {
+          $set: {
+            emailVerified: true,
+            emailVerificationTokenHash: null,
+            emailVerificationExpiresAt: null,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!user) {
+      throw new BadRequestException(
+        'Verification link is invalid or has expired',
+      );
+    }
+    return { message: 'Email verified', email: user.email };
+  }
+
+  /** ACC-02 (optional): send a fresh verification link. Same reply for every email. */
+  async resendVerification(rawEmail: string) {
+    const user = await this.userModel.findOne({
+      email: rawEmail.trim().toLowerCase(),
+    });
+    if (
+      user &&
+      user.emailVerified === false &&
+      user.status === AccountStatus.ACTIVE &&
+      !this.inCooldown(user.emailVerificationSentAt)
+    ) {
+      await this.sendVerificationEmail(user);
+    }
+    return {
+      message:
+        'If that account exists and is not verified yet, a new link has been sent.',
+    };
+  }
+
+  /** ACC-07 (optional): email a single-use reset code. Same reply for every email. */
+  async forgotPassword(rawEmail: string) {
+    const user = await this.userModel.findOne({
+      email: rawEmail.trim().toLowerCase(),
+    });
+    if (
+      user &&
+      user.status === AccountStatus.ACTIVE &&
+      !this.inCooldown(user.passwordResetRequestedAt)
+    ) {
+      const token = generateOpaqueToken();
+      const now = new Date();
+      await this.userModel.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            passwordResetTokenHash: hashToken(token),
+            passwordResetExpiresAt: new Date(
+              now.getTime() + PASSWORD_RESET_TTL_MS,
+            ),
+            passwordResetRequestedAt: now,
+          },
+        },
+      );
+      await this.mail.send({
+        to: user.email,
+        subject: 'Reset your password',
+        text:
+          `Hello ${user.name},\n\n` +
+          'Someone asked to reset the password for your Travel Planning account.\n' +
+          `Your reset code (valid for ${PASSWORD_RESET_TTL_MS / 60000} minutes):\n\n${token}\n\n` +
+          'Send it with your new password to POST /api/auth/reset-password.\n' +
+          'If you did not ask for this, ignore this email; your password is unchanged.',
+      });
+    }
+    return {
+      message:
+        'If an active account uses that email, a reset code has been sent.',
+    };
+  }
+
+  /** ACC-07 (optional): set a new password with a valid reset code. */
+  async resetPassword(token: string, newPassword: string) {
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    const user = await this.userModel
+      .findOneAndUpdate(
+        {
+          passwordResetTokenHash: hashToken(token),
+          passwordResetExpiresAt: { $gt: new Date() },
+        },
+        {
+          $set: {
+            passwordHash,
+            passwordResetTokenHash: null,
+            passwordResetExpiresAt: null,
+            mustChangePassword: false,
+            failedLoginAttempts: 0,
+            lockUntil: null,
+            // Receiving the code proves the user controls this inbox.
+            emailVerified: true,
+          },
+        },
+        { new: true },
+      )
+      .exec();
+    if (!user) {
+      throw new BadRequestException('Reset code is invalid or has expired');
+    }
+    // Sign every device out after a reset.
+    await this.refreshSessionModel.updateMany(
+      { userId: user._id, revokedAt: null },
+      { $set: { revokedAt: new Date() } },
+    );
+    return { message: 'Password reset. Log in with your new password.' };
+  }
+
+  private inCooldown(lastSentAt: Date | null | undefined): boolean {
+    return (
+      !!lastSentAt &&
+      Date.now() - lastSentAt.getTime() < EMAIL_RESEND_COOLDOWN_MS
+    );
+  }
+
+  private async sendVerificationEmail(user: UserDocument): Promise<void> {
+    const token = generateOpaqueToken();
+    const now = new Date();
+    await this.userModel.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          emailVerificationTokenHash: hashToken(token),
+          emailVerificationExpiresAt: new Date(
+            now.getTime() + EMAIL_VERIFICATION_TTL_MS,
+          ),
+          emailVerificationSentAt: now,
+        },
+      },
+    );
+    const link = `${this.mail.publicUrl()}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
+    await this.mail.send({
+      to: user.email,
+      subject: 'Verify your email address',
+      text:
+        `Hello ${user.name},\n\n` +
+        'Confirm your email address for the Travel Planning Platform by opening this link ' +
+        `(valid for 24 hours):\n\n${link}\n\n` +
+        'If you did not create this account, ignore this email.',
+    });
   }
 
   private async registerFailedLogin(user: UserDocument): Promise<void> {
