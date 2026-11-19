@@ -27,6 +27,8 @@ export class CreateReviewDto {
   @MaxLength(120)
   title?: string;
 
+  /** HTL-23: the written review is optional; the rating is required. */
+  @IsOptional()
   @IsString()
   @MinLength(REVIEW_COMMENT_MIN_LENGTH, {
     message: `comment must be at least ${REVIEW_COMMENT_MIN_LENGTH} characters long.`,
@@ -34,7 +36,7 @@ export class CreateReviewDto {
   @MaxLength(REVIEW_COMMENT_MAX_LENGTH, {
     message: `comment cannot exceed ${REVIEW_COMMENT_MAX_LENGTH} characters.`,
   })
-  comment: string;
+  comment?: string;
 }
 
 export class UpdateReviewDto extends PartialType(CreateReviewDto) {}

@@ -96,6 +96,28 @@ export class MediaService {
         })),
         { session, ordered: true },
       );
+      if (type === MediaTarget.Activity) {
+        // ITN-12: activities are embedded in itineraries, whose detail view
+        // lists activity.images. Mirror each upload there (same id) so the
+        // image shows up in the itinerary and can be removed with it.
+        await this.store.connection.collection('itineraries').updateOne(
+          { 'days.activities._id': objectId(id) },
+          // Array-filter paths are not expressible in the driver's typings.
+          {
+            $push: {
+              'days.$[].activities.$[activity].images': {
+                $each: saved.map((image) => ({
+                  _id: image._id,
+                  url: '/api/media/' + image._id.toString(),
+                  mimeType: image.mimeType,
+                  sizeBytes: image.size,
+                })),
+              },
+            },
+          } as unknown as Record<string, never>,
+          { session, arrayFilters: [{ 'activity._id': objectId(id) }] },
+        );
+      }
       return saved.map((image) => ({
         id: image._id,
         url: '/api/media/' + image._id.toString(),
@@ -114,6 +136,19 @@ export class MediaService {
       );
       if (!result.deletedCount)
         throw new NotFoundException('Image not found on this content');
+      if (type === MediaTarget.Activity) {
+        await this.store.connection.collection('itineraries').updateOne(
+          { 'days.activities._id': objectId(id) },
+          {
+            $pull: {
+              'days.$[].activities.$[activity].images': {
+                _id: objectId(imageId),
+              },
+            },
+          } as unknown as Record<string, never>,
+          { session, arrayFilters: [{ 'activity._id': objectId(id) }] },
+        );
+      }
       return { deleted: true };
     });
   }

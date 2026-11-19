@@ -18,6 +18,7 @@ import {
   INACTIVITY_TTL_MS,
 } from '../constants/auth.constants';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
+import { REQUIRE_VERIFIED_EMAIL_KEY } from '../decorators/require-verified-email.decorator';
 import {
   RefreshSession,
   RefreshSessionDocument,
@@ -120,6 +121,18 @@ export class JwtAuthGuard implements CanActivate {
 
     if (user.status === AccountStatus.DEACTIVATED) {
       throw new UnauthorizedException('Account is deactivated');
+    }
+
+    if (
+      user.emailVerified === false &&
+      this.reflector.getAllAndOverride<boolean>(REQUIRE_VERIFIED_EMAIL_KEY, [
+        context.getHandler(),
+        context.getClass(),
+      ])
+    ) {
+      throw new ForbiddenException(
+        'Verify your email address before booking. Use POST /api/auth/resend-verification to get a new link.',
+      );
     }
 
     session.lastActivityAt = new Date();

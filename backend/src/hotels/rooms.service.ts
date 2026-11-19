@@ -1,4 +1,4 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import { ClientSession, Connection, Model, Types } from 'mongoose';
 import { MAX_BLOCK_DAYS, MAX_CALENDAR_DAYS, MAX_STAY_NIGHTS } from '../shared/constants';
@@ -393,10 +393,10 @@ export class RoomsService {
     parseISODate(from, 'from');
     parseISODate(to, 'to');
     if (to < from) {
-      throw new ConflictException('to must be on or after from.');
+      throw new BadRequestException('to must be on or after from.');
     }
     if (differenceInCalendarDays(from, to) > MAX_CALENDAR_DAYS) {
-      throw new ConflictException(`The calendar window cannot exceed ${MAX_CALENDAR_DAYS} days.`);
+      throw new BadRequestException(`The calendar window cannot exceed ${MAX_CALENDAR_DAYS} days.`);
     }
 
     let rooms = await this.hotels.listRoomDocuments(hotel._id, canManage);
@@ -415,6 +415,30 @@ export class RoomsService {
       addDaysISO(to, 1),
     );
 
+    // HTL-08: managers see which reservation occupies a night; the public
+    // calendar shows only the status.
+    const references = new Map<string, string>();
+    if (canManage) {
+      const bookingIds = new Set<string>();
+      for (const roomLocks of maps.locked.values()) {
+        for (const lock of roomLocks.values()) {
+          if (lock.kind !== RoomLockKind.BLOCK && lock.bookingId) {
+            bookingIds.add(lock.bookingId.toString());
+          }
+        }
+      }
+      if (bookingIds.size) {
+        const bookings = await this.bookingModel
+          .find({ _id: { $in: [...bookingIds].map((id) => new Types.ObjectId(id)) } })
+          .select('reference')
+          .lean()
+          .exec();
+        for (const booking of bookings) {
+          if (booking.reference) references.set(booking._id.toString(), booking.reference);
+        }
+      }
+    }
+
     const sources = rooms.map((room) => {
       const roomKey = room._id.toString();
       const locked = maps.locked.get(roomKey);
@@ -426,10 +450,13 @@ export class RoomsService {
           if (lock.kind === RoomLockKind.BLOCK) {
             return { date, status: 'blocked' as const };
           }
+          const reservationReference = lock.bookingId
+            ? references.get(lock.bookingId.toString())
+            : undefined;
           if (lock.kind === RoomLockKind.HOLD) {
-            return { date, status: 'held' as const };
+            return { date, status: 'held' as const, reservationReference };
           }
-          return { date, status: 'booked' as const };
+          return { date, status: 'booked' as const, reservationReference };
         }
         if (blocked?.has(date)) {
           return { date, status: 'blocked' as const };
@@ -475,10 +502,10 @@ export class RoomsService {
     parseISODate(endDate, 'endDate');
 
     if (startDate < todayISO()) {
-      throw new ConflictException('startDate cannot be in the past.');
+      throw new BadRequestException('startDate cannot be in the past.');
     }
     if (endDate < startDate) {
-      throw new ConflictException('endDate must be on or after startDate.');
+      throw new BadRequestException('endDate must be on or after startDate.');
     }
     if (differenceInCalendarDays(startDate, endDate) + 1 > MAX_BLOCK_DAYS) {
       throw new ConflictException(`A single block cannot exceed ${MAX_BLOCK_DAYS} days.`);

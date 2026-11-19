@@ -260,6 +260,9 @@ export class ContentService {
         throw new NotFoundException('Provider not found');
       }
     }
-    if (write && session) target = await this.bridge.lock(type, id, session);
+    // Activities are embedded in their itinerary, which was locked above;
+    // there is no standalone activity document to lock.
+    if (write && session && type !== MediaTarget.Activity)
+      target = await this.bridge.lock(type, id, session);
   }
 }
