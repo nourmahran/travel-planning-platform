@@ -249,7 +249,7 @@ export function toReviewResponse(doc: ReviewDocument): ReviewResponseDto {
     userId: doc.userId.toString(),
     rating: doc.rating,
     ...(doc.title ? { title: doc.title } : {}),
-    comment: doc.comment,
+    comment: doc.comment ?? null,
     isHidden: doc.isHidden,
     hiddenReason: doc.hiddenReason ?? null,
     isDeleted: doc.isDeleted,
@@ -267,7 +267,11 @@ export function toReviewResponse(doc: ReviewDocument): ReviewResponseDto {
 
 export interface RoomCalendarSource {
   room: RoomDocument;
-  days: Array<{ date: string; status: 'available' | 'blocked' | 'held' | 'booked' }>;
+  days: Array<{
+    date: string;
+    status: 'available' | 'blocked' | 'held' | 'booked';
+    reservationReference?: string;
+  }>;
 }
 
 export function toRoomCalendar(source: RoomCalendarSource): RoomCalendarDto {
@@ -280,6 +284,7 @@ export function toRoomCalendar(source: RoomCalendarSource): RoomCalendarDto {
       date: day.date,
       status: day.status,
       pricePerNightCents: source.room.basePricePerNightCents,
+      ...(day.reservationReference ? { reservationReference: day.reservationReference } : {}),
     })),
   };
 }

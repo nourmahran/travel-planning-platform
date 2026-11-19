@@ -4,7 +4,8 @@ import { HydratedDocument, SchemaTypes, Types } from 'mongoose';
 export type ReviewDocument = HydratedDocument<Review> & { createdAt: Date; updatedAt: Date };
 
 export const REVIEW_COMMENT_MIN_LENGTH = 10;
-export const REVIEW_COMMENT_MAX_LENGTH = 2000;
+/** HTL-23: optional review text, at most 1000 characters. */
+export const REVIEW_COMMENT_MAX_LENGTH = 1000;
 
 @Schema({ _id: false })
 export class ReviewReply {
@@ -43,12 +44,12 @@ export class Review {
   title?: string;
 
   @Prop({
-    required: true,
+    required: false,
     trim: true,
     minlength: REVIEW_COMMENT_MIN_LENGTH,
     maxlength: REVIEW_COMMENT_MAX_LENGTH,
   })
-  comment: string;
+  comment?: string;
 
   /** Moderation flag owned by Member 6 / administrators. */
   @Prop({ type: Boolean, default: false, index: true })
