@@ -133,16 +133,6 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    // ACC-02 (optional): only enforced when REQUIRE_EMAIL_VERIFICATION=true.
-    if (
-      user.emailVerified === false &&
-      this.configService.get<string>('REQUIRE_EMAIL_VERIFICATION') === 'true'
-    ) {
-      throw new ForbiddenException(
-        'Verify your email address before logging in',
-      );
-    }
-
     user.failedLoginAttempts = 0;
     user.lockUntil = null;
     await user.save();
@@ -442,8 +432,10 @@ export class AuthService {
         text:
           `Hello ${user.name},\n\n` +
           'Someone asked to reset the password for your Travel Planning account.\n' +
-          `Your reset code (valid for ${PASSWORD_RESET_TTL_MS / 60000} minutes):\n\n${token}\n\n` +
-          'Send it with your new password to POST /api/auth/reset-password.\n' +
+          `Open this link within ${PASSWORD_RESET_TTL_MS / 60000} minutes to choose a new password:\n\n` +
+          `${this.resetPageUrl()}?token=${encodeURIComponent(token)}\n\n` +
+          `Reset code (valid for ${PASSWORD_RESET_TTL_MS / 60000} minutes):\n\n${token}\n\n` +
+          'The link works once and stops working if you request another one.\n' +
           'If you did not ask for this, ignore this email; your password is unchanged.',
       });
     }
@@ -486,6 +478,14 @@ export class AuthService {
       { $set: { revokedAt: new Date() } },
     );
     return { message: 'Password reset. Log in with your new password.' };
+  }
+
+  /** Page that collects the new password (frontend when configured). */
+  private resetPageUrl(): string {
+    const frontend = this.configService
+      .get<string>('FRONTEND_URL')
+      ?.replace(/\/+$/, '');
+    return `${frontend || this.mail.publicUrl()}/reset-password`;
   }
 
   private inCooldown(lastSentAt: Date | null | undefined): boolean {

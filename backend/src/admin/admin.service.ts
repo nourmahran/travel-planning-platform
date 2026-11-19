@@ -22,6 +22,7 @@ import { toSafeUser } from '../auth/utils/safe-user';
 import { CreateModeratorDto } from './dto/create-moderator.dto';
 import { ListAccountsDto } from './dto/list-accounts.dto';
 import { ListAdminBookingsDto } from './dto/list-bookings.dto';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class AdminService {
@@ -34,7 +35,31 @@ export class AdminService {
     private readonly airlineModel: Model<AirlineDocument>,
     @InjectConnection()
     private readonly connection: Connection,
+    private readonly mail: MailService,
   ) {}
+
+  /**
+   * GEN-07: record an admin action in the shared audit log (the same
+   * `audit_logs` collection and shape that GET /api/admin/audit-logs reads).
+   */
+  async audit(
+    actorId: string,
+    action: string,
+    targetType: string,
+    targetId: string,
+    details: Record<string, unknown> = {},
+  ): Promise<void> {
+    const now = new Date();
+    await this.connection.collection('audit_logs').insertOne({
+      actorId: new Types.ObjectId(actorId),
+      action,
+      targetType,
+      targetId: new Types.ObjectId(targetId),
+      details,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
   async createModerator(dto: CreateModeratorDto) {
     const email = dto.email.trim().toLowerCase();
@@ -70,6 +95,18 @@ export class AdminService {
       preferredCurrency: 'USD',
       providerType: dto.providerType,
       providerId: new Types.ObjectId(dto.providerId),
+    });
+
+    // GEN-01-B (optional): email the invitation. The temporary password is
+    // never emailed; the admin hands it over separately.
+    await this.mail.send({
+      to: user.email,
+      subject: 'You have been invited as a moderator',
+      text:
+        `Hello ${user.name},\n\n` +
+        `An administrator created a ${dto.providerType} moderator account for you on the Travel Planning Platform.\n` +
+        `Log in at ${this.mail.publicUrl()}/api/auth/login with this email and the temporary password your administrator gives you. ` +
+        'You will be asked to choose a new password on first login.',
     });
 
     return {

@@ -7,6 +7,7 @@ import { RefreshSession } from '../auth/schemas/refresh-session.schema';
 import { Airline } from '../airlines/schemas/airline.schema';
 import { AccountStatus } from '../auth/constants/account-status';
 import { UserRole } from '../auth/constants/roles';
+import { MailService } from '../mail/mail.service';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -49,6 +50,10 @@ describe('AdminService', () => {
         },
         { provide: getModelToken(Airline.name), useValue: mockAirlineModel },
         { provide: getConnectionToken(), useValue: mockConnection },
+        {
+          provide: MailService,
+          useValue: { send: async () => 'logged', publicUrl: () => 'http://localhost:3000' },
+        },
       ],
     }).compile();
 

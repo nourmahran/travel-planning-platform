@@ -48,7 +48,8 @@ export class BlogService {
   }
 
   async update(actor: Actor, id: string, dto: UpdatePostDto) {
-    if (!Object.keys(dto).length)
+    // DTO instances carry undefined keys; null (detach itinerary) still counts.
+    if (!Object.values(dto).some((value) => value !== undefined))
       throw new BadRequestException('Provide at least one post field');
     return this.store.transaction(async (session) => {
       const post = await this.content.lock(ContentType.Post, id, session);

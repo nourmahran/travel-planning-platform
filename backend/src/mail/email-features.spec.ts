@@ -10,6 +10,7 @@ import { AppModule } from '../app.module';
 import { applyApiPrefix } from '../common/http/api-prefix';
 import { MailService, type MailMessage, type MailResult } from './mail.service';
 import { NotificationEmailService } from './notification-email.service';
+import { AdminService } from '../admin/admin.service';
 
 /** Records emails instead of sending them. */
 class CapturingMail {
@@ -100,18 +101,27 @@ describe('Email bonuses (ACC-02, ACC-07, GEN-01-B)', () => {
     await http().get('/api/auth/verify-email').query({ token }).expect(400);
   });
 
-  it('ACC-02 blocks login of unverified accounts only when required', async () => {
+  it('ACC-02 lets unverified users log in but blocks booking until verified', async () => {
     await register('gate@example.com');
-    const login = () =>
-      http().post('/api/auth/login').send({ email: 'gate@example.com', password: 'Start123!' });
+    const agent = request.agent(app.getHttpServer());
+    const login = await agent
+      .post('/api/auth/login')
+      .send({ email: 'gate@example.com', password: 'Start123!' })
+      .expect(200);
+    const cookies = ([] as string[]).concat(login.headers['set-cookie'] ?? []);
+    const csrf = /csrf_token=([^;]+)/.exec(cookies.join(';'))?.[1] ?? '';
+    expect(csrf).not.toBe('');
 
-    await login().expect(200);
-    process.env.REQUIRE_EMAIL_VERIFICATION = 'true';
-    try {
-      await login().expect(403);
-    } finally {
-      delete process.env.REQUIRE_EMAIL_VERIFICATION;
-    }
+    const flight = await agent.post('/api/flight-bookings/hold').set('x-csrf-token', csrf).send({});
+    expect(flight.status).toBe(403);
+    expect(flight.body.message).toContain('Verify your email');
+    const hotel = await agent.post('/api/hotel-bookings').set('x-csrf-token', csrf).send({});
+    expect(hotel.status).toBe(403);
+
+    await db.collection('users').updateOne({ email: 'gate@example.com' }, { $set: { emailVerified: true } });
+    // Verified: the guard lets the request through to validation (400, not 403).
+    await agent.post('/api/flight-bookings/hold').set('x-csrf-token', csrf).send({}).expect(400);
+    await db.collection('users').updateOne({ email: 'gate@example.com' }, { $set: { emailVerified: false } });
   });
 
   it('ACC-02 resend answers the same for unknown emails and respects the cooldown', async () => {
@@ -137,7 +147,9 @@ describe('Email bonuses (ACC-02, ACC-07, GEN-01-B)', () => {
     const known = await http().post('/api/auth/forgot-password').send({ email: 'reset@example.com' }).expect(200);
     expect(known.body).toEqual(unknown.body);
 
-    const code = tokenFrom(mail.last().text, /minutes\):\n\n(\S+)/);
+    const resetEmail = mail.last().text;
+    const code = tokenFrom(resetEmail, /reset-password\?token=(\S+)/);
+    expect(resetEmail).toContain(`code (valid for 30 minutes):\n\n${code}`);
     await http()
       .post('/api/auth/reset-password')
       .send({ token: code, newPassword: 'weak' })
@@ -155,6 +167,40 @@ describe('Email bonuses (ACC-02, ACC-07, GEN-01-B)', () => {
     expect(sessions).toBe(1); // only gate@example.com's session is still active
     await http().post('/api/auth/login').send({ email: 'reset@example.com', password: 'Start123!' }).expect(401);
     await http().post('/api/auth/login').send({ email: 'reset@example.com', password: 'Changed456!' }).expect(200);
+  });
+
+  it('ACC-07 a newer reset request invalidates the older link', async () => {
+    const users = db.collection('users');
+    const ask = async () => {
+      await users.updateOne(
+        { email: 'reset@example.com' },
+        { $set: { passwordResetRequestedAt: new Date(Date.now() - 120_000) } },
+      );
+      await http().post('/api/auth/forgot-password').send({ email: 'reset@example.com' }).expect(200);
+      return tokenFrom(mail.last().text, /reset-password\?token=(\S+)/);
+    };
+    const older = await ask();
+    const newer = await ask();
+    expect(newer).not.toBe(older);
+    await http().post('/api/auth/reset-password').send({ token: older, newPassword: 'Older111!' }).expect(400);
+    await http().post('/api/auth/reset-password').send({ token: newer, newPassword: 'Newer222!' }).expect(200);
+  });
+
+  it('GEN-01-B emails a moderator invitation without the temporary password', async () => {
+    const airlineId = new Types.ObjectId();
+    await db.collection('airlines').insertOne({ _id: airlineId, name: 'Invite Air', code: 'IV', countryCode: 'EG', isActive: true });
+    const before = mail.sent.length;
+    await app.get(AdminService).createModerator({
+      name: 'New Moderator',
+      email: 'moderator@example.com',
+      temporaryPassword: 'TempPass123!',
+      providerType: 'airline',
+      providerId: airlineId.toString(),
+    });
+    const invite = mail.sent.slice(before);
+    expect(invite).toHaveLength(1);
+    expect(invite[0]).toMatchObject({ to: 'moderator@example.com', subject: 'You have been invited as a moderator' });
+    expect(invite[0].text).not.toContain('TempPass123!');
   });
 
   it('GEN-01-B emails new notifications once and honours the opt-out', async () => {

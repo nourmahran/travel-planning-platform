@@ -93,6 +93,14 @@ describe('combined backend against an isolated MongoDB replica set', () => {
         acceptedPrivacyPolicy: true,
       })
       .expect(201);
+    // ACC-02: booking needs a verified email; this test is not about email.
+    await app
+      .get<Connection>(getConnectionToken())
+      .db!.collection('users')
+      .updateOne(
+        { email: 'integration@example.test' },
+        { $set: { emailVerified: true } },
+      );
     const login = await request(http)
       .post('/api/auth/login')
       .send({

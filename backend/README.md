@@ -24,7 +24,7 @@ The older unlisted /api/bookings flight routes still work for existing clients b
 
 ## Email bonuses (ACC-02, ACC-07, GEN-01-B)
 
-- `GET /api/auth/verify-email?token=...` and `POST /api/auth/resend-verification`: registration emails a single-use link valid for 24 hours. Set `REQUIRE_EMAIL_VERIFICATION=true` to block login until the address is verified.
+- `GET /api/auth/verify-email?token=...` and `POST /api/auth/resend-verification`: registration emails a single-use link valid for 24 hours. Self-registered users cannot create flight or hotel bookings until the address is verified (seeded and admin-created accounts count as verified).
 - `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`: a single-use code valid for 30 minutes. Both requests answer the same way for unknown emails, and a reset signs the account out everywhere.
 - Email notifications: a job runs every 30 seconds and emails each new in-app notification to its recipient. Users can turn this off with `PATCH /api/users/me {"emailNotifications": false}`.
 

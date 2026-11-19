@@ -423,12 +423,13 @@ export class BookingsService {
       throw new BadRequestException('Selected cabin class is not available');
     }
 
-    const wantsExtraBags = dto.passengers.some(
-      (p) => p.extraBagWeightsKg?.length,
-    );
-    const airline = wantsExtraBags
-      ? await this.airlineModel.findById(flight.airlineId).exec()
-      : null;
+    // ACC-15: a deactivated airline's flights are hidden and cannot be booked.
+    const airline = await this.airlineModel.findById(flight.airlineId).exec();
+    if (!airline || airline.isActive === false) {
+      throw new BadRequestException(
+        'This airline is not accepting bookings at the moment',
+      );
+    }
     const quote = pricePassengers(
       dto.passengers,
       flight.departureTimeUtc,
@@ -470,10 +471,14 @@ export class BookingsService {
     );
     if (returnFlight && !returnCabin)
       throw new BadRequestException('Return cabin is unavailable');
-    const returnAirline =
-      returnFlight && wantsExtraBags
-        ? await this.airlineModel.findById(returnFlight.airlineId).exec()
-        : null;
+    const returnAirline = returnFlight
+      ? await this.airlineModel.findById(returnFlight.airlineId).exec()
+      : null;
+    if (returnFlight && (!returnAirline || returnAirline.isActive === false)) {
+      throw new BadRequestException(
+        'The return airline is not accepting bookings at the moment',
+      );
+    }
     const returnQuote =
       returnFlight && returnCabin
         ? pricePassengers(

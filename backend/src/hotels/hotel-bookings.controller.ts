@@ -22,6 +22,7 @@ import {
 import { Types } from 'mongoose';
 import type { AuthUser } from '../shared/auth/auth-user';
 import { AuthGuard } from '../shared/auth/auth.guard';
+import { RequireVerifiedEmail } from '../auth/decorators/require-verified-email.decorator';
 import { CurrentUser } from '../shared/auth/current-user.decorator';
 import { InternalApiKeyGuard } from '../shared/auth/internal-api-key.guard';
 import { ParseMongoIdPipe } from '../shared/pipes/parse-mongo-id.pipe';
@@ -52,6 +53,7 @@ export class HotelBookingsController {
 
   @Post()
   @UseGuards(AuthGuard)
+  @RequireVerifiedEmail()
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'HTL-16 / HTL-18 Create a 10-minute reservation hold',
