@@ -442,3 +442,22 @@ Guide me through Member 6 requirements and help me implement, test, and upload t
 How the output was used:
 Used the generated code and guidance to implement and test Member 6 features and upload the files to GitHub.
 ========================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: Section 8 API coverage; FLT-04, FLT-06, FLT-08, FLT-09, FLT-11, FLT-22 to FLT-29, ACC-07a, BLG-13
+
+Prompt:
+Compare the backend routes against the Milestone 1 endpoint table in the
+project description, then serve every route under /api and add the
+endpoint names the description lists.
+
+How the output was used:
+Added a global /api prefix, /api/flight-bookings routes (hold, cancel,
+e-ticket, change-flight, seat), flight cabin and passenger-export routes,
+airline baggage/cancellation policy PUT routes, the admin reset-password
+route and PATCH /api/posts/:id/itinerary. Completed .env.example. Reviewed
+the diff and verified with the build, lint and full test suite.
+================================================

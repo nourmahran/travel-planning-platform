@@ -34,7 +34,7 @@ import { ReviewResponseDto } from './dto/responses.dto';
 import { ReviewsService } from './reviews.service';
 
 @ApiTags('Hotel reviews')
-@Controller('api/reviews')
+@Controller('reviews')
 export class ReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 
@@ -108,7 +108,7 @@ export class ReviewsController {
 }
 
 @ApiTags('Hotel reviews')
-@Controller('api/hotels/:hotelId/reviews')
+@Controller('hotels/:hotelId/reviews')
 export class HotelReviewsController {
   constructor(private readonly reviews: ReviewsService) {}
 

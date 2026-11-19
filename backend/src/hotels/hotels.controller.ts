@@ -45,7 +45,7 @@ import { HotelsService } from './hotels.service';
 import { RoomsService } from './rooms.service';
 
 @ApiTags('Hotels')
-@Controller('api/hotels')
+@Controller('hotels')
 export class HotelsController {
   constructor(
     private readonly hotels: HotelsService,

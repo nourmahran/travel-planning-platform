@@ -22,7 +22,7 @@ import type { AuthUser } from './auth/auth-user';
 import { IdParamDto } from './dto/create-payment.dto';
 import { DevConfirmDto } from './dto/dev-confirm.dto';
 import { DevConfirmResponseDto } from './dto/responses.dto';
-import { API_PREFIX, isDevPaymentsEnabled } from './payments.config';
+import { isDevPaymentsEnabled } from './payments.config';
 import { PaymentsService } from './payments.service';
 import { ApiErrors, BAD_PARAMS, UNAUTHORIZED } from './swagger';
 
@@ -50,7 +50,7 @@ export class DevPaymentsEnabledGuard implements CanActivate {
 @ApiTags('Dev (test mode only)')
 @ApiCookieAuth('access_token')
 @UseGuards(DevPaymentsEnabledGuard)
-@Controller(`${API_PREFIX}/dev/payments`)
+@Controller('dev/payments')
 export class DevPaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 

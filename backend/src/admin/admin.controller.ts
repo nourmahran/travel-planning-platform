@@ -22,6 +22,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { AdminService } from './admin.service';
+import { AuthService } from '../auth/auth.service';
+import { AdminResetPasswordDto } from '../auth/dto/admin-reset-password.dto';
 import { CreateModeratorDto } from './dto/create-moderator.dto';
 import { ListAccountsDto } from './dto/list-accounts.dto';
 import { ListAdminBookingsDto } from './dto/list-bookings.dto';
@@ -31,7 +33,25 @@ import { ListAdminBookingsDto } from './dto/list-bookings.dto';
 @Roles(UserRole.ADMIN)
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly authService: AuthService,
+  ) {}
+
+  @Post('users/:id/reset-password')
+  @ApiOperation({
+    summary: 'ACC-07a Reset an account to a temporary password',
+    description:
+      'The admin sets a temporary password; the account must change it on its next login.',
+  })
+  @ApiOkResponse({ description: 'Temporary password issued.' })
+  @ApiForbiddenResponse({ description: 'Admin role required.' })
+  resetPassword(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: AdminResetPasswordDto,
+  ) {
+    return this.authService.adminResetPassword(id, dto.temporaryPassword);
+  }
 
   @Post('moderators')
   @ApiOperation({

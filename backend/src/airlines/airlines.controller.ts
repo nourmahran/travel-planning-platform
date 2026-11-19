@@ -5,6 +5,7 @@ import {
   Param,
   Post,
   Patch,
+  Put,
   ForbiddenException,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -17,6 +18,10 @@ import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { AirlinesService } from './airlines.service';
 import { CreateAirlineDto } from './dto/create-airline.dto';
 import { UpdateAirlineDto } from './dto/update-airline.dto';
+import {
+  BaggagePolicyDto,
+  CancellationPolicyDto,
+} from './dto/flight-policies.dto';
 
 @ApiTags('Airlines')
 @Controller('airlines')
@@ -55,6 +60,41 @@ export class AirlinesController {
     if (user.role === UserRole.AIRLINE_MODERATOR && id !== user.providerId)
       throw new ForbiddenException('Airline belongs to another provider');
     return this.airlinesService.update(id, dto);
+  }
+
+  @Put(':id/baggage-policy')
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
+  @ApiOperation({
+    summary: 'FLT-04, FLT-08 Replace the airline baggage policy',
+    description:
+      'Free bags, maximum weight per bag, extra-bag price and extra-bag limit per passenger. Requires the cancellation policy to be set first.',
+  })
+  setBaggagePolicy(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: BaggagePolicyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    this.assertOwnAirline(id, user);
+    return this.airlinesService.setBaggagePolicy(id, dto);
+  }
+
+  @Put(':id/cancellation-policy')
+  @Roles(UserRole.ADMIN, UserRole.AIRLINE_MODERATOR)
+  @ApiOperation({
+    summary: 'FLT-09 Replace the airline cancellation (refund tier) policy',
+  })
+  setCancellationPolicy(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @Body() dto: CancellationPolicyDto,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    this.assertOwnAirline(id, user);
+    return this.airlinesService.setCancellationPolicy(id, dto.cancellationTiers);
+  }
+
+  private assertOwnAirline(id: string, user: AuthenticatedUser) {
+    if (user.role === UserRole.AIRLINE_MODERATOR && id !== user.providerId)
+      throw new ForbiddenException('Airline belongs to another provider');
   }
 
   @Patch(':id/deactivate')

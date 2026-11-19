@@ -16,6 +16,7 @@ import { Airline, AirlineDocument } from '../airlines/schemas/airline.schema';
 import { CreateFlightDto } from './dto/create-flight.dto';
 import { SearchFlightsDto } from './dto/search-flights.dto';
 import { UpdateFlightDto } from './dto/update-flight.dto';
+import { CabinDetailsDto } from './dto/cabin-details.dto';
 import { BookingStatus } from '../bookings/schemas/booking.schema';
 import { notificationRecord } from '../common/notification-record';
 import { randomUUID } from 'node:crypto';
@@ -512,6 +513,49 @@ export class FlightsService {
       ),
       cancellationTiers: airline.flightPolicies?.cancellationTiers ?? [],
     };
+  }
+
+  /** FLT-04: add a new cabin class to an existing scheduled flight. */
+  async addCabin(id: string, cabin: CabinDetailsDto) {
+    if (cabin.availableSeats !== cabin.totalSeats) {
+      throw new BadRequestException(
+        'Available seats must initially equal total seats',
+      );
+    }
+    const updated = await this.flightModel
+      .findOneAndUpdate(
+        {
+          _id: id,
+          status: FlightStatus.SCHEDULED,
+          'cabins.cabinClass': { $ne: cabin.cabinClass },
+        },
+        {
+          $push: {
+            cabins: {
+              cabinClass: cabin.cabinClass,
+              price: cabin.price,
+              totalSeats: cabin.totalSeats,
+              availableSeats: cabin.totalSeats,
+              baggageAllowanceKg: cabin.baggageAllowanceKg,
+              extraBaggagePricePerKg: cabin.extraBaggagePricePerKg,
+              freeBagsPerPassenger: cabin.freeBagsPerPassenger,
+              maxWeightKgPerBag: cabin.maxWeightKgPerBag,
+              extraBagPrice: cabin.extraBagPrice,
+              maxExtraBagsPerPassenger: cabin.maxExtraBagsPerPassenger,
+            },
+          },
+        },
+        { new: true, runValidators: true },
+      )
+      .exec();
+    if (updated) return updated;
+    const flight = await this.findOne(id);
+    if (flight.status !== FlightStatus.SCHEDULED) {
+      throw new BadRequestException('Only scheduled flights can get new cabins');
+    }
+    throw new ConflictException(
+      `Cabin class ${cabin.cabinClass} already exists on this flight`,
+    );
   }
 
   async update(id: string, dto: UpdateFlightDto) {

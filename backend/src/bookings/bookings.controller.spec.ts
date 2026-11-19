@@ -7,6 +7,7 @@ import { BookingsService } from './bookings.service';
 import { FlightCancellationService } from './flight-cancellation.service';
 import { FlightChangeService } from './flight-change.service';
 import { FlightChangeExecutionService } from './flight-change-execution.service';
+import { applyApiPrefix } from '../common/http/api-prefix';
 
 describe('BookingsController', () => {
   let app: INestApplication;
@@ -39,6 +40,8 @@ describe('BookingsController', () => {
     }).compile();
 
     app = module.createNestApplication();
+
+    applyApiPrefix(app);
     app.use((req: any, _res: any, next: () => void) => {
       req.user = { id: '507f1f77bcf86cd799439012', role: 'user' };
       next();
@@ -68,7 +71,7 @@ describe('BookingsController', () => {
 
   it('should disable public booking confirmation', async () => {
     await request(app.getHttpServer())
-      .patch(`/bookings/${validBookingId}/confirm`)
+      .patch(`/api/bookings/${validBookingId}/confirm`)
       .expect(404);
 
     expect(mockBookingsService.confirm).not.toHaveBeenCalled();
@@ -76,7 +79,7 @@ describe('BookingsController', () => {
 
   it('should not expose confirmation for invalid IDs', async () => {
     await request(app.getHttpServer())
-      .patch('/bookings/invalid-id/confirm')
+      .patch('/api/bookings/invalid-id/confirm')
       .expect(404);
 
     expect(mockBookingsService.confirm).not.toHaveBeenCalled();
@@ -90,7 +93,7 @@ describe('BookingsController', () => {
     });
 
     const response = await request(app.getHttpServer())
-      .patch(`/bookings/${validBookingId}/cancel`)
+      .patch(`/api/bookings/${validBookingId}/cancel`)
       .expect(200);
 
     expect(response.body.status).toBe('Cancelled');
@@ -104,7 +107,7 @@ describe('BookingsController', () => {
       booking: { status: 'Cancelled' },
     });
     await request(app.getHttpServer())
-      .patch(`/bookings/${validBookingId}/cancel`)
+      .patch(`/api/bookings/${validBookingId}/cancel`)
       .expect(200);
     expect(mockBookingsService.findOne).toHaveBeenCalledWith(
       validBookingId,
@@ -119,7 +122,7 @@ describe('BookingsController', () => {
 
   it('should reject an invalid booking ID when cancelling', async () => {
     await request(app.getHttpServer())
-      .patch('/bookings/invalid-id/cancel')
+      .patch('/api/bookings/invalid-id/cancel')
       .expect(400);
 
     expect(mockBookingsService.cancel).not.toHaveBeenCalled();

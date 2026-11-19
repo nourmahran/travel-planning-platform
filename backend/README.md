@@ -4,17 +4,23 @@ NestJS, MongoDB and TypeScript backend for the Travel Planning and Booking Platf
 
 ## Setup
 
-From this directory, install dependencies and copy .env.example to .env. Set MONGODB_URI to a MongoDB Atlas connection string (the database must support transactions) and optionally set PORT (defaults to 3000). Keep .env private.
+From this directory, install dependencies and copy .env.example to .env. Set MONGODB_URI to a MongoDB Atlas connection string (the database must support transactions), JWT_SECRET, and the Stripe test-mode STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET; the app will not start without them. PORT is optional (defaults to 3000). Keep .env private.
 
 Run npm run seed to import the checked-in countries, cities, airports and attractions CSV files plus the configured supported currencies. Set SUPPORTED_CURRENCIES to a comma-separated list of ISO currency codes; PLATFORM_CURRENCY is always included (USD by default). The seeder inserts missing records and leaves existing records unchanged. Start the API with npm run start:dev. Swagger is available at http://localhost:3000/api.
 
 ## Backend routes
 
-- /auth/register: create an account after password and consent validation.
-- /airlines: airline management.
-- /airports: read-only paginated airport search; supports q, country, page and limit. /airports/:code reads one airport and its IANA time zone.
-- /flights: create, search (one-way and round-trip), inspect, update and cancel flights. Search supports cabin, passenger count, local departure date, price bounds, sorting and pagination.
-- /bookings: create a temporary seat hold and cancel an unpaid booking. Holds expire after ten minutes. Booking confirmation is intentionally not exposed until payment is verified.
+Every REST route is served under `/api` (for example `POST /api/auth/register`), matching section 8 of the project description. Swagger UI lists them all at http://localhost:3000/api. Main groups:
+
+- /api/auth, /api/users/me, /api/admin: accounts, sessions, moderators, suspension, reports and audit logs.
+- /api/airlines, /api/airports, /api/flights: airline profiles and baggage/cancellation policies, airport lookup, flight inventory, cabins and search (`GET /api/flights/search`).
+- /api/flight-bookings: seat holds (`POST /hold`), bookings, cancellation, e-tickets, flight changes and seat selection. Holds expire after ten minutes; bookings are confirmed only after verified payment.
+- /api/hotels, /api/hotel-bookings, /api/reviews: hotels, rooms, availability, reservations and reviews.
+- /api/bookings/:type/:id/policies, /api/payments, /api/refunds: policy acceptance, Stripe payments and refunds.
+- /api/itineraries, /api/activities, /api/budgets, /api/transport-costs: itinerary planning and budgets.
+- /api/posts, /api/comments, /api/tags, /api/authors, /api/reports, /api/notifications: blog and community.
+
+The older unlisted /api/bookings flight routes still work for existing clients but are hidden from Swagger.
 
 The API applies DTO validation globally and returns normalized HTTP errors. Scheduled jobs release expired seat holds and mark flights Departed. Use a replica-set MongoDB deployment for transactions.
 

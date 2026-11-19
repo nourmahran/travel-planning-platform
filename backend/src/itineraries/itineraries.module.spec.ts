@@ -9,6 +9,7 @@ import request from 'supertest';
 
 import { AuthModule } from '../auth/auth.module';
 import { ItinerariesModule } from './itineraries.module';
+import { applyApiPrefix } from '../common/http/api-prefix';
 
 process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'test-secret';
 process.env.STRIPE_SECRET_KEY =
@@ -67,41 +68,41 @@ const connection = {
 class StubDatabaseModule {}
 
 const ROUTES: [method: string, path: string][] = [
-  ['post', '/itineraries'],
-  ['get', '/itineraries'],
-  ['get', '/itineraries/{id}'],
-  ['patch', '/itineraries/{id}'],
-  ['delete', '/itineraries/{id}'],
-  ['post', '/itineraries/{id}/clone'],
-  ['get', '/itineraries/{id}/budget-summary'],
-  ['get', '/itineraries/{id}/hotels'],
-  ['get', '/itineraries/{id}/flights'],
-  ['post', '/itineraries/{itineraryId}/days'],
-  ['patch', '/itineraries/{itineraryId}/days/reorder'],
-  ['patch', '/itineraries/{itineraryId}/days/{dayId}'],
-  ['delete', '/itineraries/{itineraryId}/days/{dayId}'],
-  ['post', '/itineraries/{itineraryId}/days/{dayId}/activities'],
-  ['patch', '/activities/{activityId}'],
-  ['delete', '/activities/{activityId}'],
-  ['post', '/activities/{activityId}/images'],
-  ['delete', '/activities/{activityId}/images/{imageId}'],
-  ['post', '/itineraries/{itineraryId}/days/{dayId}/budgets'],
-  ['patch', '/budgets/{budgetId}'],
-  ['delete', '/budgets/{budgetId}'],
-  ['post', '/itineraries/{itineraryId}/transport-costs'],
-  ['patch', '/transport-costs/{costId}'],
-  ['delete', '/transport-costs/{costId}'],
-  ['get', '/itineraries/public/search'],
-  ['get', '/itineraries/public/{id}'],
-  ['get', '/cities'],
-  ['get', '/currency/convert'],
+  ['post', '/api/itineraries'],
+  ['get', '/api/itineraries'],
+  ['get', '/api/itineraries/{id}'],
+  ['patch', '/api/itineraries/{id}'],
+  ['delete', '/api/itineraries/{id}'],
+  ['post', '/api/itineraries/{id}/clone'],
+  ['get', '/api/itineraries/{id}/budget-summary'],
+  ['get', '/api/itineraries/{id}/hotels'],
+  ['get', '/api/itineraries/{id}/flights'],
+  ['post', '/api/itineraries/{itineraryId}/days'],
+  ['patch', '/api/itineraries/{itineraryId}/days/reorder'],
+  ['patch', '/api/itineraries/{itineraryId}/days/{dayId}'],
+  ['delete', '/api/itineraries/{itineraryId}/days/{dayId}'],
+  ['post', '/api/itineraries/{itineraryId}/days/{dayId}/activities'],
+  ['patch', '/api/activities/{activityId}'],
+  ['delete', '/api/activities/{activityId}'],
+  ['post', '/api/activities/{activityId}/images'],
+  ['delete', '/api/activities/{activityId}/images/{imageId}'],
+  ['post', '/api/itineraries/{itineraryId}/days/{dayId}/budgets'],
+  ['patch', '/api/budgets/{budgetId}'],
+  ['delete', '/api/budgets/{budgetId}'],
+  ['post', '/api/itineraries/{itineraryId}/transport-costs'],
+  ['patch', '/api/transport-costs/{costId}'],
+  ['delete', '/api/transport-costs/{costId}'],
+  ['get', '/api/itineraries/public/search'],
+  ['get', '/api/itineraries/public/{id}'],
+  ['get', '/api/cities'],
+  ['get', '/api/currency/convert'],
 ];
 
 const GUEST_ROUTES = new Set([
-  '/itineraries/public/search',
-  '/itineraries/public/{id}',
-  '/cities',
-  '/currency/convert',
+  '/api/itineraries/public/search',
+  '/api/itineraries/public/{id}',
+  '/api/cities',
+  '/api/currency/convert',
 ]);
 
 describe('ItinerariesModule wiring', () => {
@@ -119,6 +120,8 @@ describe('ItinerariesModule wiring', () => {
     }).compile();
 
     app = moduleRef.createNestApplication();
+
+    applyApiPrefix(app);
     await app.init();
   });
 
@@ -159,21 +162,21 @@ describe('ItinerariesModule wiring', () => {
   });
 
   it('answers 401 on an owner route without a session', async () => {
-    await request(app.getHttpServer()).get('/itineraries').expect(401);
-    await request(app.getHttpServer()).post('/itineraries').expect(401);
+    await request(app.getHttpServer()).get('/api/itineraries').expect(401);
+    await request(app.getHttpServer()).post('/api/itineraries').expect(401);
   });
 
   it('no longer trusts the retired x-dev-user-id header', async () => {
     await request(app.getHttpServer())
-      .get('/itineraries')
+      .get('/api/itineraries')
       .set('x-dev-user-id', 'a'.repeat(24))
       .expect(401);
   });
 
   it('leaves the guest routes open', async () => {
-    await request(app.getHttpServer()).get('/cities').expect(200);
+    await request(app.getHttpServer()).get('/api/cities').expect(200);
     await request(app.getHttpServer())
-      .get('/itineraries/public/search')
+      .get('/api/itineraries/public/search')
       .expect(200);
   });
 });

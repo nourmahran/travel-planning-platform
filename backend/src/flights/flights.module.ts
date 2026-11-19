@@ -6,6 +6,7 @@ import { FlightsService } from './flights.service';
 import { ProviderFlightCancellationService } from './provider-flight-cancellation.service';
 import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { PaymentsModule } from '../payments/payments.module';
+import { BookingsModule } from '../bookings/bookings.module';
 
 import { Flight, FlightSchema } from './schemas/flight.schema';
 
@@ -14,6 +15,7 @@ import { Airline, AirlineSchema } from '../airlines/schemas/airline.schema';
 @Module({
   imports: [
     PaymentsModule,
+    BookingsModule,
     MongooseModule.forFeature([
       { name: Booking.name, schema: BookingSchema },
       {

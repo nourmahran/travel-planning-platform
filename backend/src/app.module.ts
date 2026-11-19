@@ -2,7 +2,6 @@ import { AirportsController } from './airports/airports.controller';
 import { ScheduleModule } from '@nestjs/schedule';
 
 import { Module } from '@nestjs/common';
-import { RouterModule } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { EventEmitterModule } from '@nestjs/event-emitter';
@@ -96,7 +95,6 @@ import { FavouritesModule } from './favourites/favourites.module';
     CommunityModule.register({
       identityProvider: { provide: CommunityIdentity, useClass: TeamIdentity },
     }),
-    RouterModule.register([{ path: 'api', module: CommunityModule }]),
     CurrencyModule,
     ItinerariesModule,
     FavouritesModule,

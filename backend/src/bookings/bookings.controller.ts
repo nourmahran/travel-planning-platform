@@ -13,6 +13,7 @@ import {
   Header,
 } from '@nestjs/common';
 import {
+  ApiExcludeController,
   ApiBody,
   ApiOperation,
   ApiParam,
@@ -33,6 +34,9 @@ import { FlightChangeService, type ChangeLeg } from './flight-change.service';
 import { FlightChangeExecutionService } from './flight-change-execution.service';
 import { RequestFlightChangeDto } from './dto/request-flight-change.dto';
 
+// Superseded in Swagger by FlightBookingsController (/api/flight-bookings) and
+// FlightsController (/api/flights/:id/bookings). Kept so existing clients work.
+@ApiExcludeController()
 @ApiTags('Bookings')
 @Controller('bookings')
 export class BookingsController {

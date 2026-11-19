@@ -17,12 +17,11 @@ import type { Request } from 'express';
 import type Stripe from 'stripe';
 import { WebhookAckDto } from './dto/responses.dto';
 import { Public } from '../auth/decorators/public.decorator';
-import { API_PREFIX } from './payments.config';
 import { ApiErrors } from './swagger';
 import { WebhookService } from './webhook.service';
 
 @ApiTags('Payments')
-@Controller(`${API_PREFIX}/payments`)
+@Controller('payments')
 export class WebhookController {
   constructor(private readonly webhooks: WebhookService) {}
 

@@ -49,3 +49,12 @@ export class FlightPoliciesDto {
   @Type(() => BaggagePolicyDto)
   baggage: BaggagePolicyDto;
 }
+
+export class CancellationPolicyDto {
+  @ApiProperty({ type: [CancellationTierDto], minItems: 1 })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CancellationTierDto)
+  cancellationTiers: CancellationTierDto[];
+}

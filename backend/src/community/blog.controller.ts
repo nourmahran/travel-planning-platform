@@ -25,6 +25,7 @@ import { memoryStorage } from 'multer';
 import { Access, CommunityGuard, CurrentActor } from './auth';
 import { BlogService } from './blog.service';
 import {
+  AttachItineraryDto,
   AuthorQueryDto,
   CommentDto,
   ConfirmDto,
@@ -112,6 +113,21 @@ export class PostsController {
   })
   detail(@Param('id', ObjectIdPipe) id: string, @CurrentActor() actor?: Actor) {
     return this.blog.detail(id, actor);
+  }
+
+  @Patch(':id/itinerary')
+  @Access('user')
+  @ApiCookieAuth('session')
+  @ApiSecurity('csrf')
+  @ApiOperation({
+    summary: 'BLG-13 (Optional) Attach your public itinerary to your post, or detach it',
+  })
+  attachItinerary(
+    @CurrentActor() actor: Actor,
+    @Param('id', ObjectIdPipe) id: string,
+    @Body() dto: AttachItineraryDto,
+  ) {
+    return this.blog.update(actor, id, { itineraryId: dto.itineraryId });
   }
 
   @Patch(':id')

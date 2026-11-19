@@ -5,12 +5,14 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as dns from 'node:dns';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
+import { applyApiPrefix } from './common/http/api-prefix';
 
 dns.setServers(['8.8.8.8']);
 
 async function bootstrap() {
   // rawBody: Stripe webhook signature verification needs the exact raw bytes (PAY-01)
   const app = await NestFactory.create(AppModule, { rawBody: true });
+  applyApiPrefix(app);
   app.use(cookieParser());
   app.useGlobalFilters(new HttpExceptionFilter());
 

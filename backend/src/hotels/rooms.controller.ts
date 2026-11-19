@@ -40,7 +40,7 @@ import {
 import { RoomsService } from './rooms.service';
 
 @ApiTags('Hotel rooms')
-@Controller('api/hotels/:hotelId/rooms')
+@Controller('hotels/:hotelId/rooms')
 export class RoomsController {
   constructor(private readonly rooms: RoomsService) {}
 

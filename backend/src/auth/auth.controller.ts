@@ -10,6 +10,7 @@ import {
   Res,
 } from '@nestjs/common';
 import {
+  ApiExcludeEndpoint,
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCookieAuth,
@@ -183,6 +184,7 @@ export class AuthController {
   }
 
   @Post('admin/users/:id/reset-password')
+  @ApiExcludeEndpoint() // documented at POST /api/admin/users/:id/reset-password
   @Roles(UserRole.ADMIN)
   @ApiOperation({
     summary: 'Admin reset password to a temporary password',

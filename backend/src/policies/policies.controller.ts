@@ -15,7 +15,6 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from '../payments/auth/auth-user';
-import { API_PREFIX } from '../payments/payments.config';
 import {
   ApiErrors,
   BAD_PARAMS,
@@ -32,7 +31,7 @@ import { PoliciesService } from './policies.service';
 
 @ApiTags('Policies')
 @ApiCookieAuth('access_token')
-@Controller(`${API_PREFIX}/bookings`)
+@Controller('bookings')
 export class PoliciesController {
   constructor(private readonly policies: PoliciesService) {}
 

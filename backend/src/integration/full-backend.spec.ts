@@ -14,6 +14,7 @@ import { WebhookService } from '../payments/webhook.service';
 import { StripeService } from '../payments/stripe/stripe.service';
 import { AdminService } from '../admin/admin.service';
 import { FlightChangeExecutionService } from '../bookings/flight-change-execution.service';
+import { applyApiPrefix } from '../common/http/api-prefix';
 
 describe('combined backend against an isolated MongoDB replica set', () => {
   let mongo: MongoMemoryReplSet;
@@ -43,6 +44,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       imports: [AppModule],
     }).compile();
     app = moduleRef.createNestApplication();
+    applyApiPrefix(app);
     app.use(cookieParser());
     app.useGlobalPipes(
       new ValidationPipe({
@@ -73,7 +75,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
     const http = app.getHttpServer();
     await request(http).get('/api/hotels/search').expect(200);
     await request(http).get('/api/posts').expect(200);
-    await request(http).get('/itineraries/public/search').expect(200);
+    await request(http).get('/api/itineraries/public/search').expect(200);
     await request(http).get('/api/hotel-bookings').expect(401);
     await request(http).get('/api/notifications').expect(401);
     await request(http).post('/api/posts').expect(401);
@@ -82,7 +84,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
   it('uses Member 1 login for hotel and community owner routes', async () => {
     const http = app.getHttpServer();
     await request(http)
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send({
         name: 'Integration User',
         email: 'integration@example.test',
@@ -92,7 +94,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       })
       .expect(201);
     const login = await request(http)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({
         email: 'integration@example.test',
         password: 'Integration123',
@@ -109,7 +111,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       .expect(200);
 
     await request(http)
-      .post('/auth/register')
+      .post('/api/auth/register')
       .send({
         name: 'Integration Admin',
         email: 'admin-integration@example.test',
@@ -126,7 +128,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
         { $set: { role: 'admin' } },
       );
     const adminLogin = await request(http)
-      .post('/auth/login')
+      .post('/api/auth/login')
       .send({
         email: 'admin-integration@example.test',
         password: 'Integration123',
@@ -233,12 +235,12 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       transportCosts: [], cloneCount: 0,
     });
     const linked = await request(http)
-      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/hotel/${hold.body.id}`)
+      .post(`/api/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/hotel/${hold.body.id}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf(cookies));
     if (linked.status !== 201) throw new Error(JSON.stringify(linked.body));
     expect(linked.body.bookingId).toBe(hold.body.id);
     const budget = await request(http)
-      .get(`/itineraries/${itineraryId.toString()}/budget-summary`)
+      .get(`/api/itineraries/${itineraryId.toString()}/budget-summary`)
       .set('Cookie', cookies).expect(200);
     expect(budget.body.totals.categories.accommodation).toBe(240);
     const flightBookingId = new Types.ObjectId();
@@ -246,34 +248,34 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       _id: flightBookingId, userId: owner._id.toString(), status: 'Confirmed', totalPrice: 75,
     });
     await request(http)
-      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
+      .post(`/api/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).expect(201);
     const withFlight = await request(http)
-      .get(`/itineraries/${itineraryId.toString()}/budget-summary`)
+      .get(`/api/itineraries/${itineraryId.toString()}/budget-summary`)
       .set('Cookie', cookies).expect(200);
     expect(withFlight.body.totals.categories.local_transport).toBe(75);
     await request(http)
-      .post(`/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
+      .post(`/api/itineraries/${itineraryId.toString()}/days/${dayId.toString()}/bookings/flight/${flightBookingId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).expect(409);
     await connection.db!.collection('itineraries').updateOne(
       { _id: itineraryId }, { $set: { visibility: 'public' } },
     );
     const publicDetail = await request(http)
-      .get(`/itineraries/public/${itineraryId.toString()}`).expect(200);
+      .get(`/api/itineraries/public/${itineraryId.toString()}`).expect(200);
     expect(publicDetail.body.days[0].budgets[0].bookingId).toBeUndefined();
     const clone = await request(http)
-      .post(`/itineraries/${itineraryId.toString()}/clone`)
+      .post(`/api/itineraries/${itineraryId.toString()}/clone`)
       .set('Cookie', cookies).set('x-csrf-token', csrf(cookies)).send({}).expect(201);
     expect(clone.body.days[0].budgets).toEqual([]);
   });
 
   it('saves only active hotels and public itineraries for the signed-in user', async () => {
     const http = app.getHttpServer();
-    await request(http).post('/auth/register').send({
+    await request(http).post('/api/auth/register').send({
       name: 'Favourite User', email: 'favourite@example.test', password: 'Integration123',
       acceptedTerms: true, acceptedPrivacyPolicy: true,
     }).expect(201);
-    const login = await request(http).post('/auth/login').send({
+    const login = await request(http).post('/api/auth/login').send({
       email: 'favourite@example.test', password: 'Integration123',
     }).expect(200);
     const cookies = login.headers['set-cookie'] as unknown as string[];
@@ -289,23 +291,23 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       { _id: itineraryId, title: 'Public trip', visibility: 'public', isHidden: false },
       { _id: privateId, title: 'Private trip', visibility: 'private', isHidden: false },
     ]);
-    await request(http).post(`/favourites/hotel/${hotelId.toString()}`)
+    await request(http).post(`/api/favourites/hotel/${hotelId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf).expect(201);
-    await request(http).post(`/favourites/itinerary/${itineraryId.toString()}`)
+    await request(http).post(`/api/favourites/itinerary/${itineraryId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf).expect(201);
-    await request(http).post(`/favourites/itinerary/${privateId.toString()}`)
+    await request(http).post(`/api/favourites/itinerary/${privateId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf).expect(404);
-    const listed = await request(http).get('/favourites').set('Cookie', cookies).expect(200);
+    const listed = await request(http).get('/api/favourites').set('Cookie', cookies).expect(200);
     expect(listed.body.total).toBe(2);
-    await request(http).delete(`/favourites/hotel/${hotelId.toString()}`)
+    await request(http).delete(`/api/favourites/hotel/${hotelId.toString()}`)
       .set('Cookie', cookies).set('x-csrf-token', csrf).expect(200);
-    const after = await request(http).get('/favourites').set('Cookie', cookies).expect(200);
+    const after = await request(http).get('/api/favourites').set('Cookie', cookies).expect(200);
     expect(after.body.total).toBe(1);
   });
 
   it('reports provider bookings and net revenue from verified payments and refunds', async () => {
     const http = app.getHttpServer();
-    await request(http).post('/auth/register').send({
+    await request(http).post('/api/auth/register').send({
       name: 'Analytics Admin', email: 'analytics-admin@example.test', password: 'Integration123',
       acceptedTerms: true, acceptedPrivacyPolicy: true,
     }).expect(201);
@@ -313,7 +315,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
     await connection.db!.collection('users').updateOne(
       { email: 'analytics-admin@example.test' }, { $set: { role: 'admin' } },
     );
-    const login = await request(http).post('/auth/login').send({
+    const login = await request(http).post('/api/auth/login').send({
       email: 'analytics-admin@example.test', password: 'Integration123',
     }).expect(200);
     const cookies = login.headers['set-cookie'] as unknown as string[];
@@ -329,12 +331,12 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       paymentId, status: 'Refunded', amount: 2000,
     });
     const date = new Date().toISOString().slice(0, 10);
-    const report = await request(http).get(`/admin/analytics?from=${date}&to=${date}`)
+    const report = await request(http).get(`/api/admin/analytics?from=${date}&to=${date}`)
       .set('Cookie', cookies).expect(200);
     expect(report.body.providers).toEqual(expect.arrayContaining([
       expect.objectContaining({ type: 'hotel', providerId: hotelId.toString(), bookings: 1, grossRevenue: 120, refunds: 20, netRevenue: 100 }),
     ]));
-    await request(http).get(`/admin/analytics?from=${date}&to=${date}`).expect(401);
+    await request(http).get(`/api/admin/analytics?from=${date}&to=${date}`).expect(401);
   });
 
   it('shows only unoccupied numbered flight seats', async () => {
@@ -349,18 +351,18 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       passengers: [{ seatNumber: 2 }],
     });
     const seats = await request(app.getHttpServer())
-      .get(`/bookings/flights/${flightId.toString()}/seats?cabin=Economy`).expect(200);
+      .get(`/api/bookings/flights/${flightId.toString()}/seats?cabin=Economy`).expect(200);
     expect(seats.body.numberedSeats).toEqual([1, 3]);
     expect(seats.body.availableSeats).toBe(2);
   });
 
   it('quotes a same-route flight change without changing the confirmed booking', async () => {
     const http = app.getHttpServer();
-    await request(http).post('/auth/register').send({
+    await request(http).post('/api/auth/register').send({
       name: 'Change User', email: 'change@example.test', password: 'Integration123',
       acceptedTerms: true, acceptedPrivacyPolicy: true,
     }).expect(201);
-    const login = await request(http).post('/auth/login').send({
+    const login = await request(http).post('/api/auth/login').send({
       email: 'change@example.test', password: 'Integration123',
     }).expect(200);
     const cookies = login.headers['set-cookie'] as unknown as string[];
@@ -389,7 +391,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
         dateOfBirth: '1990-01-01', passengerType: 'adult', fare: 100, baggageFee: 0 }],
     });
     const quote = await request(http)
-      .get(`/bookings/${bookingId.toString()}/change-preview?flightId=${newFlightId.toString()}`)
+      .get(`/api/bookings/${bookingId.toString()}/change-preview?flightId=${newFlightId.toString()}`)
       .set('Cookie', cookies).expect(200);
     expect(quote.body.amountDue).toBe(50);
     const unchanged = await connection.db!.collection('bookings').findOne({ _id: bookingId });
@@ -401,7 +403,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
     const csrfCookie = cookies.find((value) => value.startsWith('csrf_token='));
     if (!csrfCookie) throw new Error('Missing CSRF cookie');
     const csrf = decodeURIComponent(csrfCookie.split(';')[0].split('=')[1]);
-    const requested = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+    const requested = await request(http).post(`/api/bookings/${bookingId.toString()}/change`)
       .set('Cookie', cookies).set('x-csrf-token', csrf)
       .send({ flightId: newFlightId.toString() }).expect(201);
     expect(requested.body.amountDue).toBe(50);
@@ -427,14 +429,14 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       expect.objectContaining({ type: 'flight', providerId: flightBase.airlineId.toString(), grossRevenue: 50, bookings: 0 }),
     ]));
     const cancellationPreview = await request(http)
-      .get(`/bookings/${bookingId.toString()}/cancellation-preview`)
+      .get(`/api/bookings/${bookingId.toString()}/cancellation-preview`)
       .set('Cookie', cookies).expect(200);
     expect(cancellationPreview.body.amount).toBe(150);
     let refundNumber = 0;
     const refundCalls = jest.spyOn(app.get(StripeService), 'createRefund')
       .mockImplementation(async () => ({ id: `re_change_cancel_${++refundNumber}`, status: 'succeeded' } as never));
     try {
-      await request(http).patch(`/bookings/${bookingId.toString()}/cancel`)
+      await request(http).patch(`/api/bookings/${bookingId.toString()}/cancel`)
         .set('Cookie', cookies).set('x-csrf-token', csrf).expect(200);
       expect(refundCalls).toHaveBeenCalledTimes(2);
     } finally { refundCalls.mockRestore(); }
@@ -442,11 +444,11 @@ describe('combined backend against an isolated MongoDB replica set', () => {
 
   it('changes a lower-fare flight and records the Stripe difference refund', async () => {
     const http = app.getHttpServer();
-    await request(http).post('/auth/register').send({
+    await request(http).post('/api/auth/register').send({
       name: 'Refund Change', email: 'refund-change@example.test', password: 'Integration123',
       acceptedTerms: true, acceptedPrivacyPolicy: true,
     }).expect(201);
-    const login = await request(http).post('/auth/login').send({
+    const login = await request(http).post('/api/auth/login').send({
       email: 'refund-change@example.test', password: 'Integration123',
     }).expect(200);
     const cookies = login.headers['set-cookie'] as unknown as string[];
@@ -480,7 +482,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
     const stripe = app.get(StripeService);
     const refundCall = jest.spyOn(stripe, 'createRefund').mockResolvedValue({ id: 're_fare_change_test', status: 'succeeded' } as never);
     try {
-      const changed = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+      const changed = await request(http).post(`/api/bookings/${bookingId.toString()}/change`)
         .set('Cookie', cookies).set('x-csrf-token', csrf)
         .send({ flightId: newFlightId.toString() }).expect(201);
       expect(changed.body.amountDue).toBe(0);
@@ -496,11 +498,11 @@ describe('combined backend against an isolated MongoDB replica set', () => {
 
   it('releases an expired replacement hold and refunds a late fare payment', async () => {
     const http = app.getHttpServer();
-    await request(http).post('/auth/register').send({
+    await request(http).post('/api/auth/register').send({
       name: 'Late Change', email: 'late-change@example.test', password: 'Integration123',
       acceptedTerms: true, acceptedPrivacyPolicy: true,
     }).expect(201);
-    const login = await request(http).post('/auth/login').send({
+    const login = await request(http).post('/api/auth/login').send({
       email: 'late-change@example.test', password: 'Integration123',
     }).expect(200);
     const cookies = login.headers['set-cookie'] as unknown as string[];
@@ -532,7 +534,7 @@ describe('combined backend against an isolated MongoDB replica set', () => {
       bookingType: 'flight', bookingId, userId: owner._id, status: 'Succeeded',
       amount: 10000, currency: 'usd', stripePaymentIntentId: 'pi_original_late_change',
     });
-    const requested = await request(http).post(`/bookings/${bookingId.toString()}/change`)
+    const requested = await request(http).post(`/api/bookings/${bookingId.toString()}/change`)
       .set('Cookie', cookies).set('x-csrf-token', csrf)
       .send({ flightId: newFlightId.toString() }).expect(201);
     const changeId = new Types.ObjectId(requested.body.changeId as string);
