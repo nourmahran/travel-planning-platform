@@ -67,6 +67,36 @@ export class User {
 
   @Prop({ type: Types.ObjectId, default: null })
   providerId: Types.ObjectId | null;
+
+  /**
+   * ACC-02 (optional bonus). Self-registered accounts start unverified;
+   * seeded and admin-created accounts default to verified.
+   */
+  @Prop({ default: true })
+  emailVerified: boolean;
+
+  @Prop({ type: String, default: null, select: false })
+  emailVerificationTokenHash: string | null;
+
+  @Prop({ type: Date, default: null, select: false })
+  emailVerificationExpiresAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  emailVerificationSentAt: Date | null;
+
+  /** ACC-07 (optional bonus): single-use, hashed reset token. */
+  @Prop({ type: String, default: null, select: false })
+  passwordResetTokenHash: string | null;
+
+  @Prop({ type: Date, default: null, select: false })
+  passwordResetExpiresAt: Date | null;
+
+  @Prop({ type: Date, default: null })
+  passwordResetRequestedAt: Date | null;
+
+  /** GEN-01-B (optional bonus): email copies of in-app notifications. */
+  @Prop({ default: true })
+  emailNotifications: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

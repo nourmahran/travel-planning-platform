@@ -22,6 +22,14 @@ Every REST route is served under `/api` (for example `POST /api/auth/register`),
 
 The older unlisted /api/bookings flight routes still work for existing clients but are hidden from Swagger.
 
+## Email bonuses (ACC-02, ACC-07, GEN-01-B)
+
+- `GET /api/auth/verify-email?token=...` and `POST /api/auth/resend-verification`: registration emails a single-use link valid for 24 hours. Set `REQUIRE_EMAIL_VERIFICATION=true` to block login until the address is verified.
+- `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`: a single-use code valid for 30 minutes. Both requests answer the same way for unknown emails, and a reset signs the account out everywhere.
+- Email notifications: a job runs every 30 seconds and emails each new in-app notification to its recipient. Users can turn this off with `PATCH /api/users/me {"emailNotifications": false}`.
+
+Mail goes only to the SMTP server set in `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`). Without `SMTP_HOST` nothing is sent; outside production the email text is printed in the server log so the flows can be tried from Swagger. For a demo, use a test inbox such as Ethereal or Mailtrap.
+
 The API applies DTO validation globally and returns normalized HTTP errors. Scheduled jobs release expired seat holds and mark flights Departed. Use a replica-set MongoDB deployment for transactions.
 
 ## Checks

@@ -602,3 +602,25 @@ airline baggage/cancellation policy PUT routes, the admin reset-password
 route and PATCH /api/posts/:id/itinerary. Completed .env.example. Reviewed
 the diff and verified with the build, lint and full test suite.
 ================================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: ACC-02, ACC-07, GEN-01-B (optional bonuses)
+
+Prompt:
+Do everything that is remaining in the backend, including the bonuses.
+
+How the output was used:
+Added email verification (GET /api/auth/verify-email, POST
+/api/auth/resend-verification), forgotten-password recovery (POST
+/api/auth/forgot-password and /api/auth/reset-password) and email copies
+of in-app notifications through a 30-second outbox job with a per-user
+opt-out. Tokens are hashed, single-use and expire; the endpoints answer
+the same way for unknown emails. Mail goes only to the SMTP server set in
+.env; without it the text is printed in the server log outside
+production. Login is gated on verification only when
+REQUIRE_EMAIL_VERIFICATION=true. Verified with an in-memory MongoDB test
+of every flow and the full test suite.
+================================================

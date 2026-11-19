@@ -13,6 +13,7 @@ import { RefreshSession } from './schemas/refresh-session.schema';
 import { AuthCookieService } from './cookies/auth-cookie.service';
 import { AccountStatus } from './constants/account-status';
 import { UserRole } from './constants/roles';
+import { MailService } from '../mail/mail.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -21,6 +22,8 @@ describe('AuthService', () => {
     findOne: jest.fn(),
     findById: jest.fn(),
     create: jest.fn(),
+    updateOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
   };
 
   const mockRefreshSessionModel = {
@@ -66,6 +69,13 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
         { provide: AuthCookieService, useValue: mockCookieService },
+        {
+          provide: MailService,
+          useValue: {
+            send: jest.fn().mockResolvedValue('logged'),
+            publicUrl: () => 'http://localhost:3000',
+          },
+        },
       ],
     }).compile();
 

@@ -39,7 +39,8 @@ export class UsersService {
     if (
       dto.name === undefined &&
       dto.phone === undefined &&
-      dto.preferredCurrency === undefined
+      dto.preferredCurrency === undefined &&
+      dto.emailNotifications === undefined
     ) {
       throw new BadRequestException('No profile fields provided');
     }
@@ -57,6 +58,9 @@ export class UsersService {
     }
     if (dto.preferredCurrency !== undefined) {
       user.preferredCurrency = dto.preferredCurrency.trim().toUpperCase();
+    }
+    if (dto.emailNotifications !== undefined) {
+      user.emailNotifications = dto.emailNotifications;
     }
 
     await user.save();
