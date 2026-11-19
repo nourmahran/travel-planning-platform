@@ -62,7 +62,8 @@ class Client {
     if (cookie) h.cookie = cookie;
     if (this.csrf && method !== 'GET' && !('x-csrf-token' in h)) h['x-csrf-token'] = this.csrf;
     let payload = rawBody;
-    if (body !== undefined && rawBody === undefined) { h['content-type'] = 'application/json'; payload = JSON.stringify(body); }
+    if (body instanceof FormData) payload = body;
+    else if (body !== undefined && rawBody === undefined) { h['content-type'] = 'application/json'; payload = JSON.stringify(body); }
     const res = await fetch(BASE + url, { method, headers: h, body: payload });
     for (const c of res.headers.getSetCookie?.() ?? []) {
       const [pair, ...attrs] = c.split(';'); const i = pair.indexOf('=');
@@ -84,6 +85,15 @@ class Client {
   del(u, b) { return this.raw('DELETE', u, b); }
 }
 const guest = new Client('guest');
+
+// Minimal valid images for upload tests.
+const PNG_1PX = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+const GIF_1PX = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+function imageForm(field, files) {
+  const fd = new FormData();
+  for (const f of files) fd.append(field, new Blob([f.data], { type: f.type }), f.name);
+  return fd;
+}
 
 function idOf(body) {
   if (!body || typeof body !== 'object') return undefined;
@@ -173,7 +183,7 @@ async function boot() {
 }
 
 module.exports = {
-  ROOT, BASE, ADMIN, Client, guest, check, expectStatus, idOf, items, sleep, isoDate, daysFromNow,
+  ROOT, BASE, ADMIN, Client, guest, PNG_1PX, GIF_1PX, imageForm, check, expectStatus, idOf, items, sleep, isoDate, daysFromNow,
   register, login, newUser, payWithTestCard, deliver, deliverPaymentSucceeded, signedEvent, stripe, ObjectId,
   setSection: (s) => { section = s; console.log(`\n=== ${s} ===`); }, results, boot,
 };
