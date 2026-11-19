@@ -1,0 +1,116 @@
+AI PROMPT LOG - Member 3 (Hotels module)
+=========================================
+
+Project: Travel Planning and Booking Platform - Milestone 1
+Owner: Member 3 (hotel and room management, availability, reservations, reviews)
+Date: 2026-11-15
+Tool: OpenCode
+Model: DeepSeek V4.1 Flash (opencode/deepseek-v4.1-flash-free)
+
+The project brief requires a log of AI-assisted development. Entries below record the prompts,
+the resulting work, and how the output was verified. No secrets, passwords, tokens or production
+credentials were shared with the AI tool.
+
+--------------------------------------------------------------------------
+Entry 1 - 2026-11-15 - Scope extraction
+--------------------------------------------------------------------------
+Prompt summary:
+  "Read the attached project PDF and identify everything assigned to Member 3 (HTL-01..HTL-06,
+  HTL-08..HTL-12, HTL-15..HTL-18, HTL-20..HTL-24, optional HTL-26). List the data model,
+  endpoints, rules and integration points, and identify which parts depend on other members."
+
+AI output used:
+  - Requirement/endpoint map for hotels, rooms, availability, bookings and reviews.
+  - Identification of external dependencies: Member 1 (auth/users/admin), Member 2 (AppModule,
+    shared config/error format, indexes), Member 4 (Stripe payments/refunds), Member 6
+    (notifications, media, moderation).
+  - Decision to deliver a standalone NestJS sandbox whose src/hotels folder can be copied into the
+    team backend.
+
+Human review:
+  - Compared the extracted requirement list with the PDF endpoint tables (sections 8.5 and 8.6).
+  - Confirmed the assigned scope and the optional HTL-26 reply bonus.
+
+--------------------------------------------------------------------------
+Entry 2 - 2026-11-15 - Module design
+--------------------------------------------------------------------------
+Prompt summary:
+  "Design a NestJS + MongoDB module for the assigned hotel requirements. It must prevent double
+  booking under concurrency, support all-or-nothing multi-room holds that expire after 10 minutes,
+  keep prices and cancellation policies stable per reservation, and avoid hard dependencies on
+  other members' code."
+
+AI output used:
+  - Mongoose schemas: hotels, rooms, room_availability_blocks, room_night_locks, hotel_bookings,
+    reviews.
+  - Concurrency design: one lock document per room per night with a unique {roomId, date} index;
+    booking + locks written in one MongoDB transaction; moderator blocks also take BLOCK locks so
+    block-vs-booking races are safe.
+  - Money as integer minor units; stay dates as YYYY-MM-DD calendar strings; check-out exclusive.
+  - Booking state machine HELD -> CONFIRMED/CANCELLED/EXPIRED and CONFIRMED -> COMPLETED.
+  - Policy snapshot (check-in/out times + cancellation tiers) stored on the reservation.
+  - Ports for payments and notifications, with logging defaults for standalone use.
+
+Human review:
+  - Checked that the unique index covers exactly the sold inventory and that expired locks are
+    removed before re-selling a night.
+  - Confirmed the design matches the team's shared rules (pagination 10, server-side validation,
+    empty lists, Swagger).
+
+--------------------------------------------------------------------------
+Entry 3 - 2026-11-15 - Implementation
+--------------------------------------------------------------------------
+Prompt summary:
+  "Implement the module: schemas, DTOs, services, controllers, Swagger annotations, validation,
+  role/ownership checks, cancellation refunds, background jobs, seed data and documentation."
+
+AI output used (all files under member3-hotels/):
+  - src/hotels/schemas/*, src/hotels/dto/*, src/hotels/mappers/*, src/hotels/domain/*
+  - src/hotels/availability.service.ts, hotels.service.ts, rooms.service.ts,
+    hotel-bookings.service.ts, reviews.service.ts
+  - src/hotels/*.controller.ts and hotels.module.ts
+  - src/shared/auth/*, pagination, date/money/object-id/transaction utilities
+  - src/hotels/integrations/* (PaymentGatewayPort, NotificationPort)
+  - src/sandbox/* (runnable AppModule, Swagger bootstrap, exception filter, demo seed)
+  - README.md, INTEGRATION.md, .env.example
+
+Human review and corrections:
+  - Fixed relative imports for files placed directly under src/hotels.
+  - Replaced Mongoose 8 incompatibility: `@Prop({ type: Types.ObjectId })` produced Mixed paths;
+    switched schema ObjectId fields to `SchemaTypes.ObjectId`.
+  - Removed an accidental dependency on ConfigService so the module reads environment variables
+    lazily and needs no ConfigModule.
+  - Fixed `.exists(filter, { session })` calls (Mongoose only accepts a filter) by using query
+    `.session()`.
+  - Removed a duplicate index definition on room_night_locks.bookingId.
+  - Added cleanup of moderator BLOCK locks when a room is deleted.
+
+--------------------------------------------------------------------------
+Entry 4 - 2026-11-15 - Verification
+--------------------------------------------------------------------------
+Prompt summary:
+  "Type-check, build and test the module. Add an end-to-end test that exercises the real lifecycle
+  against MongoDB, including a concurrent double-booking race."
+
+AI output used:
+  - Unit tests for date math, cancellation tiers, occupancy/pricing and room selection.
+  - test/hotels.e2e-spec.ts: starts mongodb-memory-server as a replica set, boots the Nest module,
+    and covers hotel/room creation and permissions, search, atomic multi-room holds, a two-guest
+    race for one room, policy acceptance, confirmation, tiered cancellation and refund update,
+    blocked dates, hold expiry and lock release, automatic completion of past stays, review
+    eligibility, duplicate-review rejection, edit/reply/moderation and rating recalculation.
+
+Verification performed:
+  - npx tsc --noEmit: passed.
+  - npx nest build: passed.
+  - npx jest --runInBand: 3 suites, 17 tests passed.
+  - npx jest --runInBand --config test/jest-e2e.json: 1 suite, 13 tests passed.
+  - Swagger routes reviewed against the PDF endpoint tables; extra endpoints are documented in
+    README.md and INTEGRATION.md.
+
+--------------------------------------------------------------------------
+Statement
+--------------------------------------------------------------------------
+The AI output was reviewed, corrected and tested. The student remains responsible for the
+submitted code and should be able to explain the concurrency guard, the booking state machine,
+the refund calculation, and every integration point described in INTEGRATION.md.

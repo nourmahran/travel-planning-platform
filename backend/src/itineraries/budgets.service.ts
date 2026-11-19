@@ -1,0 +1,122 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+
+import {
+  BUDGET_CATEGORIES,
+  type BudgetCategory,
+} from './itinerary.constants';
+import { ItinerariesService } from './itineraries.service';
+import { CreateBudgetDto } from './dto/create-budget.dto';
+import { UpdateBudgetDto } from './dto/update-budget.dto';
+import {
+  budgetList,
+  requireBudget,
+  requireDay,
+  type BudgetSubdocument,
+} from './subdocuments';
+import { toBudgetResponse } from './itinerary-detail';
+import { resolveEntryCurrency } from './entry-currency';
+import type { BudgetEntry } from './schemas/itinerary.schema';
+import { isMoney } from './validation';
+import { ReferenceDataService } from '../reference-data/reference-data.service';
+
+@Injectable()
+export class BudgetsService {
+  constructor(
+    private readonly itineraries: ItinerariesService,
+    private readonly referenceData: ReferenceDataService,
+  ) {}
+
+  async create(
+    ownerId: string,
+    itineraryId: string,
+    dayId: string,
+    dto: CreateBudgetDto,
+  ) {
+    const itinerary = await this.itineraries.findOne(ownerId, itineraryId);
+    const day = requireDay(itinerary, dayId);
+
+    this.assertFields(dto);
+
+    const currency = await resolveEntryCurrency(
+      dto.currency,
+      itinerary.currency,
+      this.referenceData,
+    );
+
+    day.budgets.push({
+      category: dto.category,
+      amount: dto.amount,
+      currency,
+      note: dto.note?.trim(),
+    } as BudgetEntry);
+
+    await itinerary.save();
+
+    const budgets = budgetList(day) as unknown as BudgetSubdocument[];
+
+    return toBudgetResponse(budgets[budgets.length - 1], itinerary.currency);
+  }
+
+  async update(ownerId: string, budgetId: string, dto: UpdateBudgetDto) {
+    const itinerary = await this.itineraries.findOneByBudget(ownerId, budgetId);
+    const { budget } = requireBudget(itinerary, budgetId);
+    if (budget.bookingId) throw new BadRequestException('Linked booking costs cannot be edited');
+
+    this.assertFields(dto);
+
+    if (dto.category !== undefined) {
+      budget.category = dto.category;
+    }
+
+    if (dto.amount !== undefined) {
+      budget.amount = dto.amount;
+    }
+
+    if (dto.currency !== undefined) {
+      budget.currency = await resolveEntryCurrency(
+        dto.currency,
+        itinerary.currency,
+        this.referenceData,
+      );
+    }
+
+    if (dto.note !== undefined) {
+      budget.note = dto.note.trim();
+    }
+
+    await itinerary.save();
+
+    return toBudgetResponse(budget, itinerary.currency);
+  }
+
+  async remove(ownerId: string, budgetId: string) {
+    const itinerary = await this.itineraries.findOneByBudget(ownerId, budgetId);
+    const { day, index } = requireBudget(itinerary, budgetId);
+    if ((day.budgets[index] as BudgetEntry).bookingId) {
+      throw new BadRequestException('Unlink the booking to remove its cost');
+    }
+
+    (day.budgets as unknown as BudgetSubdocument[]).splice(index, 1);
+
+    await itinerary.save();
+
+    return { removedBudgetId: budgetId };
+  }
+
+  private assertFields(dto: { category?: string; amount?: number }): void {
+    if (
+      dto.category !== undefined &&
+      !BUDGET_CATEGORIES.includes(dto.category as BudgetCategory)
+    ) {
+      throw new BadRequestException(
+        `category must be one of ${BUDGET_CATEGORIES.join(', ')}`,
+      );
+    }
+
+    if (dto.amount !== undefined && !isMoney(dto.amount)) {
+      throw new BadRequestException(
+        'amount must be a non-negative amount with at most 2 decimals',
+      );
+    }
+  }
+}

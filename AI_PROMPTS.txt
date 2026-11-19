@@ -1,0 +1,626 @@
+AI PROMPT LOG
+Software Project I — Winter 2026
+
+========================================
+Date: 2026-10-28
+Student: Nour Mahran
+Tool: ChatGPT
+Related Requirement: Project Setup / Git Workflow
+
+Prompt:
+Guide me through setting up the university
+Travel Planning and Booking Platform project
+according to the official PDF requirements.
+
+How the output was used:
+Used the guidance to install development tools,
+create the project folder structure, initialize
+Git, and prepare project documentation.
+========================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: GEN-11, PAY-04
+Prompt:
+Following my CLAUDE-part1-independent.md plan, create the shared booking
+basics: booking status enum, allowed-transition guard, platform currency
+and money helpers (amounts in cents), with unit tests for all 25 status
+combinations.
+How the output was used:
+Kept backend/src/common/booking/* and the tests. Reviewed the transition
+table against GEN-11 and the rounding rules (toMinorUnits, percentOf).
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02
+Prompt:
+Build the Stripe wrapper (test keys only), the Payment/Refund/
+ProcessedEvent schemas, policy retrieval and acceptance with a stored
+snapshot, and the payment create/retry/get/cancel-on-expiry service,
+talking to bookings only through a BookingGateway interface.
+How the output was used:
+Kept the payments and policies modules. Checked the order of the payment
+checks (404/409/410/400/400/409/400), that the amount comes only from the
+booking, that the client secret is never stored, and the idempotency keys.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-03
+Prompt:
+Implement the Stripe webhook (raw body signature check, duplicate event
+protection, succeeded/failed/canceled/refund handlers, late-payment
+refund) and the refund calculator and refunds service (tier rule, policy
+snapshot, 100% for provider cancellations, Stripe failure recorded
+without throwing).
+How the output was used:
+Kept webhook.service/controller, refund-calculator and refunds.service.
+Reviewed the tier examples (30/7/0 days), the days-remaining rule for
+flights vs hotels, and the redelivery/late-payment logic against the tests.
+================================================
+
+================================================
+Date: 2026-11-08
+Student: Fares Yasser
+Tool: Claude Code
+Related Requirement: PAY-01, PAY-02, PAY-03
+Prompt:
+Add the dev-only Stripe test confirm endpoint for Swagger demos, Swagger
+docs with requirement IDs, unit and HTTP wiring tests with fake gateways,
+the integration guide for Members 2 and 3, a decisions log and a study
+guide for the discussion.
+How the output was used:
+Kept the dev endpoint (disabled in production), the tests (164 passing)
+and docs/api/payments-integration.md, payments-decisions.md and
+payments-explained.md. Sent the integration guide to the team.
+================================================
+
+================================================
+Date: 2026-11-11
+Student: Fares Yasser
+Tool: Claude (Claude.ai)
+Related Requirement: PAY-01, PAY-02, PAY-03, PAY-04, GEN-11
+Prompt:
+Pasted my Member 4 responsibilities, the requirements sheet and the project
+description, and asked for an exact plan of my part, what depends on other
+members, and a CLAUDE.md file with all the work.
+How the output was used:
+Used the plan to check my existing payments branch and to list what I needed
+from Members 1, 2 and 3. Took the dependency list and open decisions (status
+names, who runs expiry, platform currency) to the team.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / GEN-11
+Prompt:
+Allowed Claude to run local git commands (fetch, checkout, merge, rm, add,
+commit, new branch feature/PAY-01-flight-gateway; no push/force/reset) to merge
+my PAY-01 payments branch into feature/member-4 and then Member 2's flight
+bookings branch into a new local branch, showing each command first.
+How the output was used:
+Kept the merges. Conflicts resolved as planned: my common/booking files won,
+the old booking-adapter.interface.ts / booking-state-machine.ts (and its spec)
+were deleted, package.json and app.module.ts kept both members' entries.
+Pushing stayed my own step.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Fares Yasser
+Tool: Claude (Claude.ai) and Claude Code (VS Code)
+Related Requirement: PAY-01, PAY-02, GEN-11
+Prompt:
+Reviewed Member 2's flight booking branch against my payments branch and asked
+for the connection between flight bookings and payments (Task 2 and Task 3).
+How the output was used:
+Used the generated FlightBookingGateway, its unit tests and the updated
+bookings.module.ts. The gateway maps Member 2's booking statuses to the shared
+GEN-11 statuses, opens the transaction their confirm() needs and registers with
+the payments registry. Kept my jest config, removed two lines from
+round-trip.spec.ts so both members' tests run, added the Node 24.9 requirement
+and a payments testing section to the README. Full suite: 269 tests passing.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: ACC-04 / ACC-19 / PAY-01 / GEN-11
+Prompt:
+Follow my CLAUDE.md: bring feature/member-4 up to date (fast-forward, revert the
+commit that deleted AI log entries, merge develop), then apply the prepared
+auth-swap patch so payments use Member 1's global JwtAuthGuard, @CurrentUser()
+and @Public(), and run tsc and the tests.
+How the output was used:
+The merge with develop had no conflicts; I checked app.module, main.ts,
+package.json, seed.ts and flights.service.ts against my reference. The patch
+applied to 16 files; payments.module.ts and auth-user.ts had been changed by a
+teammate, so they were edited by hand keeping the teammate's
+MongoNotificationAdapter and using UserRole.ADMIN for admin checks (the commit
+changed 21 files in total). Removed my temporary PaymentsAuthGuard /
+x-dev-user-id header. All 43 test suites (295 tests) pass. package-lock.json
+changes from npm install were left out of the commit. I reviewed every change
+and pushed it myself.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / PAY-03
+Prompt:
+Follow CLAUDE.md Task 0 and Task F: bring feature/member-4 up to date with
+develop, then add a scheduled job that cancels the Stripe PaymentIntent of open
+payments whose booking is Expired, Cancelled or deleted (PAY-01 "when the hold
+expires the PaymentIntent is cancelled"), and an endpoint
+GET /api/bookings/:type/:id/refund that shows the latest refund status to the
+booking owner or an admin (PAY-03). Register both in PaymentsModule, add unit
+tests, update the integration docs.
+How the output was used:
+Kept the sweeper, controller, service method and 7 tests after checking each
+import against my branch. Kept the teammate's MongoNotificationAdapter in
+payments.module.ts instead of the LoggerNotificationAdapter in the planned diff.
+Reverted a formatting-only change Prettier made to a teammate's line in
+notification.port.ts. Full suite: 44 suites, 302 tests passing.
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Fares Yasser
+Tool: Claude Code (VS Code)
+Related Requirement: PAY-01 / PAY-02 / PAY-03 / PAY-04 / GEN-11
+Prompt:
+Do Task D yourself: start the backend and stripe listen, tell me when to paste
+the webhook signing secret into backend/.env, then run the full payment flow
+with HTTP requests from the terminal, handling the login cookies and the
+x-csrf-token header. Never read or print .env or any keys. Give me a pass/fail
+table at the end.
+How the output was used:
+Used as an end-to-end test of my payments code against the real flight
+bookings module and Stripe test mode. It found that the test airline had no
+cancellation/baggage policies and that no admin user existed in the shared
+database; I seeded the admin myself and allowed one script to log in with the
+admin credentials from .env (in memory only) to PATCH the airline policies.
+All steps passed: policy block (400, intended), PaymentIntent reuse, decline
+then retry, webhook confirmation, duplicate event ignored, invalid signature
+400, other user 404, CSRF 401, hold expiry, 50% tier refund confirmed in
+Stripe, and refund notifications. No code was changed.
+================================================
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-01 to ITN-26 (itinerary planning and budgeting)
+
+Prompt:
+Turn the member-5 implementation plan into working code,
+phase by phase (P0 to P10), following the repository
+conventions and using the installed skills
+(executing-plans, systematic-debugging, contract-first).
+
+How the output was used:
+Built the itineraries module skeleton, the temporary dev
+auth guard, the cities reference route, itinerary CRUD with
+ownership, days with renumbering and reorder, city grouping,
+activities and images, budget entries, transport costs and
+the exchange-rate cache with stale fallback. Each phase was
+tested before the next one started.
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-14, ITN-18
+
+Prompt:
+Design the budget summary response: totals per category, per
+day, per city group and for the whole itinerary, converted
+into a display currency, and explain where rounding belongs.
+
+How the output was used:
+Each source total is converted once and rounded to 2 decimals
+instead of converting entry by entry, so no rounding drift
+appears. Transport costs stay a separate list plus a grand
+total line. Activity costs are counted under the activities
+category so they are not invisible in the budget.
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-20, ITN-21, ITN-22
+
+Prompt:
+Implement the public itinerary search, the public detail and
+the clone, and make sure a private itinerary of another user
+cannot be discovered through any of them.
+
+How the output was used:
+Search matches only public, non-hidden itineraries, with the
+title regex escaped. Public detail returns 404 for private or
+hidden itineraries and shows the itinerary budget in its own
+currency. The clone rebuilds every subdocument with new ids,
+records the original author in clonedFrom and increments the
+source cloneCount.
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-25, ITN-26
+
+Prompt:
+Integrate hotel search and flight search into the itinerary
+without owning either module, and define what happens before
+those modules exist.
+
+How the output was used:
+Defined a HotelSearchPort contract with a placeholder
+provider, so the hotels route answers available=false with a
+reason instead of inventing hotels. The flights route builds
+one leg per change of city, resolves airports per city, and
+reports a missing airport or an empty leg honestly. Both
+routes enforce itinerary ownership.
+========================================
+================================================================================
+Date: 2026-11-14
+Student: roba
+Tool: Cursor
+Related Requirement IDs: ACC-04, ACC-05, ACC-06, ACC-07a, ACC-08, ACC-09, ACC-10, ACC-11, ACC-12, ACC-13, ACC-14, ACC-15, ACC-16, ACC-17, ACC-18, ACC-19
+
+Prompt summary:
+Continue Member 1 backend authentication and administration after installing @nestjs/jwt and cookie-parser. Implement login, HTTP-only cookies, refresh/logout, lockout, guards, profile, admin APIs, and tests without rewriting registration or teammates' modules.
+
+How the output was used:
+Implemented and verified NestJS auth/admin/users modules on feature/ACC-04-login-logout. Kept registration intact. Used JWT access cookies, opaque hashed refresh sessions, CSRF double-submit, role guards, ownership helper, admin seed, and Swagger tags.
+
+Files implemented or changed:
+backend/src/auth/**, backend/src/users/**, backend/src/admin/**, backend/src/main.ts, backend/src/app.module.ts, backend/src/database/seeds/seed.ts, backend/src/airlines/airlines.service.ts, backend/src/flights/flights.service.ts, .env.example, backend/package.json
+
+Tests completed:
+npm run build (pass)
+npm test -- --testPathPatterns="auth|admin|ownership" -> 4 suites, 24 tests passed
+
+Corrections made:
+Fixed mongoose Prop types for enum/nullable User fields; added JWT_SECRET to local .env (not committed); FilterQuery replaced for mongoose 9; forced password-change gate; refresh token rotation; inactive airline filtering for ACC-15.
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-05, ITN-09, ITN-12, ITN-16, ITN-21, ITN-25, ITN-26, GEN-08
+
+Prompt:
+I asked OpenCode to recheck every itinerary requirement in the
+reviewed requirements workbook, row by row, against the code
+instead of the reworded API documentation, and to close the
+gaps without dropping a working feature.
+
+How the output was used:
+I used the output to add day notes with an edit route that takes
+city, notes or both; make transport mode mandatory; enforce
+JPG/PNG and a 5 MB image limit in both the DTO and the service;
+add rooms to the hotel stay query and port; expose the public
+budget and widen the keyword search to country and city; and add
+a chosen-origin one-way/round-trip flight search beside the
+existing inter-city legs. City groups now report their day
+count, not only from/to.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries -> 15 suites, 174 tests passed
+npm test -> 22 of 27 suites pass, 215 of 219 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs and the
+round-trip.spec.ts parse error, unchanged by this work
+npm run lint (exit 0, warnings only)
+========================================
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-14, ITN-16, ITN-18
+
+Prompt:
+Recheck ITN-14 and ITN-16 against the workbook text rather than the
+code. The transport entry is listed as (mode, from-city, to-city,
+amount, currency, day) and budget entries are "in a selected
+currency", but neither carries a currency. Add it and keep every
+total correct.
+
+How the output was used:
+Each budget entry and transport cost now stores the currency it was
+entered in - optional on write, defaulting to the itinerary currency,
+checked against the reference currencies - and both totals convert an
+entry into the itinerary currency before the display conversion, so a
+USD amount on an EGP itinerary adds up correctly. The budget summary
+and the public detail report the entry's own amount and currency
+beside the converted figure, and the clone keeps both.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries -> 16 suites, 181 tests passed
+npm test -> 23 of 28 suites pass, 223 of 227 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs, unchanged by
+this work
+npm run lint (exit 0, warnings only)
+node verify-swagger-pass.cjs (local MongoDB) -> 53/53 checks passed
+========================================
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: ITN-14, ITN-16, ITN-18
+
+Prompt:
+A user whose preferred currency is CAD is silently served the
+itinerary currency, and an explicit ?currency=CAD is rejected,
+even though the platform declares SUPPORTED_CURRENCIES. Treat
+that list as the truth for validation, keep countries.currency
+only for per-country defaults, and make a currency with no rate
+fail loudly instead of quietly falling back.
+
+How the output was used:
+displayCurrencies is now the union of the distinct
+countries.currency values and the codes declared in
+SUPPORTED_CURRENCIES (trimmed, uppercased, 3 letters), so the
+budget summary, the conversion route and entry validation all
+accept one list. With SUPPORTED_CURRENCIES unset the union
+collapses to the previous behaviour, and per-country defaults
+still read countries.currency only. A budget entry or transport
+cost is written without an FX lookup; the read path answers 400
+"rate missing for <code> (<entry type> <id>, ...)" naming what
+needs a rate, rather than returning a quietly wrong total.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries reference-data currency -> 19 suites,
+205 tests passed
+npm test -> 24 of 29 suites pass, 230 of 234 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs,
+unchanged by this work
+npm run lint (exit 0, warnings only)
+node verify-swagger-pass.cjs -> the CAD summary and the CAD
+profile preference both answer 200 once CAD is supported
+========================================
+========================================
+Date: 2026-11-15
+Student: Ahmed Sayed (Member 5) - itinerary and budgeting module
+Tool: OpenCode (DeepSeek V4.1)
+Related Requirement: live verification of every assigned route
+(ITN-01 to ITN-26)
+
+Prompt:
+Run the live Swagger pass against the shared team database
+instead of a local one. Harden the harness before it touches
+anything: one scratch database it cannot be talked out of, a
+read-only mirror of the shared reference data and flights, the
+repo's own seed rather than a copy of it, dates derived from the
+data instead of literals, and a missing fixture or an unreachable
+FX API reported as skipped with a reason rather than counted as a
+failure.
+
+How the output was used:
+The harness writes only to travel_planning_verify, refuses
+travel_planning by name and exits 3 for any other target, and
+asserts the target three times: before the app is imported, after
+boot, and immediately before the drop. The mirror copies
+countries, cities, airports, attractions, airlines and flights
+with _id preserved, and never touches users, bookings or refresh
+sessions. The itinerary is created on today + 3 and the flight
+date is read from the database and applied by PATCH, so the run
+does not go stale. Skips carry their reason, and one finally
+closes the app and drops the scratch database on a green run.
+
+Tests completed:
+npm run build (pass)
+npm test -- itineraries reference-data currency -> 19 suites,
+205 tests passed
+npm test -> 24 of 29 suites pass, 230 of 234 tests pass; the 4
+remaining failures are Member 2's airlines/flights specs,
+unchanged by this work
+npm run lint (exit 0, warnings only)
+node verify-swagger-pass.cjs --seed=repo -> 62 passed, 0 failed,
+5 skipped (67 checks)
+node verify-swagger-pass.cjs --seed=existing --mirror -> 67
+passed, 0 failed, 0 skipped
+========================================
+========================================
+Date: 2026-11-13
+Student: Eyad Elsafty
+Tool: ChatGPT
+Related Requirement: Blog, Community and Shared Services 
+
+Prompt:
+Guide me through Member 6 requirements and help me implement, test, and upload the code to GitHub.
+
+How the output was used:
+Used the generated code and guidance to implement and test Member 6 features and upload the files to GitHub.
+========================================
+
+================================================
+Date: 2026-11-11
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-11, FLT-12, FLT-15, FLT-19 to FLT-25, FLT-29, FLT-02
+
+Prompt:
+Continue implementing my Member 2 NestJS backend tasks directly in the
+project: configure scheduling for the 10-minute seat-hold expiry, then
+work through every Member 2 requirement that does not depend on Member 1
+authentication or Member 4 payments, testing each change.
+
+How the output was used:
+Kept the scheduled jobs that release expired seat holds and mark flights
+Departed, price filtering and sorting in flight search, airport lookup,
+unique booking references, PDF e-tickets and the moderator CSV passenger
+export. Later prompts in the same chat added passenger age-based pricing,
+round trips, baggage rules and the seed command. Checked that build and
+lint passed and the tests ran (81 passing) before pushing to
+feature/member2-backend-setup (commits 03275d4, c12a5c9).
+================================================
+
+================================================
+Date: 2026-11-11
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-05, FLT-06, FLT-25, FLT-26
+
+Prompt:
+Continue what is remaining in Member 2.
+
+How the output was used:
+Kept the protection against reducing a cabin below its booked seats,
+notifications to confirmed passengers when a flight time changes, booking
+history and the cancellation refund preview (commits ee89532, 3f86f62;
+88 tests passing).
+================================================
+
+================================================
+Date: 2026-11-12
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: PAY-01, GEN-11, GEN-12
+
+Prompt:
+Member 4 pushed their booking interfaces; continue Member 2 using them.
+
+How the output was used:
+Kept the flight booking adapter aligned with Member 4's shared payment
+contract, confirmation notifications inside the payment transaction, and
+configurable supported-currency seeding (commits 933460f, 4a915bc). The
+seed was not run against the shared database at that point.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-06, FLT-26, PAY-03
+
+Prompt:
+Do what is required from me now that Member 4 has pushed payments and
+refunds.
+
+How the output was used:
+Kept the owner cancellation flow (seat release plus tier-based refund),
+airline flight cancellation with full refunds for affected bookings,
+in-app notifications and retry of interrupted refund requests, on
+feature/member2-cancellation-integration (commit b191689; 276 tests
+passing).
+================================================
+
+================================================
+Date: 2026-11-14
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: GEN-01 (in-app notifications)
+
+Prompt:
+Member 6 pushed the notification APIs; update my part to use them.
+
+How the output was used:
+Switched flight, cancellation and refund notifications to Member 6's
+notification record format (commit 1858101).
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-23, FLT-25, FLT-26, FLT-29, ACC-19
+
+Prompt:
+Implement my remaining requirements now that Member 1's authentication is
+in develop, then merge my branch into develop.
+
+How the output was used:
+Booking routes now use the logged-in user and airline moderators are
+limited to their own airline (commit dad034b). After reviewing the
+result (295 tests passing) I merged feature/member2-cancellation-integration
+into develop (commit 2ad624c).
+================================================
+
+================================================
+Date: 2026-11-16
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: Backend integration (Members 3, 4, 5, 6)
+
+Prompt:
+Do the remaining backend integration: merge Member 4's payment updates,
+Member 5's itineraries, Member 3's hotel backend and Member 6's community
+module into develop, then run the full suite and fix conflicts. Keep each
+member's own commits under their name.
+
+How the output was used:
+Merged the four feature branches with their authors' commits preserved
+and put the integration fixes in a separate commit (f4919ad). Build
+passed and 538 tests passed in 70 suites. The hotel payment path was only
+tested with a fake Stripe key.
+================================================
+
+================================================
+Date: 2026-11-16
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: BLG-13, ITN-28, BON-01, BON-02, ITN-27, FLT-28, FLT-27
+
+Prompt:
+Implement the remaining project bonuses, sticking to the project
+requirements.
+
+How the output was used:
+Kept blog itinerary attachments, itinerary PDF export, provider
+analytics and favourites (commit fa52cd5), linking confirmed bookings to
+itinerary day budgets and numbered seat selection (commit 8a4ec28), and
+flight changes with Stripe fare payments and refunds (commit 79f9575).
+Email bonuses (ACC-02, ACC-07, GEN-01-B) were not done because no SMTP
+test inbox was set up. 548 tests passed.
+================================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: Section 8 API coverage; FLT-04, FLT-06, FLT-08, FLT-09, FLT-11, FLT-22 to FLT-29, ACC-07a, BLG-13
+
+Prompt:
+Compare the backend routes against the Milestone 1 endpoint table in the
+project description, then serve every route under /api and add the
+endpoint names the description lists.
+
+How the output was used:
+Added a global /api prefix, /api/flight-bookings routes (hold, cancel,
+e-ticket, change-flight, seat), flight cabin and passenger-export routes,
+airline baggage/cancellation policy PUT routes, the admin reset-password
+route and PATCH /api/posts/:id/itinerary. Completed .env.example. Reviewed
+the diff and verified with the build, lint and full test suite.
+================================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: ACC-02, ACC-07, GEN-01-B (optional bonuses)
+
+Prompt:
+Do everything that is remaining in the backend, including the bonuses.
+
+How the output was used:
+Added email verification (GET /api/auth/verify-email, POST
+/api/auth/resend-verification), forgotten-password recovery (POST
+/api/auth/forgot-password and /api/auth/reset-password) and email copies
+of in-app notifications through a 30-second outbox job with a per-user
+opt-out. Tokens are hashed, single-use and expire; the endpoints answer
+the same way for unknown emails. Mail goes only to the SMTP server set in
+.env; without it the text is printed in the server log outside
+production. Login is gated on verification only when
+REQUIRE_EMAIL_VERIFICATION=true. Verified with an in-memory MongoDB test
+of every flow and the full test suite.
+================================================

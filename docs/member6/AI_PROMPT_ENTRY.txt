@@ -1,0 +1,81 @@
+================================================
+Date: 2026-11-13
+Student: Eyad El Safty
+Student ID: 16003613
+Member: 6
+Tool: ChatGPT
+Related Requirements: BLG-01, BLG-02, BLG-03, BLG-04, BLG-05, BLG-06, BLG-07, BLG-08, BLG-09, BLG-10, BLG-12, GEN-01, GEN-07, GEN-08, GEN-09, GEN-10, GEN-02, GEN-03, GEN-04, GEN-05, GEN-13
+
+Prompt (opening request, verbatim):
+This the software project milestone 1. I am Eyad El Safty Id 16003613 and I am member 6. First read project description and AI prompt thoroughly without skipping a point . Do member 6 instructions and requirements like in description and prompt and make sure you don't miss anything and while doing it make sure the code you do is 100 percent Human and 100 percent correct and don't use comments. Make sure code works within respiratory with the other members codes in GitHub Respiratory (nourmahran/travel-planning-platform)
+
+The same request supplied this assignment (formatting normalized):
+Software Project I - Milestone 1
+Project: Travel Planning and Booking Platform
+Deadline: 20 November 2026
+Technologies: NestJS, TypeScript, MongoDB Atlas, Swagger UI
+Member 6 - Blog, Community & Shared Services
+Assigned requirements: BLG-01 through BLG-10, BLG-12, GEN-01, GEN-07, GEN-08, GEN-09, GEN-10.
+
+Responsibilities:
+1. Implement blog post creation and management.
+2. Implement Draft and Published statuses.
+3. Implement viewing and searching published posts.
+4. Implement personal post management.
+5. Implement post editing/deletion with ownership restrictions.
+6. Implement comments (maximum 500 characters).
+7. Implement comment editing and deletion.
+8. Implement likes with duplicate prevention.
+9. Implement tags (maximum five per post).
+10. Implement blog search by title, tags, and author.
+11. Sort search results by interaction score.
+12. Implement author pages with published posts and public itineraries.
+13. Implement blog image upload and removal.
+14. Implement reusable image validation: JPG/PNG, maximum 5 MB.
+15. Enforce image quantity limits for posts, activities, hotels, and airline logos.
+16. Implement content reporting for posts, comments, reviews, and itineraries.
+17. Prevent duplicate reports for the same item by one user.
+18. Implement reporting and content moderation logic.
+19. Support report dismissal, content hiding, and content deletion.
+20. Implement mandatory in-app notifications.
+21. Implement notification listing, unread count, and mark-as-read.
+22. Implement administrator audit logging.
+23. Integrate moderation and audit APIs with Member 1.
+24. Provide notification and media services to other members.
+
+Expected result: Fully functional community APIs and reusable notification, media, reporting, and audit services.
+
+Shared requirements:
+GEN-02: Server-side validation and useful validation errors.
+GEN-03: Require confirmation before destructive actions; backend must still enforce authorization and valid operations.
+GEN-04: Return appropriate empty search/list results.
+GEN-05: Paginate lists with more than 10 records, using page size 10.
+GEN-13: Enforce business rules, validation, authorization, and password security on the backend.
+GEN-14, GEN-15, GEN-16 and GEN-17 primarily concern frontend design and responsiveness for Milestone 2.
+
+Shared rules:
+1. Implement database schemas, DTOs, controllers and services.
+2. Document REST APIs in Swagger.
+3. Test functionality.
+4. Implement authorization.
+5. Use the same shared MongoDB Atlas database.
+6. Push regularly through feature branches.
+7. Keep the AI prompt log updated.
+8. Communicate dependencies on other members.
+9. Mandatory work comes before optional bonuses.
+10. All six modules must work together before the deadline.
+
+Follow-up context:
+The user connected Google Drive to allow reading the authoritative workbook, uploaded travel-planning-platform-main (1).zip, and said "Continue this chat".
+
+How the output was used:
+ChatGPT read the project description, official workbook and supplied repository documents. The archive contained setup documents only. ChatGPT generated the Member 6 NestJS implementation, schemas, DTOs, controllers, services, tests, local demo, OpenAPI specification, setup instructions and integration documentation. It reviewed and corrected the code, ran the TypeScript build, executed 27 HTTP integration tests against a temporary MongoDB replica set, and checked the local demo workflow.
+
+The code is AI-assisted, not represented as entirely human-written. The no-comments preference was followed in the TypeScript source. The student and team must review and understand the implementation before submission. No shared Atlas credentials or other members' backend implementations were available, so final cross-member wiring remains to be checked against develop. No GitHub changes were pushed by ChatGPT.
+================================================
+
+Follow-up request (verbatim):
+why did you do the whole project i just want my part alone so i can add to the resportory
+
+How the follow-up was used:
+Repackaged only Member 6 source, isolated tests, Swagger specification and integration notes. Removed the standalone application bootstrap, demo, dependency manifest and original repository setup files. Updated test paths and provided an isolated test harness. The existing team application files must be kept and amended using ADD_TO_REPOSITORY.md.
