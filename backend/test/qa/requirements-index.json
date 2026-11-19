@@ -1,0 +1,807 @@
+[
+ {
+  "id": "ACC-01",
+  "module": "Accounts & Admin",
+  "actors": "Guest",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest to register by entering name, unique email, password and a mandatory terms-and-privacy consent checkbox"
+ },
+ {
+  "id": "ACC-04",
+  "module": "Accounts & Admin",
+  "actors": "Registered User, Admin, Hotel Moderator, Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user, admin or moderator to log in with email and password and land on their role's home page"
+ },
+ {
+  "id": "ACC-05",
+  "module": "Accounts & Admin",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "After 5 consecutive failed login attempts, the system shall lock the account for 15 minutes and show a lockout message"
+ },
+ {
+  "id": "ACC-06",
+  "module": "Accounts & Admin",
+  "actors": "Any logged-in user",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a logged-in user to log out, which clears the authentication cookies and revokes the refresh token on the server"
+ },
+ {
+  "id": "ACC-07a",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to reset a user's or moderator's password to a temporary password"
+ },
+ {
+  "id": "ACC-08",
+  "module": "Accounts & Admin",
+  "actors": "Any logged-in user",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a logged-in user to change their password by entering the current password and a new one that meets the rules."
+ },
+ {
+  "id": "ACC-09",
+  "module": "Accounts & Admin",
+  "actors": "Any logged-in user",
+  "kind": "Mandatory",
+  "summary": "The system shall allow any logged-in user to edit name, phone number and preferred currency, saving only if all fields pass validation."
+ },
+ {
+  "id": "ACC-10",
+  "module": "Accounts & Admin",
+  "actors": "Guest",
+  "kind": "Mandatory",
+  "summary": "The system shall send a guest who attempts a restricted action (book, review, post) to login and return them to that action afterwards."
+ },
+ {
+  "id": "ACC-11",
+  "module": "Accounts & Admin",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall restrict access to bookings and private itineraries to their owner, except that admins may view all bookings (ACC-17) and moderators ..."
+ },
+ {
+  "id": "ACC-12",
+  "module": "Accounts & Admin",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to deactivate their own account after confirmation"
+ },
+ {
+  "id": "ACC-13",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to create a hotel or airline moderator account (name, email, role) linked to exactly one hotel or airline, with a temp..."
+ },
+ {
+  "id": "ACC-14",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to view a paginated list of all accounts (name, email, role, status, registration date) and to search by name or email..."
+ },
+ {
+  "id": "ACC-15",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to suspend and reactivate a moderator account (a suspended moderator cannot log in) and, separately, to deactivate and..."
+ },
+ {
+  "id": "ACC-16",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to suspend and reactivate registered users (for example, for abusive content)"
+ },
+ {
+  "id": "ACC-17",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to view a read-only list of all flight and hotel bookings (reference, user, provider, dates, amount, status), filterab..."
+ },
+ {
+  "id": "FLT-01",
+  "module": "Flights",
+  "actors": "Admin, Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to create an airline profile and an airline moderator to edit their airline's profile (name, code, logo)."
+ },
+ {
+  "id": "FLT-02",
+  "module": "Flights",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall provide a predefined, read-only list of airports (IATA code, name, city, country, IANA time zone) loaded at setup"
+ },
+ {
+  "id": "FLT-03",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to create a flight with flight number, departure and arrival airports, and departure and arrival date-time..."
+ },
+ {
+  "id": "FLT-04",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to define cabin categories per flight from the fixed set {Economy, Premium Economy, Business, First}, each..."
+ },
+ {
+  "id": "FLT-05",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to edit departure/arrival times, cabin prices and cabin seat counts of their own Scheduled flights"
+ },
+ {
+  "id": "FLT-06",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to cancel a Scheduled flight after confirmation"
+ },
+ {
+  "id": "FLT-08",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to define a price per extra bag (>0) and a maximum number of extra bags per passenger (>=0)"
+ },
+ {
+  "id": "FLT-09",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to define cancellation tiers, each with a unique days-before-departure threshold (integer >=0) and a refun..."
+ },
+ {
+  "id": "FLT-11",
+  "module": "Flights",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to search flights by selecting a departure airport, arrival airport, departure date (local date at t..."
+ },
+ {
+  "id": "FLT-12",
+  "module": "Flights",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall support: (a) round-trip search returning outbound and return options, booked as one booking with two segments, one payment and one re..."
+ },
+ {
+  "id": "FLT-15",
+  "module": "Flights",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to filter flight results by an inclusive minimum and maximum price while preserving the other search..."
+ },
+ {
+  "id": "FLT-17",
+  "module": "Flights",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall provide a flight details page showing airline, flight number, airports, local departure and arrival times, duration, each cabin categ..."
+ },
+ {
+  "id": "FLT-19",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user, during booking, to enter each passenger's full name, date of birth and passport/ID number and optionally add..."
+ },
+ {
+  "id": "FLT-21",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall show a booking summary (flight, passengers, baggage, total) before payment."
+ },
+ {
+  "id": "FLT-22",
+  "module": "Flights",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "When a user proceeds to payment, the system shall atomically reserve the requested seats only if enough remain, creating a booking in Pending Payment ..."
+ },
+ {
+  "id": "FLT-23",
+  "module": "Flights",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "After successful payment, the system shall set the flight booking to Confirmed, convert the held seats into booked seats, generate a unique booking re..."
+ },
+ {
+  "id": "FLT-25",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to view their flight bookings grouped as Upcoming, Past and Cancelled, showing reference, flight, date, passe..."
+ },
+ {
+  "id": "FLT-26",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to cancel their own Confirmed flight booking any time before departure, after viewing the refund amount compu..."
+ },
+ {
+  "id": "FLT-29",
+  "module": "Flights",
+  "actors": "Airline Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an airline moderator to view, per flight, its bookings (reference, passenger names, cabin, seats and status: Confirmed or Cance..."
+ },
+ {
+  "id": "HTL-01",
+  "module": "Hotels",
+  "actors": "Admin, Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to create a hotel profile and a hotel moderator to edit their hotel's profile (name, address, city and country, descri..."
+ },
+ {
+  "id": "HTL-02",
+  "module": "Hotels",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall provide a hotel details page showing the hotel profile, photos, amenities, check-in and check-out times, cancellation policy, average..."
+ },
+ {
+  "id": "HTL-03",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to add a room (an individually bookable unit) with a room number/name unique within the hotel, type, number o..."
+ },
+ {
+  "id": "HTL-04",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to define non-overlapping date ranges when a room is bookable."
+ },
+ {
+  "id": "HTL-05",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to edit a room's beds, occupancy, price and availability"
+ },
+ {
+  "id": "HTL-06",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to block date ranges for a room and to deactivate or delete a room"
+ },
+ {
+  "id": "HTL-08",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to view each room's status for a chosen date range as Available, Booked (with reservation reference) or Block..."
+ },
+ {
+  "id": "HTL-09",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to set the hotel's standard check-in and check-out times, shown on the hotel page and the booking summary."
+ },
+ {
+  "id": "HTL-10",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to define cancellation tiers, each with a unique days-before-check-in threshold (integer >=0) and a refund pe..."
+ },
+ {
+  "id": "HTL-11",
+  "module": "Hotels",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to search hotels by city or country, check-in date, check-out date, number of guests and number of r..."
+ },
+ {
+  "id": "HTL-12",
+  "module": "Hotels",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to filter hotel results by an inclusive minimum and maximum price per night (price of the cheapest q..."
+ },
+ {
+  "id": "HTL-15",
+  "module": "Hotels",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to view all of a hotel's rooms that are free for the searched dates, showing type, beds, maximum occ..."
+ },
+ {
+  "id": "HTL-16",
+  "module": "Hotels",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to book one or more available rooms in the same hotel for the same dates in one reservation, assigning adults..."
+ },
+ {
+  "id": "HTL-17",
+  "module": "Hotels",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "After successful payment, the system shall set the reservation (all its rooms) to Confirmed, generate a unique booking reference, show a confirmation ..."
+ },
+ {
+  "id": "HTL-18",
+  "module": "Hotels",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "When a user proceeds to payment, the system shall hold all selected rooms together for 10 minutes as one Pending Payment reservation"
+ },
+ {
+  "id": "HTL-20",
+  "module": "Hotels",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to view their hotel reservations grouped as Upcoming, Past and Cancelled, showing reference, hotel, rooms, da..."
+ },
+ {
+  "id": "HTL-21",
+  "module": "Hotels",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to cancel their own Confirmed reservation as a whole before the check-in date, after viewing the refund compu..."
+ },
+ {
+  "id": "HTL-22",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a hotel moderator to view reservations for their hotel (guest, dates, status)."
+ },
+ {
+  "id": "HTL-23",
+  "module": "Hotels",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "A Confirmed reservation becomes Completed once its check-out date has passed"
+ },
+ {
+  "id": "HTL-24",
+  "module": "Hotels",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to view a hotel's average rating, number of ratings and reviews (newest first, paginated)."
+ },
+ {
+  "id": "PAY-01",
+  "module": "Payments & Policies",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to pay for a Pending Payment flight booking or hotel reservation within its hold period using Stripe in test ..."
+ },
+ {
+  "id": "PAY-02",
+  "module": "Payments & Policies",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "Before payment, the system shall show the provider's policies (airline: cancellation and baggage policies; hotel: cancellation policy and check-in/che..."
+ },
+ {
+  "id": "PAY-03",
+  "module": "Payments & Policies",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "For every cancellation with a positive refund amount (user cancellations per the provider's tiers; provider-initiated cancellations at 100%), the syst..."
+ },
+ {
+  "id": "ITN-01",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to create an itinerary with a required title (max 100 characters), one or more countries selected from a pred..."
+ },
+ {
+  "id": "ITN-03",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to list their itineraries (title, countries, start date, days and visibility), most recently updated first, and open any..."
+ },
+ {
+  "id": "ITN-05",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to add days to their itinerary and edit each day's city (selected from the predefined city list shared with hotels and a..."
+ },
+ {
+  "id": "ITN-07",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to delete a day after confirmation"
+ },
+ {
+  "id": "ITN-08",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to move a day to a new position, with days renumbered and dates and groupings recalculated."
+ },
+ {
+  "id": "ITN-09",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall require each itinerary day to have a city and shall display consecutive days in the same city as a group, with the group's day count ..."
+ },
+ {
+  "id": "ITN-10",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to add, edit and delete activities for an itinerary day, including name, description, optional time and optional cost."
+ },
+ {
+  "id": "ITN-12",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to attach images to and remove images from an activity under the shared media-upload rule (GEN-08)."
+ },
+ {
+  "id": "ITN-14",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to add, edit and delete non-negative budget entries for each day across food, accommodation, in-city transport and activ..."
+ },
+ {
+  "id": "ITN-16",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to add, edit and delete a transport cost entry (mode, from-city, to-city, amount, currency, day)."
+ },
+ {
+  "id": "ITN-18",
+  "module": "Itineraries",
+  "actors": "Registered User, System",
+  "kind": "Mandatory",
+  "summary": "The system shall convert all itinerary budget amounts to the user's preferred currency (from the supported currency list) using exchange rates fetched..."
+ },
+ {
+  "id": "ITN-20",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to set an itinerary's visibility to Public or Private"
+ },
+ {
+  "id": "ITN-21",
+  "module": "Itineraries",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to search public itineraries by keyword matching title, country or city; filter results by duration ..."
+ },
+ {
+  "id": "ITN-25",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to pick a city group in their itinerary and view hotels available for that group's dates (check-in = date of the group's..."
+ },
+ {
+  "id": "ITN-26",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to search one-way or round-trip flights from a chosen origin airport to any airport in the city of the itinerary's first..."
+ },
+ {
+  "id": "BLG-01",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to create a post with a required title and body, optional tags and images, and save it as Draft or Publish"
+ },
+ {
+  "id": "BLG-02",
+  "module": "Blog",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to browse a paginated list of published posts filterable by tag, and open a post page showing title,..."
+ },
+ {
+  "id": "BLG-03",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to list their own posts, including drafts, with title, status, date, like count and comment count."
+ },
+ {
+  "id": "BLG-04",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an author to edit and delete their own posts."
+ },
+ {
+  "id": "BLG-05",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to comment on a published post (non-empty, max 500 characters), shown in chronological order."
+ },
+ {
+  "id": "BLG-06",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to like a post once and remove the like, showing the like count."
+ },
+ {
+  "id": "BLG-07",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a user to edit and delete their own comments."
+ },
+ {
+  "id": "BLG-08",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an author to add up to 5 tags (max 30 characters each) to a post and edit them later"
+ },
+ {
+  "id": "BLG-09",
+  "module": "Blog",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a guest or registered user to search published posts by keyword in title, tags or author name, showing title, author, date and ..."
+ },
+ {
+  "id": "BLG-10",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an author to attach images to a post under the shared media-upload rule (GEN-08) and remove them."
+ },
+ {
+  "id": "BLG-12",
+  "module": "Blog",
+  "actors": "Guest, Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall provide a public author page showing the author's name, join date, published posts and public itineraries."
+ },
+ {
+  "id": "GEN-01",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall show in-app notifications (unread count, notification list, mark as read) for booking confirmation, cancellation and refund, flight s..."
+ },
+ {
+  "id": "GEN-02",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall show field-level validation messages on all forms."
+ },
+ {
+  "id": "GEN-03",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall ask for confirmation before destructive actions (delete, cancel)."
+ },
+ {
+  "id": "GEN-04",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall show friendly empty states when a list or search has no results."
+ },
+ {
+  "id": "GEN-05",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall paginate every list longer than 10 rows (page size 10)."
+ },
+ {
+  "id": "GEN-06",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall show flight times in each airport's local time zone."
+ },
+ {
+  "id": "GEN-07",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall keep an audit log of admin actions (suspensions, deletions)."
+ },
+ {
+  "id": "GEN-08",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall accept image uploads in JPG or PNG format, up to 5 MB each, with up to 5 images per post, activity or hotel and 1 logo per airline, s..."
+ },
+ {
+  "id": "GEN-09",
+  "module": "Cross-cutting",
+  "actors": "Registered User",
+  "kind": "Mandatory",
+  "summary": "The system shall allow a registered user to report a post, comment, review or itinerary with a reason, at most once per item."
+ },
+ {
+  "id": "GEN-10",
+  "module": "Cross-cutting",
+  "actors": "Admin",
+  "kind": "Mandatory",
+  "summary": "The system shall allow an admin to view the list of open reports and resolve each by dismissing it, hiding the content or deleting it, and to hide or ..."
+ },
+ {
+  "id": "GEN-11",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "Flight bookings and hotel reservations shall follow the lifecycle Pending Payment -> Confirmed -> Completed, with Pending Payment -> Expired (hold tim..."
+ },
+ {
+  "id": "FLT-30",
+  "module": "Flights",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "Flights shall have a status of Scheduled, Cancelled or Departed"
+ },
+ {
+  "id": "ACC-18",
+  "module": "Accounts & Admin",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "Admin accounts shall be created by seeding at setup; there is no admin self-registration."
+ },
+ {
+  "id": "PAY-04",
+  "module": "Payments & Policies",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "All flight and hotel prices, payments and refunds shall use a single platform currency."
+ },
+ {
+  "id": "GEN-12",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall seed reference data at setup: airports, cities, countries and supported currencies."
+ },
+ {
+  "id": "GEN-13",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "All validation, business rules and authorisation shall be enforced by the backend regardless of frontend checks, and passwords shall be stored only as..."
+ },
+ {
+  "id": "ACC-19",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall not store authentication tokens or user credentials in localStorage, sessionStorage or any other JavaScript-accessible storage"
+ },
+ {
+  "id": "GEN-14",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall provide a clear and organized information architecture, with logically grouped content, balanced spacing, correctly structured menus,..."
+ },
+ {
+  "id": "GEN-15",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall provide an intuitive, easy-to-learn interface with clearly visible actions, understandable labels, and efficient workflows that minim..."
+ },
+ {
+  "id": "GEN-16",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall provide clear feedback for user actions, including loading, success, and error states"
+ },
+ {
+  "id": "GEN-17",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Mandatory",
+  "summary": "The system shall maintain a consistent color palette, typography, spacing, alignment, and component styling across all pages"
+ },
+ {
+  "id": "ACC-02",
+  "module": "Accounts & Admin",
+  "actors": "System",
+  "kind": "Bonus",
+  "summary": "The system shall send a verification link by email after registration and block booking until the email is verified."
+ },
+ {
+  "id": "ACC-07",
+  "module": "Accounts & Admin",
+  "actors": "Registered User (not logged in)",
+  "kind": "Bonus",
+  "summary": "The system shall allow a user who forgot their password to request a reset link by email; the link expires after 30 minutes, is single-use, is invalid..."
+ },
+ {
+  "id": "GEN-01-B",
+  "module": "Cross-cutting",
+  "actors": "System",
+  "kind": "Bonus",
+  "summary": "The system shall also send the GEN-01 notifications (plus moderator invitations) by email via SMTP, using a test inbox in development."
+ },
+ {
+  "id": "FLT-27",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow a registered user to change a Confirmed flight booking's date or flight (same route and cabin), paying any fare difference via ..."
+ },
+ {
+  "id": "FLT-28",
+  "module": "Flights",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow seat selection."
+ },
+ {
+  "id": "HTL-26",
+  "module": "Hotels",
+  "actors": "Hotel Moderator",
+  "kind": "Bonus",
+  "summary": "The system shall allow a hotel moderator to reply to a review."
+ },
+ {
+  "id": "ITN-27",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow booked flights and hotels to be linked to itinerary days, feeding the budget."
+ },
+ {
+  "id": "ITN-28",
+  "module": "Itineraries",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow a user to export or print an itinerary as PDF."
+ },
+ {
+  "id": "BLG-13",
+  "module": "Blog",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow an author to attach an itinerary to a post."
+ },
+ {
+  "id": "BON-01",
+  "module": "Accounts & Admin",
+  "actors": "Admin",
+  "kind": "Bonus",
+  "summary": "The system shall provide an admin analytics dashboard showing bookings and revenue per provider over a selected period."
+ },
+ {
+  "id": "BON-02",
+  "module": "Cross-cutting",
+  "actors": "Registered User",
+  "kind": "Bonus",
+  "summary": "The system shall allow a registered user to save hotels and public itineraries to a favourites list and view it."
+ }
+]

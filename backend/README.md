@@ -24,11 +24,23 @@ The older unlisted /api/bookings flight routes still work for existing clients b
 
 ## Email bonuses (ACC-02, ACC-07, GEN-01-B)
 
-- `GET /api/auth/verify-email?token=...` and `POST /api/auth/resend-verification`: registration emails a single-use link valid for 24 hours. Set `REQUIRE_EMAIL_VERIFICATION=true` to block login until the address is verified.
+- `GET /api/auth/verify-email?token=...` and `POST /api/auth/resend-verification`: registration emails a single-use link valid for 24 hours. Self-registered users cannot create flight or hotel bookings until the address is verified (seeded and admin-created accounts count as verified).
 - `POST /api/auth/forgot-password` and `POST /api/auth/reset-password`: a single-use code valid for 30 minutes. Both requests answer the same way for unknown emails, and a reset signs the account out everywhere.
 - Email notifications: a job runs every 30 seconds and emails each new in-app notification to its recipient. Users can turn this off with `PATCH /api/users/me {"emailNotifications": false}`.
 
 Mail goes only to the SMTP server set in `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM`). Without `SMTP_HOST` nothing is sent; outside production the email text is printed in the server log so the flows can be tried from Swagger. For a demo, use a test inbox such as Ethereal or Mailtrap.
+
+## Full API verification (test/qa)
+
+`test/qa/run.cjs` starts the built backend against a private in-memory MongoDB replica set (seeded with the reference data), then exercises every module over HTTP like Swagger UI: valid and invalid requests, authentication, roles, ownership, duplicates, concurrency and Stripe test-mode payments (real PaymentIntents and refunds; webhooks are signed with a harness-only secret). The shared Atlas database is never touched. It needs a Stripe test key in `.env`.
+
+```bash
+npm run build
+node test/qa/run.cjs
+node test/qa/make-reports.cjs
+```
+
+Results go to `test/qa/results.json`; the reports are written to `docs/qa/`.
 
 The API applies DTO validation globally and returns normalized HTTP errors. Scheduled jobs release expired seat holds and mark flights Departed. Use a replica-set MongoDB deployment for transactions.
 

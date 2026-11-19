@@ -22,6 +22,8 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { AdminService } from './admin.service';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { AuthService } from '../auth/auth.service';
 import { AdminResetPasswordDto } from '../auth/dto/admin-reset-password.dto';
 import { CreateModeratorDto } from './dto/create-moderator.dto';
@@ -46,11 +48,17 @@ export class AdminController {
   })
   @ApiOkResponse({ description: 'Temporary password issued.' })
   @ApiForbiddenResponse({ description: 'Admin role required.' })
-  resetPassword(
+  async resetPassword(
     @Param('id', ParseObjectIdPipe) id: string,
     @Body() dto: AdminResetPasswordDto,
+    @CurrentUser() admin: AuthenticatedUser,
   ) {
-    return this.authService.adminResetPassword(id, dto.temporaryPassword);
+    const result = await this.authService.adminResetPassword(
+      id,
+      dto.temporaryPassword,
+    );
+    await this.adminService.audit(admin.id, 'account.password_reset', 'account', id);
+    return result;
   }
 
   @Post('moderators')
@@ -61,8 +69,16 @@ export class AdminController {
   })
   @ApiCreatedResponse({ description: 'Moderator created.' })
   @ApiForbiddenResponse({ description: 'Admin role required.' })
-  createModerator(@Body() dto: CreateModeratorDto) {
-    return this.adminService.createModerator(dto);
+  async createModerator(
+    @Body() dto: CreateModeratorDto,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    const result = await this.adminService.createModerator(dto);
+    await this.adminService.audit(admin.id, 'moderator.create', 'account', result.user.id, {
+      providerType: dto.providerType,
+      providerId: dto.providerId,
+    });
+    return result;
   }
 
   @Get('accounts')
@@ -83,8 +99,13 @@ export class AdminController {
   })
   @ApiOkResponse({ description: 'Account suspended.' })
   @ApiNotFoundResponse({ description: 'Account not found.' })
-  suspendAccount(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.adminService.suspendAccount(id);
+  async suspendAccount(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    const result = await this.adminService.suspendAccount(id);
+    await this.adminService.audit(admin.id, 'account.suspend', 'account', id);
+    return result;
   }
 
   @Patch('accounts/:id/reactivate')
@@ -92,8 +113,13 @@ export class AdminController {
     summary: 'Reactivate a suspended user or moderator account',
   })
   @ApiOkResponse({ description: 'Account reactivated.' })
-  reactivateAccount(@Param('id', ParseObjectIdPipe) id: string) {
-    return this.adminService.reactivateAccount(id);
+  async reactivateAccount(
+    @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
+  ) {
+    const result = await this.adminService.reactivateAccount(id);
+    await this.adminService.audit(admin.id, 'account.reactivate', 'account', id);
+    return result;
   }
 
   @Patch('providers/:type/:id/deactivate')
@@ -104,12 +130,15 @@ export class AdminController {
   })
   @ApiOkResponse({ description: 'Provider deactivated.' })
   @ApiBadRequestResponse({ description: 'Invalid provider type or id.' })
-  deactivateProvider(
+  async deactivateProvider(
     @Param('type') type: string,
     @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
   ) {
     const providerType = this.parseProviderType(type);
-    return this.adminService.setProviderActive(providerType, id, false);
+    const result = await this.adminService.setProviderActive(providerType, id, false);
+    await this.adminService.audit(admin.id, 'provider.deactivate', providerType, id);
+    return result;
   }
 
   @Patch('providers/:type/:id/reactivate')
@@ -117,12 +146,15 @@ export class AdminController {
     summary: 'Reactivate an airline or hotel provider',
   })
   @ApiOkResponse({ description: 'Provider reactivated.' })
-  reactivateProvider(
+  async reactivateProvider(
     @Param('type') type: string,
     @Param('id', ParseObjectIdPipe) id: string,
+    @CurrentUser() admin: AuthenticatedUser,
   ) {
     const providerType = this.parseProviderType(type);
-    return this.adminService.setProviderActive(providerType, id, true);
+    const result = await this.adminService.setProviderActive(providerType, id, true);
+    await this.adminService.audit(admin.id, 'provider.reactivate', providerType, id);
+    return result;
   }
 
   @Get('bookings')

@@ -29,6 +29,7 @@ import { UserRole } from '../auth/constants/roles';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user';
 import { FlightCancellationService } from './flight-cancellation.service';
 import { Public } from '../auth/decorators/public.decorator';
+import { RequireVerifiedEmail } from '../auth/decorators/require-verified-email.decorator';
 import { CabinClass } from '../flights/schemas/flight.schema';
 import { FlightChangeService, type ChangeLeg } from './flight-change.service';
 import { FlightChangeExecutionService } from './flight-change-execution.service';
@@ -53,6 +54,7 @@ export class BookingsController {
     summary: 'Create a flight booking with a temporary seat hold',
   })
   @Roles(UserRole.USER)
+  @RequireVerifiedEmail()
   @ApiBody({ type: CreateBookingRequestDto })
   @ApiResponse({
     status: 201,

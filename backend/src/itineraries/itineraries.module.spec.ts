@@ -84,8 +84,8 @@ const ROUTES: [method: string, path: string][] = [
   ['post', '/api/itineraries/{itineraryId}/days/{dayId}/activities'],
   ['patch', '/api/activities/{activityId}'],
   ['delete', '/api/activities/{activityId}'],
-  ['post', '/api/activities/{activityId}/images'],
-  ['delete', '/api/activities/{activityId}/images/{imageId}'],
+  // Activity images are uploaded through the community media route
+  // (POST/DELETE /api/activities/{id}/images), not part of this module's document.
   ['post', '/api/itineraries/{itineraryId}/days/{dayId}/budgets'],
   ['patch', '/api/budgets/{budgetId}'],
   ['delete', '/api/budgets/{budgetId}'],

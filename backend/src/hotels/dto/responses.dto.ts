@@ -263,6 +263,12 @@ export class AvailabilityDayDto {
 
   @ApiProperty({ example: 12000 })
   pricePerNightCents: number;
+
+  @ApiPropertyOptional({
+    example: 'HTL-7K2M9Q',
+    description: 'HTL-08: reservation occupying the night (hotel moderators and admins only)',
+  })
+  reservationReference?: string;
 }
 
 export class RoomCalendarDto {
@@ -546,8 +552,8 @@ export class ReviewResponseDto {
   @ApiPropertyOptional()
   title?: string;
 
-  @ApiProperty()
-  comment: string;
+  @ApiPropertyOptional({ nullable: true, description: 'Optional review text (HTL-23)' })
+  comment: string | null;
 
   @ApiProperty()
   isHidden: boolean;

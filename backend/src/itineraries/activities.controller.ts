@@ -6,7 +6,12 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { ApiCookieAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiCookieAuth,
+  ApiExcludeEndpoint,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 
 import { CurrentUserId } from '../common/auth/current-user-id.decorator';
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
@@ -62,6 +67,9 @@ export class ActivitiesController {
     return this.activities.remove(ownerId, activityId);
   }
 
+  // Shadowed: the multipart upload route POST/DELETE /api/activities/:id/images
+  // (community module) answers these paths and mirrors images into the activity.
+  @ApiExcludeEndpoint()
   @Post('activities/:activityId/images')
   @ApiOperation({
     summary: 'Attach an image to an activity',
@@ -76,6 +84,7 @@ export class ActivitiesController {
     return this.activities.addImage(ownerId, activityId, dto);
   }
 
+  @ApiExcludeEndpoint()
   @Delete('activities/:activityId/images/:imageId')
   @ApiOperation({
     summary: 'Remove an activity image',

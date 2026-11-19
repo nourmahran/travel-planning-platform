@@ -21,6 +21,7 @@ import { FlightChangeExecutionService } from './flight-change-execution.service'
 import { ParseObjectIdPipe } from '../common/pipes/parse-object-id.pipe';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
+import { RequireVerifiedEmail } from '../auth/decorators/require-verified-email.decorator';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../auth/constants/roles';
 import type { AuthenticatedUser } from '../auth/types/authenticated-user';
@@ -44,6 +45,7 @@ export class FlightBookingsController {
   @Post('hold')
   @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.USER)
+  @RequireVerifiedEmail()
   @ApiOperation({
     summary: 'FLT-22 Hold seats for the selected flight(s) and passengers',
     description:
@@ -62,6 +64,7 @@ export class FlightBookingsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.USER)
+  @RequireVerifiedEmail()
   @ApiOperation({
     summary: 'FLT-19, FLT-21 Create a flight booking with passengers and baggage',
     description:

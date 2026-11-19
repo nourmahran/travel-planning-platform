@@ -567,9 +567,13 @@ export class FlightsService {
       if (
         capacityUpdates.length !== 1 ||
         dto.cabins?.length !== 1 ||
-        Object.keys(dto).some((key) => key !== 'cabins') ||
-        Object.keys(capacityUpdates[0]).some(
-          (key) => key !== 'cabinClass' && key !== 'totalSeats',
+        // Count only fields actually sent (DTO instances carry undefined keys).
+        Object.entries(dto).some(
+          ([key, value]) => value !== undefined && key !== 'cabins',
+        ) ||
+        Object.entries(capacityUpdates[0]).some(
+          ([key, value]) =>
+            value !== undefined && key !== 'cabinClass' && key !== 'totalSeats',
         )
       ) {
         throw new BadRequestException(
@@ -687,8 +691,13 @@ export class FlightsService {
     if (
       hasAllocatedSeats &&
       requestedTimeChange &&
-      Object.keys(dto).some(
-        (key) => key !== 'departureLocalTime' && key !== 'arrivalLocalTime',
+      // Only fields actually sent count: the validated DTO also carries every
+      // declared property as undefined.
+      Object.entries(dto).some(
+        ([key, value]) =>
+          value !== undefined &&
+          key !== 'departureLocalTime' &&
+          key !== 'arrivalLocalTime',
       )
     ) {
       throw new BadRequestException(

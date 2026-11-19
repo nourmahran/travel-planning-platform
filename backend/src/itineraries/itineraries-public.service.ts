@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
 import type { Model } from 'mongoose';
@@ -150,6 +150,14 @@ export class ItinerariesPublicService {
 
     if (query.authorId) {
       filter.ownerId = new Types.ObjectId(query.authorId);
+    }
+
+    if (
+      query.minDays !== undefined &&
+      query.maxDays !== undefined &&
+      query.minDays > query.maxDays
+    ) {
+      throw new BadRequestException('minDays cannot be greater than maxDays');
     }
 
     const dayCount = { $size: { $ifNull: ['$days', []] } };
