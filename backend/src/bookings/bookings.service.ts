@@ -17,6 +17,7 @@ import {
   FlightStatus,
 } from '../flights/schemas/flight.schema';
 import { CreateBookingDto } from './dto/create-booking.dto';
+import type { SeatLeg } from './dto/select-seat.dto';
 import { FLIGHT_HOLD_DURATION_MS } from './booking.constants';
 import {
   Airline,
@@ -1102,6 +1103,93 @@ export class BookingsService {
           p.passportNumber,
         ]),
       ).slice(1);
+    }
+  }
+
+  /**
+   * FLT-28: choose or change one passenger's numbered seat on an active booking.
+   * The flight document is written inside the transaction so two concurrent
+   * seat changes on the same flight conflict and retry instead of both winning.
+   */
+  async selectSeat(
+    id: string,
+    userId: string,
+    passengerIndex: number,
+    seatNumber: number,
+    leg: SeatLeg = 'outbound',
+  ) {
+    const session = await this.bookingModel.db.startSession();
+    try {
+      let result: Booking | null = null;
+      await session.withTransaction(async () => {
+        const booking = await this.bookingModel
+          .findOne({ _id: id, userId })
+          .session(session)
+          .exec();
+        if (!booking) throw new NotFoundException('Booking not found');
+        if (
+          ![
+            BookingStatus.PENDING,
+            BookingStatus.PENDING_PAYMENT,
+            BookingStatus.CONFIRMED,
+          ].includes(booking.status)
+        ) {
+          throw new BadRequestException(
+            'Seats can only be chosen on active bookings',
+          );
+        }
+        const passenger = booking.passengers[passengerIndex];
+        if (!passenger) throw new BadRequestException('Passenger not found');
+        if (passenger.passengerType === 'infant') {
+          throw new BadRequestException('Infants do not occupy a seat');
+        }
+        const flightId =
+          leg === 'return' ? booking.returnFlightId : booking.flightId;
+        if (!flightId) {
+          throw new BadRequestException('This booking has no return flight');
+        }
+        const current =
+          leg === 'return' ? passenger.returnSeatNumber : passenger.seatNumber;
+        if (current === seatNumber) {
+          result = booking;
+          return;
+        }
+        const flight = await this.flightModel
+          .findOneAndUpdate(
+            {
+              _id: flightId,
+              status: FlightStatus.SCHEDULED,
+              departureTimeUtc: { $gt: new Date() },
+            },
+            { $currentDate: { updatedAt: true } },
+            { new: true, session },
+          )
+          .exec();
+        if (!flight) {
+          throw new BadRequestException(
+            'Seats can only be chosen before a scheduled flight departs',
+          );
+        }
+        const cabin = flight.cabins.find(
+          (item) => item.cabinClass === booking.cabinClass,
+        );
+        if (!cabin || seatNumber > cabin.totalSeats) {
+          throw new BadRequestException('Invalid seat number for this cabin');
+        }
+        await this.assertSeatsFree(
+          flightId,
+          booking.cabinClass,
+          [seatNumber],
+          session,
+        );
+        if (leg === 'return') passenger.returnSeatNumber = seatNumber;
+        else passenger.seatNumber = seatNumber;
+        booking.markModified('passengers');
+        result = await booking.save({ session });
+      });
+      return result;
+    } finally {
+      await session.endSession();
     }
   }
 

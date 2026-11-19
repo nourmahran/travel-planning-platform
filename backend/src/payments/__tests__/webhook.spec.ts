@@ -28,6 +28,7 @@ import {
   makeModels,
   testConfig,
 } from './test-helpers';
+import { applyApiPrefix } from '../../common/http/api-prefix';
 
 const oid = () => new Types.ObjectId().toString();
 let eventSeq = 0;
@@ -355,6 +356,7 @@ describe('PAY-01 Stripe webhook', () => {
         providers: [{ provide: WebhookService, useValue: webhookService }],
       }).compile();
       app = moduleRef.createNestApplication({ rawBody: true });
+      applyApiPrefix(app);
       await app.init();
     });
 

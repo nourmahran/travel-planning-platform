@@ -21,7 +21,6 @@ import {
   CreatePaymentResponseDto,
   PaymentResponseDto,
 } from './dto/responses.dto';
-import { API_PREFIX } from './payments.config';
 import { PaymentsService } from './payments.service';
 import { ApiErrors, BAD_PARAMS, NOT_WIRED, UNAUTHORIZED } from './swagger';
 
@@ -42,7 +41,7 @@ const PAYABLE_ERRORS: Array<[number, string]> = [
 
 @ApiTags('Payments')
 @ApiCookieAuth('access_token')
-@Controller(`${API_PREFIX}/payments`)
+@Controller('payments')
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 

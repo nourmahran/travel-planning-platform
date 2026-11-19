@@ -9,13 +9,12 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { AuthUser } from './auth/auth-user';
 import { IdParamDto } from './dto/create-payment.dto';
 import { RefundResponseDto } from './dto/responses.dto';
-import { API_PREFIX } from './payments.config';
 import { RefundsService } from './refunds.service';
 import { ApiErrors, BAD_PARAMS, UNAUTHORIZED } from './swagger';
 
 @ApiTags('Refunds')
 @ApiCookieAuth('access_token')
-@Controller(`${API_PREFIX}/refunds`)
+@Controller('refunds')
 export class RefundsController {
   constructor(private readonly refunds: RefundsService) {}
 

@@ -1,7 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { RouterModule } from '@nestjs/core';
 import { getConnectionToken } from '@nestjs/mongoose';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { Test } from '@nestjs/testing';
@@ -14,6 +13,7 @@ import { TeamIdentity } from '../community/team-identity';
 import { BookingType } from '../common/booking';
 import { HotelsModule } from '../hotels/hotels.module';
 import { BookingGatewayRegistry } from '../payments/gateway/booking-gateway.registry';
+import { applyApiPrefix } from '../common/http/api-prefix';
 
 process.env.JWT_SECRET ??= 'test-module-graph';
 process.env.STRIPE_SECRET_KEY ??= 'sk_test_module_graph';
@@ -67,10 +67,10 @@ describe('shared backend module wiring', () => {
             useClass: TeamIdentity,
           },
         }),
-        RouterModule.register([{ path: 'api', module: CommunityModule }]),
       ],
     }).compile();
     app = moduleRef.createNestApplication();
+    applyApiPrefix(app);
     await app.init();
   });
 

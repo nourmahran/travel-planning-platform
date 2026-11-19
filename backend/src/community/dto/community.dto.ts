@@ -235,3 +235,15 @@ export class AuditQueryDto extends PageDto {
   @MaxLength(100)
   action?: string;
 }
+
+/** BLG-13 (Optional): body for PATCH /api/posts/:id/itinerary. */
+export class AttachItineraryDto {
+  @ApiProperty({
+    nullable: true,
+    format: 'mongo-id',
+    description: 'Your public itinerary to attach, or null to detach it',
+  })
+  @ValidateIf((_object, value) => value !== null)
+  @IsMongoId()
+  itineraryId!: string | null;
+}

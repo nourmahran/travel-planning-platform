@@ -442,3 +442,163 @@ Guide me through Member 6 requirements and help me implement, test, and upload t
 How the output was used:
 Used the generated code and guidance to implement and test Member 6 features and upload the files to GitHub.
 ========================================
+
+================================================
+Date: 2026-11-11
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-11, FLT-12, FLT-15, FLT-19 to FLT-25, FLT-29, FLT-02
+
+Prompt:
+Continue implementing my Member 2 NestJS backend tasks directly in the
+project: configure scheduling for the 10-minute seat-hold expiry, then
+work through every Member 2 requirement that does not depend on Member 1
+authentication or Member 4 payments, testing each change.
+
+How the output was used:
+Kept the scheduled jobs that release expired seat holds and mark flights
+Departed, price filtering and sorting in flight search, airport lookup,
+unique booking references, PDF e-tickets and the moderator CSV passenger
+export. Later prompts in the same chat added passenger age-based pricing,
+round trips, baggage rules and the seed command. Checked that build and
+lint passed and the tests ran (81 passing) before pushing to
+feature/member2-backend-setup (commits 03275d4, c12a5c9).
+================================================
+
+================================================
+Date: 2026-11-11
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-05, FLT-06, FLT-25, FLT-26
+
+Prompt:
+Continue what is remaining in Member 2.
+
+How the output was used:
+Kept the protection against reducing a cabin below its booked seats,
+notifications to confirmed passengers when a flight time changes, booking
+history and the cancellation refund preview (commits ee89532, 3f86f62;
+88 tests passing).
+================================================
+
+================================================
+Date: 2026-11-12
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: PAY-01, GEN-11, GEN-12
+
+Prompt:
+Member 4 pushed their booking interfaces; continue Member 2 using them.
+
+How the output was used:
+Kept the flight booking adapter aligned with Member 4's shared payment
+contract, confirmation notifications inside the payment transaction, and
+configurable supported-currency seeding (commits 933460f, 4a915bc). The
+seed was not run against the shared database at that point.
+================================================
+
+================================================
+Date: 2026-11-13
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-06, FLT-26, PAY-03
+
+Prompt:
+Do what is required from me now that Member 4 has pushed payments and
+refunds.
+
+How the output was used:
+Kept the owner cancellation flow (seat release plus tier-based refund),
+airline flight cancellation with full refunds for affected bookings,
+in-app notifications and retry of interrupted refund requests, on
+feature/member2-cancellation-integration (commit b191689; 276 tests
+passing).
+================================================
+
+================================================
+Date: 2026-11-14
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: GEN-01 (in-app notifications)
+
+Prompt:
+Member 6 pushed the notification APIs; update my part to use them.
+
+How the output was used:
+Switched flight, cancellation and refund notifications to Member 6's
+notification record format (commit 1858101).
+================================================
+
+================================================
+Date: 2026-11-15
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: FLT-23, FLT-25, FLT-26, FLT-29, ACC-19
+
+Prompt:
+Implement my remaining requirements now that Member 1's authentication is
+in develop, then merge my branch into develop.
+
+How the output was used:
+Booking routes now use the logged-in user and airline moderators are
+limited to their own airline (commit dad034b). After reviewing the
+result (295 tests passing) I merged feature/member2-cancellation-integration
+into develop (commit 2ad624c).
+================================================
+
+================================================
+Date: 2026-11-16
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: Backend integration (Members 3, 4, 5, 6)
+
+Prompt:
+Do the remaining backend integration: merge Member 4's payment updates,
+Member 5's itineraries, Member 3's hotel backend and Member 6's community
+module into develop, then run the full suite and fix conflicts. Keep each
+member's own commits under their name.
+
+How the output was used:
+Merged the four feature branches with their authors' commits preserved
+and put the integration fixes in a separate commit (f4919ad). Build
+passed and 538 tests passed in 70 suites. The hotel payment path was only
+tested with a fake Stripe key.
+================================================
+
+================================================
+Date: 2026-11-16
+Student: Nour Mahran
+Tool: ChatGPT (Codex)
+Related Requirement: BLG-13, ITN-28, BON-01, BON-02, ITN-27, FLT-28, FLT-27
+
+Prompt:
+Implement the remaining project bonuses, sticking to the project
+requirements.
+
+How the output was used:
+Kept blog itinerary attachments, itinerary PDF export, provider
+analytics and favourites (commit fa52cd5), linking confirmed bookings to
+itinerary day budgets and numbered seat selection (commit 8a4ec28), and
+flight changes with Stripe fare payments and refunds (commit 79f9575).
+Email bonuses (ACC-02, ACC-07, GEN-01-B) were not done because no SMTP
+test inbox was set up. 548 tests passed.
+================================================
+
+================================================
+Date: 2026-11-19
+Student: Nour Mahran
+Tool: Claude Code
+Related Requirement: Section 8 API coverage; FLT-04, FLT-06, FLT-08, FLT-09, FLT-11, FLT-22 to FLT-29, ACC-07a, BLG-13
+
+Prompt:
+Compare the backend routes against the Milestone 1 endpoint table in the
+project description, then serve every route under /api and add the
+endpoint names the description lists.
+
+How the output was used:
+Added a global /api prefix, /api/flight-bookings routes (hold, cancel,
+e-ticket, change-flight, seat), flight cabin and passenger-export routes,
+airline baggage/cancellation policy PUT routes, the admin reset-password
+route and PATCH /api/posts/:id/itinerary. Completed .env.example. Reviewed
+the diff and verified with the build, lint and full test suite.
+================================================

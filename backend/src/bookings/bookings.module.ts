@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BookingsController } from './bookings.controller';
+import { FlightBookingsController } from './flight-bookings.controller';
 import { BookingsService } from './bookings.service';
 import { Booking, BookingSchema } from './schemas/booking.schema';
 import { Flight, FlightSchema } from '../flights/schemas/flight.schema';
@@ -30,7 +31,7 @@ import { Refund, RefundSchema } from '../payments/schemas/refund.schema';
     // PaymentsModule does not import BookingsModule, so there is no cycle.
     PaymentsModule,
   ],
-  controllers: [BookingsController],
+  controllers: [BookingsController, FlightBookingsController],
   providers: [
     BookingsService,
     FlightBookingGateway,

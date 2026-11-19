@@ -1,4 +1,4 @@
-import { ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional, OmitType } from '@nestjs/swagger';
 import {
   IsArray,
   IsEnum,
@@ -44,6 +44,11 @@ export class UpdateCabinDto {
   @Min(0)
   extraBaggagePricePerKg?: number;
 }
+
+/** Body for PATCH /flights/:id/cabins/:cabinId; the cabin class comes from the URL. */
+export class PatchCabinDto extends OmitType(UpdateCabinDto, [
+  'cabinClass',
+] as const) {}
 
 export class UpdateFlightDto {
   @ApiPropertyOptional()

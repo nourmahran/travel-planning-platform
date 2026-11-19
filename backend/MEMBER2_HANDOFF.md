@@ -15,7 +15,7 @@ The reviewed requirements workbook has no FLT-27 row; the listed flight requirem
 - New bookings receive immutable UUID references with a sparse unique index. Existing bookings are not modified; internal exports fall back to the booking ID.
 - Internal generateTicket(id, userId) returns a PDF Buffer only for confirmed/completed bookings belonging to the supplied user. Uses the current flight details. Standard PDF font currently covers Latin text; a licensed Unicode font is needed for full multilingual passenger names. No public download route yet.
 - Internal listForAirline and streaming exportPassengers restrict queries to the specified airline's flight. CSV includes confirmed/completed passengers, quotes fields and neutralizes spreadsheet formulas. No public moderator routes yet.
-- Read-only airport APIs provide paginated search by name/IATA code/country and GET /airports/:code with its IANA time zone. Airport search validates pagination and escapes regular-expression input.
+- Read-only airport APIs provide paginated search by name/IATA code/country and GET /api/airports/:code with its IANA time zone. Airport search validates pagination and escapes regular-expression input.
 - Airlines can define cancellation tiers and baggage rules matching Member 4's published policy shape. Internal booking acceptance stores an immutable snapshot during an active hold. FlightBookingGateway maps flight bookings, confirmation and expiry for Member 4's interface, and is exported from BookingsModule.
 
 ## Member 1 boundary

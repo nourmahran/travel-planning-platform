@@ -22,6 +22,7 @@ import { STRIPE_CLIENT } from '../stripe/stripe.provider';
 import { StripeService } from '../stripe/stripe.service';
 import { FakeBookingGateway } from './fake-booking.gateway';
 import { FakeStripe, makeModels, TestAuthGuard } from './test-helpers';
+import { applyApiPrefix } from '../../common/http/api-prefix';
 
 /**
  * Wiring test: the REAL modules, controllers, guards, DTO validation and the
@@ -77,6 +78,8 @@ describe('Payments flow over HTTP (module wiring)', () => {
       .compile();
 
     app = moduleRef.createNestApplication({ rawBody: true });
+
+    applyApiPrefix(app);
     app.useGlobalFilters(new HttpExceptionFilter());
     app.useGlobalPipes(
       new ValidationPipe({
